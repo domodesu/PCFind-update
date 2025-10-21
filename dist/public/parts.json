@@ -1,0 +1,171 @@
+[
+  {
+    "name": "Corsair RM750 750W 80+ Gold",
+    "category": "PSU",
+    "price": 5200,
+    "imageUrl": null,
+    "specs": {
+      "Wattage": "750W",
+      "Certification": "80+ Gold",
+      "Modular": "Fully Modular"
+    },
+    "retailer": "EasyPC",
+    "available": [
+      "EasyPC"
+    ],
+    "socket": null,
+    "chipset": null,
+    "formFactor": "ATX",
+    "ramType": null,
+    "wattage": 750,
+    "tdp": null
+  },
+  {
+    "name": "AMD Ryzen 5 5600",
+    "category": "CPU",
+    "price": 7500,
+    "imageUrl": null,
+    "specs": {
+      "Cores": "6",
+      "Threads": "12",
+      "Base Clock": "3.5 GHz",
+      "Boost Clock": "4.4 GHz"
+    },
+    "retailer": "Lazada",
+    "available": [
+      "Lazada"
+    ],
+    "socket": "AM4",
+    "chipset": null,
+    "formFactor": null,
+    "ramType": "DDR4",
+    "wattage": null,
+    "tdp": 65
+  },
+  {
+    "name": "MSI B550-A PRO",
+    "category": "Motherboard",
+    "price": 6800,
+    "imageUrl": null,
+    "specs": {
+      "Socket": "AM4",
+      "Chipset": "B550",
+      "Form Factor": "ATX",
+      "Memory Type": "DDR4"
+    },
+    "retailer": "PC Express",
+    "available": [
+      "PC Express"
+    ],
+    "socket": "AM4",
+    "chipset": "B550",
+    "formFactor": "ATX",
+    "ramType": "DDR4",
+    "wattage": null,
+    "tdp": null
+  },
+  {
+    "name": "Kingston NV2 1TB NVMe SSD",
+    "category": "Storage",
+    "price": 2900,
+    "imageUrl": null,
+    "specs": {
+      "Capacity": "1TB",
+      "Interface": "NVMe PCIe 4.0"
+    },
+    "retailer": "Shopee",
+    "available": [
+      "Shopee"
+    ],
+    "socket": null,
+    "chipset": null,
+    "formFactor": "M.2",
+    "ramType": null,
+    "wattage": null,
+    "tdp": null
+  },
+  {
+    "name": "AMD Ryzen 7 5700X",
+    "category": "CPU",
+    "price": 9990,
+    "imageUrl": "https://example-cdn/lazada/ryzen-7-5700x.jpg",
+    "specs": {
+      "Cores": "8",
+      "Threads": "16",
+      "Base Clock": "3.4 GHz",
+      "Boost Clock": "4.6 GHz"
+    },
+    "retailer": "Lazada",
+    "available": [
+      "Lazada"
+    ],
+    "socket": "AM4",
+    "chipset": null,
+    "formFactor": null,
+    "ramType": "DDR4",
+    "wattage": null,
+    "tdp": 65
+  },
+  {
+    "name": "Samsung 970 EVO Plus 1TB",
+    "category": "Storage",
+    "price": 3990,
+    "imageUrl": "https://example-cdn/shopee/970-evo-plus-1tb.jpg",
+    "specs": {
+      "Capacity": "1TB",
+      "Interface": "NVMe PCIe 3.0"
+    },
+    "retailer": "Shopee",
+    "available": [
+      "Shopee"
+    ],
+    "socket": null,
+    "chipset": null,
+    "formFactor": "M.2",
+    "ramType": null,
+    "wattage": null,
+    "tdp": null
+  },
+  {
+    "name": "ASUS TUF Gaming B650-PLUS",
+    "category": "Motherboard",
+    "price": 12490,
+    "imageUrl": "https://example-cdn/pcx/asus-tuf-b650-plus.jpg",
+    "specs": {
+      "Socket": "AM5",
+      "Chipset": "B650",
+      "Form Factor": "ATX",
+      "Memory Type": "DDR5"
+    },
+    "retailer": "PC Express",
+    "available": [
+      "PC Express"
+    ],
+    "socket": "AM5",
+    "chipset": "B650",
+    "formFactor": "ATX",
+    "ramType": "DDR5",
+    "wattage": null,
+    "tdp": null
+  },
+  {
+    "name": "NZXT Kraken 240 RGB",
+    "category": "Cooling",
+    "price": 7290,
+    "imageUrl": "https://example-cdn/easypc/nzxt-kraken-240.jpg",
+    "specs": {
+      "Type": "AIO Liquid Cooler",
+      "Radiator Size": "240mm"
+    },
+    "retailer": "EasyPC",
+    "available": [
+      "EasyPC"
+    ],
+    "socket": null,
+    "chipset": null,
+    "formFactor": null,
+    "ramType": null,
+    "wattage": null,
+    "tdp": null
+  }
+]
