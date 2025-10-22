@@ -132,6 +132,36 @@
         }catch(e){}
       })();
     </script>
+    <script>
+      // Fix navigation links for GitHub Pages base path
+      (function(){
+        try{
+          var host = (location.hostname||'').toLowerCase();
+          if(!host.endsWith('.github.io')) return;
+          var parts = (location.pathname||'/').split('/');
+          var repo = parts[1] || '';
+          if(!repo || repo.toLowerCase() === 'index.html') return;
+          var base = '/' + repo;
+          // Intercept all clicks on links and prepend base if needed
+          document.addEventListener('click', function(e){
+            var a = e.target.closest('a');
+            if(!a || !a.href) return;
+            try{
+              var url = new URL(a.href, location.origin);
+              // Only fix same-origin relative links
+              if(url.origin === location.origin && !url.pathname.startsWith(base + '/')){
+                if(url.pathname.startsWith('/') && url.pathname !== base){
+                  e.preventDefault();
+                  var fixed = base + url.pathname + url.search + url.hash;
+                  history.pushState({}, '', fixed);
+                  window.dispatchEvent(new Event('popstate'));
+                }
+              }
+            }catch(ex){}
+          }, true);
+        }catch(e){}
+      })();
+    </script>
     <script type="module" src="assets/index-CaPvLiAV.js"></script>
     <link rel="stylesheet" href="assets/index-BhHjkmWg.css">
     <style>
