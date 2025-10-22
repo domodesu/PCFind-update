@@ -100,24 +100,32 @@
       })();
     </script>
     <script>
-      // GitHub Pages SPA prefix remover: mount app at "/" while keeping asset base at /<repo>/
+      // GitHub Pages SPA support: use /<repo>/ for assets, strip prefix for routes, honor hash paths
       (function(){
         try{
-          var host = location.hostname || '';
-          if(host && host.toLowerCase().endsWith('.github.io')){
+          var host = (location.hostname||'').toLowerCase();
+          var hash = location.hash||'';
+          if(host.endsWith('.github.io')){
             var parts = (location.pathname||'/').split('/');
             var repo = parts[1] || '';
             if(repo){
-              // Ensure <base href> points to /<repo>/ so assets resolve correctly
               var baseEl = document.querySelector('base');
               if(baseEl){ baseEl.setAttribute('href','/' + repo + '/'); }
-              // Strip the /<repo> prefix from the visible URL for the SPA router
               var prefix = '/' + repo;
-              if((location.pathname||'').toLowerCase().startsWith((prefix + '/').toLowerCase())){
-                var newPath = (location.pathname||'').slice(prefix.length) || '/';
-                history.replaceState({}, '', newPath + (location.search||'') + (location.hash||''));
-              } else if((location.pathname||'').toLowerCase() === prefix.toLowerCase()){
-                history.replaceState({}, '', '/' + (location.search||'') + (location.hash||''));
+              // If redirected from 404.html we will have a hash like #/pc-builder - convert to clean path
+              if(hash.startsWith('#/')){
+                var desired = hash.slice(1); // '/pc-builder'
+                history.replaceState({}, '', desired);
+                // clear hash so router sees a clean URL
+                setTimeout(function(){ if(location.hash) history.replaceState({}, '', location.pathname + location.search); }, 0);
+              } else {
+                // Otherwise, strip the /<repo> prefix so default route is '/'
+                if((location.pathname||'').toLowerCase().startsWith((prefix + '/').toLowerCase())){
+                  var newPath = (location.pathname||'').slice(prefix.length) || '/';
+                  history.replaceState({}, '', newPath + (location.search||''));
+                } else if((location.pathname||'').toLowerCase() === prefix.toLowerCase()){
+                  history.replaceState({}, '', '/' + (location.search||''));
+                }
               }
             }
           }
