@@ -1393,7 +1393,7 @@
           
           html += '<div class="pcf-chat-history-header">';
           html += '<span class="pcf-chat-history-title">Chat History</span>';
-          html += '<button class="pcf-chat-history-close" onclick="closeHistoryPanel()">✕</button>';
+          html += '<button class="pcf-chat-history-close" id="pcf-history-close-btn">✕</button>';
           html += '</div>';
           
           if(sessions.length === 0){
@@ -1404,8 +1404,8 @@
               const date = new Date(session.updatedAt);
               const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
               
-              html += '<div class="pcf-chat-history-item'+(isActive?' active':'')+'" onclick="loadChatSession(\''+session.id+'\')">';
-              html += '<button class="pcf-chat-history-item-delete" onclick="deleteChatSession(\''+session.id+'\', event)" title="Delete">🗑️</button>';
+              html += '<div class="pcf-chat-history-item'+(isActive?' active':'')+'" data-session-id="'+session.id+'">';
+              html += '<button class="pcf-chat-history-item-delete" data-delete-id="'+session.id+'" title="Delete">🗑️</button>';
               html += '<div class="pcf-chat-history-item-title">'+escapeHtml(session.title)+'</div>';
               html += '<div class="pcf-chat-history-item-date">'+dateStr+'</div>';
               html += '</div>';
@@ -1413,6 +1413,30 @@
           }
           
           panel.innerHTML = html;
+          
+          // Add event listeners after rendering
+          const closeBtn = document.getElementById('pcf-history-close-btn');
+          if(closeBtn){
+            closeBtn.addEventListener('click', closeHistoryPanel);
+          }
+          
+          // Add click listeners for chat items
+          panel.querySelectorAll('.pcf-chat-history-item').forEach(item => {
+            item.addEventListener('click', function(e){
+              if(e.target.classList.contains('pcf-chat-history-item-delete')) return; // Don't load if clicking delete
+              const sessionId = this.getAttribute('data-session-id');
+              if(sessionId) loadChatSession(sessionId);
+            });
+          });
+          
+          // Add click listeners for delete buttons
+          panel.querySelectorAll('.pcf-chat-history-item-delete').forEach(btn => {
+            btn.addEventListener('click', function(e){
+              e.stopPropagation();
+              const sessionId = this.getAttribute('data-delete-id');
+              if(sessionId) deleteChatSession(sessionId, e);
+            });
+          });
         }
         
         // Watch for route changes
