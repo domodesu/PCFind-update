@@ -270,7 +270,18 @@
       .pcf-forum .pcf-comment{margin-top:10px;padding-top:10px;border-top:1px dashed #374151}
       .light .pcf-forum .pcf-comment{border-color:#e5e7eb}
       /* AI Chat page styles */
-      .pcf-chat{display:flex;flex-direction:column;height:100vh;max-width:1200px;margin:0 auto;padding-top:70px}
+      .pcf-chat{
+        display:flex !important;
+        flex-direction:column;
+        height:100vh;
+        max-width:1200px;
+        margin:0 auto;
+        padding-top:70px;
+        position:relative;
+        z-index:1;
+        background:#0b1220;
+      }
+      .light .pcf-chat{background:#ffffff}
       .pcf-chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
       .pcf-chat-msg{display:flex;gap:12px;max-width:80%;animation:slideIn 0.3s ease}
       @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -935,6 +946,7 @@
         }
         
         function renderChat(){
+          console.log('renderChat called');
           if(!isChat()){ 
             // Remove chat container if not on chat page
             const existing = document.getElementById('pcf-chat');
@@ -944,11 +956,13 @@
             if(main) main.style.display = 'block';
             return;
           }
+          console.log('On chat page, rendering...');
           // Hide only main content on chat page (keep nav visible)
           const main = document.querySelector('main');
           if(main) main.style.display = 'none';
           
           const c = ensureChatContainer();
+          console.log('Chat container:', c);
           
           let html = '<div class="pcf-chat-messages" id="pcf-chat-messages">';
           
@@ -982,6 +996,7 @@
           html += '</div></div>';
           
           c.innerHTML = html;
+          console.log('Chat HTML set, container:', c, 'visible:', c.offsetHeight > 0);
           
           // Auto-resize textarea
           const input = document.getElementById('pcf-chat-input');
