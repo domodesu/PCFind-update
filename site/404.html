@@ -10,11 +10,19 @@
         try{
           // Capture the full path that 404'd
           var path = (location.pathname||'');
-          var parts = path.split('/');
-          var repo = parts[1]||'';
-          // Strip repo prefix to get the SPA route
-          if(repo && path.toLowerCase().startsWith('/' + repo.toLowerCase() + '/')){
-            path = path.slice(('/' + repo).length) || '/';
+          var host = (location.hostname||'').toLowerCase();
+          // Detect user site vs project site
+          var hostParts = host.split('.');
+          var username = hostParts[0] || '';
+          var isUserSite = host.endsWith('.github.io') && (host === username + '.github.io');
+          var repo = '';
+          if(!isUserSite){
+            // Project site: strip repo prefix
+            var parts = path.split('/');
+            repo = parts[1]||'';
+            if(repo && path.toLowerCase().startsWith('/' + repo.toLowerCase() + '/')){
+              path = path.slice(('/' + repo).length) || '/';
+            }
           }
           // Store the intended path in sessionStorage so index.html can restore it
           try{ sessionStorage.setItem('spa_redirect', path + (location.search||'') + (location.hash||'')); }catch{}

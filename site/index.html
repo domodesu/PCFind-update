@@ -100,32 +100,38 @@
       })();
     </script>
     <script>
-      // GitHub Pages SPA support: restore route from 404 redirect or strip repo prefix
+      // GitHub Pages SPA support: restore route from 404 redirect or strip repo prefix (project sites only)
       (function(){
         try{
           var host = (location.hostname||'').toLowerCase();
-          if(host.endsWith('.github.io')){
+          if(!host.endsWith('.github.io')) return;
+          // Detect user site vs project site
+          var hostParts = host.split('.');
+          var username = hostParts[0] || '';
+          var isUserSite = (host === username + '.github.io');
+          // Handle 404 redirect restoration for both user and project sites
+          var redirect = null;
+          try{ redirect = sessionStorage.getItem('spa_redirect'); sessionStorage.removeItem('spa_redirect'); }catch{}
+          if(redirect){
+            // Restore the intended route and notify the router
+            history.replaceState({}, '', redirect);
+            setTimeout(function(){ window.dispatchEvent(new Event('popstate')); }, 0);
+            return;
+          }
+          // For project sites, strip the repo prefix and set base href
+          if(!isUserSite){
             var parts = (location.pathname||'/').split('/');
             var repo = parts[1] || '';
             if(repo){
               var baseEl = document.querySelector('base');
               if(baseEl){ baseEl.setAttribute('href','/' + repo + '/'); }
               var prefix = '/' + repo;
-              // Check if we were redirected from 404.html (sessionStorage holds the real route)
-              var redirect = null;
-              try{ redirect = sessionStorage.getItem('spa_redirect'); sessionStorage.removeItem('spa_redirect'); }catch{}
-              if(redirect){
-                // Restore the intended route and notify the router
-                history.replaceState({}, '', redirect);
-                setTimeout(function(){ window.dispatchEvent(new Event('popstate')); }, 0);
-              } else {
-                // Otherwise, strip the /<repo> prefix so default route is '/'
-                if((location.pathname||'').toLowerCase().startsWith((prefix + '/').toLowerCase())){
-                  var newPath = (location.pathname||'').slice(prefix.length) || '/';
-                  history.replaceState({}, '', newPath + (location.search||''));
-                } else if((location.pathname||'').toLowerCase() === prefix.toLowerCase()){
-                  history.replaceState({}, '', '/' + (location.search||''));
-                }
+              // Strip the /<repo> prefix so default route is '/'
+              if((location.pathname||'').toLowerCase().startsWith((prefix + '/').toLowerCase())){
+                var newPath = (location.pathname||'').slice(prefix.length) || '/';
+                history.replaceState({}, '', newPath + (location.search||''));
+              } else if((location.pathname||'').toLowerCase() === prefix.toLowerCase()){
+                history.replaceState({}, '', '/' + (location.search||''));
               }
             }
           }
@@ -133,11 +139,18 @@
       })();
     </script>
     <script>
-      // Fix navigation links for GitHub Pages base path
+      // Fix navigation links for GitHub Pages base path (project sites only, not user sites)
       (function(){
         try{
           var host = (location.hostname||'').toLowerCase();
           if(!host.endsWith('.github.io')) return;
+          // Detect if this is a user site (e.g., domodesu.github.io) vs project site (e.g., domodesu.github.io/repo)
+          // User site: hostname matches username.github.io exactly, no repo prefix needed
+          var hostParts = host.split('.');
+          var username = hostParts[0] || '';
+          // If we're on username.github.io (user site), no prefix logic needed
+          if(host === username + '.github.io') return;
+          // Otherwise, it's a project site - apply prefix logic
           var parts = (location.pathname||'/').split('/');
           var repo = parts[1] || '';
           if(!repo || repo.toLowerCase() === 'index.html') return;
