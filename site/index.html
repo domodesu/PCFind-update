@@ -321,6 +321,8 @@
         background:#3b82f6;
         border-color:#3b82f6;
       }
+      #pcf-new-chat-btn{background:#10b981 !important;border-color:#10b981 !important;}
+      #pcf-new-chat-btn:hover{background:#059669 !important;border-color:#059669 !important;}
       /* Chat main area */
       .pcf-chat-main{
         flex:1;
@@ -379,6 +381,35 @@
       .light .pcf-chat-welcome-title{color:#1f2937;font-weight:600}
       .pcf-chat-welcome-text{color:#9ca3af}
       .light .pcf-chat-welcome-text{color:#4b5563}
+      /* Chat history panel */
+      .pcf-chat-history-panel{position:fixed;top:70px;left:0;width:320px;height:calc(100vh - 70px);background:#1f2937;border-right:1px solid #374151;transform:translateX(-100%);transition:transform 0.3s ease;z-index:1000;overflow-y:auto;padding:20px;}
+      .light .pcf-chat-history-panel{background:#ffffff;border-color:#e5e7eb}
+      .pcf-chat-history-panel.open{transform:translateX(0)}
+      .pcf-chat-history-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid #374151;}
+      .light .pcf-chat-history-header{border-color:#e5e7eb}
+      .pcf-chat-history-title{color:#e5e7eb;font-weight:600;font-size:1.1rem;}
+      .light .pcf-chat-history-title{color:#1f2937}
+      .pcf-chat-history-close{background:none;border:none;color:#9ca3af;font-size:1.5rem;cursor:pointer;padding:4px 8px;border-radius:4px;transition:all 0.2s;}
+      .pcf-chat-history-close:hover{background:#374151;color:#fff;}
+      .light .pcf-chat-history-close:hover{background:#f3f4f6;color:#1f2937}
+      .pcf-chat-history-item{background:#0b1220;border:1px solid #374151;border-radius:8px;padding:12px;margin-bottom:10px;cursor:pointer;transition:all 0.2s;}
+      .light .pcf-chat-history-item{background:#f9fafb;border-color:#e5e7eb}
+      .pcf-chat-history-item:hover{background:#374151;border-color:#2563eb;transform:translateX(4px);}
+      .light .pcf-chat-history-item:hover{background:#eff6ff;border-color:#3b82f6}
+      .pcf-chat-history-item.active{background:#1e3a8a;border-color:#2563eb;}
+      .light .pcf-chat-history-item.active{background:#dbeafe;border-color:#3b82f6}
+      .pcf-chat-history-item-title{color:#e5e7eb;font-weight:500;font-size:0.9rem;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+      .light .pcf-chat-history-item-title{color:#1f2937}
+      .pcf-chat-history-item-date{color:#9ca3af;font-size:0.75rem;}
+      .light .pcf-chat-history-item-date{color:#6b7280}
+      .pcf-chat-history-item-delete{float:right;background:none;border:none;color:#ef4444;font-size:0.85rem;cursor:pointer;padding:2px 6px;border-radius:4px;opacity:0;transition:opacity 0.2s;}
+      .pcf-chat-history-item:hover .pcf-chat-history-item-delete{opacity:1}
+      .pcf-chat-history-item-delete:hover{background:#7f1d1d;color:#fca5a5}
+      .pcf-chat-new-btn{width:100%;padding:10px;background:#10b981;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:background 0.2s;margin-bottom:16px;}
+      .pcf-chat-new-btn:hover{background:#059669}
+      .pcf-chat-history-empty{color:#9ca3af;text-align:center;padding:40px 20px;font-size:0.9rem;}
+      .light .pcf-chat-history-empty{color:#6b7280}
+      @media (max-width: 768px){.pcf-chat-history-panel{width:100%}}
     </style>
     <div class="pcf-account-btn" id="pcf-account">
       <button class="pcf-btn" id="pcf-signin-btn">Sign In</button>
@@ -1057,6 +1088,9 @@
           
           // Sidebar navigation
           html += '<div class="pcf-chat-sidebar">';
+          html += '<button class="pcf-chat-sidebar-link" id="pcf-new-chat-btn" style="border:none;width:100%;text-align:left;background:#10b981;cursor:pointer;">➕ New Chat</button>';
+          html += '<button class="pcf-chat-sidebar-link" id="pcf-history-btn" style="border:none;width:100%;text-align:left;cursor:pointer;">📜 History</button>';
+          html += '<div style="border-top:1px solid #374151;margin:12px 0;"></div>';
           html += '<a href="/" class="pcf-chat-sidebar-link">🏠 Home</a>';
           html += '<a href="/browse-parts" class="pcf-chat-sidebar-link">🔍 Browse Parts</a>';
           html += '<a href="/pc-builder" class="pcf-chat-sidebar-link">🔧 PC Builder</a>';
@@ -1100,6 +1134,16 @@
           c.innerHTML = html;
           console.log('Chat HTML set, container:', c, 'visible:', c.offsetHeight > 0);
           
+          // Add history panel
+          let historyPanel = document.getElementById('pcf-chat-history-panel');
+          if(!historyPanel){
+            historyPanel = document.createElement('div');
+            historyPanel.id = 'pcf-chat-history-panel';
+            historyPanel.className = 'pcf-chat-history-panel';
+            document.body.appendChild(historyPanel);
+          }
+          renderHistoryPanel();
+          
           // Auto-resize textarea
           const input = document.getElementById('pcf-chat-input');
           const sendBtn = document.getElementById('pcf-chat-send');
@@ -1120,6 +1164,18 @@
           
           if(sendBtn){
             sendBtn.addEventListener('click', sendMessage);
+          }
+          
+          // History button
+          const historyBtn = document.getElementById('pcf-history-btn');
+          if(historyBtn){
+            historyBtn.addEventListener('click', toggleHistoryPanel);
+          }
+          
+          // New chat button
+          const newChatBtn = document.getElementById('pcf-new-chat-btn');
+          if(newChatBtn){
+            newChatBtn.addEventListener('click', startNewChat);
           }
           
           scrollToBottom();
@@ -1217,7 +1273,146 @@
             sendBtn.disabled = false;
             const newInput = document.getElementById('pcf-chat-input');
             if(newInput) newInput.focus();
+            // Save chat after each message
+            saveCurrentChat();
           }
+        }
+        
+        // Chat history management
+        let currentSessionId = null;
+        
+        function getChatSessions(){
+          try{
+            const sessions = localStorage.getItem('pcfind_chat_sessions');
+            return sessions ? JSON.parse(sessions) : [];
+          }catch{
+            return [];
+          }
+        }
+        
+        function saveChatSessions(sessions){
+          try{
+            localStorage.setItem('pcfind_chat_sessions', JSON.stringify(sessions));
+          }catch(e){
+            console.error('Failed to save chat sessions:', e);
+          }
+        }
+        
+        function saveCurrentChat(){
+          if(chatHistory.length === 0) return;
+          
+          const sessions = getChatSessions();
+          const now = Date.now();
+          
+          // Get chat title from first user message
+          const firstMsg = chatHistory.find(m => m.role === 'user');
+          const title = firstMsg ? firstMsg.content.substring(0, 50) + (firstMsg.content.length > 50 ? '...' : '') : 'New Chat';
+          
+          if(currentSessionId){
+            // Update existing session
+            const session = sessions.find(s => s.id === currentSessionId);
+            if(session){
+              session.messages = chatHistory;
+              session.updatedAt = now;
+              session.title = title;
+            }
+          }else{
+            // Create new session
+            currentSessionId = 'chat_' + now + '_' + Math.random().toString(36).slice(2);
+            sessions.unshift({
+              id: currentSessionId,
+              title: title,
+              messages: chatHistory,
+              createdAt: now,
+              updatedAt: now
+            });
+            // Keep only last 50 sessions
+            if(sessions.length > 50) sessions.length = 50;
+          }
+          
+          saveChatSessions(sessions);
+          renderHistoryPanel();
+        }
+        
+        function loadChatSession(sessionId){
+          const sessions = getChatSessions();
+          const session = sessions.find(s => s.id === sessionId);
+          if(session){
+            currentSessionId = sessionId;
+            chatHistory.length = 0;
+            chatHistory.push(...session.messages);
+            renderChat();
+            closeHistoryPanel();
+          }
+        }
+        
+        function deleteChatSession(sessionId, event){
+          if(event){
+            event.stopPropagation();
+          }
+          if(!confirm('Delete this chat?')) return;
+          
+          let sessions = getChatSessions();
+          sessions = sessions.filter(s => s.id !== sessionId);
+          saveChatSessions(sessions);
+          
+          if(currentSessionId === sessionId){
+            startNewChat();
+          }else{
+            renderHistoryPanel();
+          }
+        }
+        
+        function startNewChat(){
+          currentSessionId = null;
+          chatHistory.length = 0;
+          renderChat();
+          closeHistoryPanel();
+        }
+        
+        function toggleHistoryPanel(){
+          const panel = document.getElementById('pcf-chat-history-panel');
+          if(panel){
+            panel.classList.toggle('open');
+          }
+        }
+        
+        function closeHistoryPanel(){
+          const panel = document.getElementById('pcf-chat-history-panel');
+          if(panel){
+            panel.classList.remove('open');
+          }
+        }
+        
+        function renderHistoryPanel(){
+          const panel = document.getElementById('pcf-chat-history-panel');
+          if(!panel) return;
+          
+          const sessions = getChatSessions();
+          let html = '';
+          
+          html += '<div class="pcf-chat-history-header">';
+          html += '<span class="pcf-chat-history-title">Chat History</span>';
+          html += '<button class="pcf-chat-history-close" onclick="closeHistoryPanel()">✕</button>';
+          html += '</div>';
+          
+          if(sessions.length === 0){
+            html += '<div class="pcf-chat-history-empty">No chat history yet.<br>Start a conversation to save it here!</div>';
+          }else{
+            sessions.forEach(session => {
+              const isActive = session.id === currentSessionId;
+              const date = new Date(session.updatedAt);
+              const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+              
+              html += '<div class="pcf-chat-history-item'+(isActive?' active':'')+'" onclick="loadChatSession(\''+session.id+'\')">';
+              html += '<button class="pcf-chat-history-item-delete" onclick="deleteChatSession(\''+session.id+'\', event)" title="Delete">🗑️</button>';
+              html += '<div class="pcf-chat-history-item-title">'+escapeHtml(session.title)+'</div>';
+              html += '<div class="pcf-chat-history-item-date">'+dateStr+'</div>';
+              html += '</div>';
+            });
+          }
+          
+          panel.innerHTML = html;
         }
         
         // Watch for route changes
