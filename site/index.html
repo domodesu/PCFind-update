@@ -236,35 +236,20 @@
       @media (max-width: 900px){
         nav a[href="/"], nav a[href="/browse-parts"], nav a[href="/pc-builder"], nav a[href="/saved-builds"]{display:none !important}
         .pcf-nav-mobile{display:block}
-        /* Mobile layout: theme (left), PCFind logo (center), burger (right) */
-        .pcf-tools{
-          position:fixed !important;
-          top:12px !important;
-          left:0 !important;
-          right:0 !important;
-          width:100% !important;
-          display:flex !important;
-          justify-content:space-between !important;
-          padding:0 12px !important;
-          pointer-events:none !important;
-        }
-        .pcf-tools > *{
-          pointer-events:auto !important;
-        }
-        #pcf-theme{
-          order:-1 !important;
-          display:block !important;
-        }
-        #pcf-burger{
-          order:1 !important;
-        }
+        /* Hide theme toggle on mobile */
+        #pcf-theme{display:none !important}
+        /* Center PCFind logo in navigation bar */
         header nav, nav{
           position:relative !important;
+          display:flex !important;
+          justify-content:center !important;
+          align-items:center !important;
         }
         header a:first-child, nav a:first-child, nav > a[href="/"], header > div > a:first-child{
           position:absolute !important;
           left:50% !important;
           transform:translateX(-50%) !important;
+          z-index:1 !important;
         }
       }
       /* Forum styles */
