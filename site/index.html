@@ -354,6 +354,18 @@
       #root:has(~ #pcf-chat) > *:not(header):not(nav){
         display:none !important;
       }
+      /* Hide main content when saved builds page is active */
+      #root:has(#pcf-saved-builds-container){
+        min-height:auto !important;
+      }
+      #root:has(#pcf-saved-builds-container) > *:not(header):not(nav):not(#pcf-saved-builds-container){
+        display:none !important;
+      }
+      /* Also hide footer */
+      body:has(#pcf-saved-builds-container) footer,
+      body:has(#pcf-saved-builds-container) [class*="footer" i]{
+        display:none !important;
+      }
       .pcf-chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
       .pcf-chat-msg{display:flex;gap:12px;max-width:80%;animation:slideIn 0.3s ease}
       @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
