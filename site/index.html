@@ -951,15 +951,30 @@
             // Remove chat container if not on chat page
             const existing = document.getElementById('pcf-chat');
             if(existing) existing.remove();
-            // Show main app content
-            const main = document.querySelector('main');
-            if(main) main.style.display = 'block';
+            // Show all main app content
+            const root = document.getElementById('root');
+            if(root){
+              const children = root.children;
+              for(let i = 0; i < children.length; i++){
+                children[i].style.display = '';
+              }
+            }
             return;
           }
           console.log('On chat page, rendering...');
-          // Hide only main content on chat page (keep nav visible)
-          const main = document.querySelector('main');
-          if(main) main.style.display = 'none';
+          // Hide all main app content (keep nav visible)
+          const root = document.getElementById('root');
+          if(root){
+            // Hide all children except header/nav
+            const children = root.children;
+            for(let i = 0; i < children.length; i++){
+              const child = children[i];
+              const tagName = child.tagName.toLowerCase();
+              if(tagName !== 'header' && tagName !== 'nav'){
+                child.style.display = 'none';
+              }
+            }
+          }
           
           const c = ensureChatContainer();
           console.log('Chat container:', c);
