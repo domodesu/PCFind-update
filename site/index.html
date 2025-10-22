@@ -115,8 +115,9 @@
               var redirect = null;
               try{ redirect = sessionStorage.getItem('spa_redirect'); sessionStorage.removeItem('spa_redirect'); }catch{}
               if(redirect){
-                // Restore the intended route
+                // Restore the intended route and notify the router
                 history.replaceState({}, '', redirect);
+                setTimeout(function(){ window.dispatchEvent(new Event('popstate')); }, 0);
               } else {
                 // Otherwise, strip the /<repo> prefix so default route is '/'
                 if((location.pathname||'').toLowerCase().startsWith((prefix + '/').toLowerCase())){
