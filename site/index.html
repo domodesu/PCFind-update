@@ -355,15 +355,8 @@
         display:none !important;
       }
       /* Hide main content when saved builds page is active */
-      #root:has(#pcf-saved-builds-container){
-        min-height:auto !important;
-      }
-      #root:has(#pcf-saved-builds-container) > *:not(header):not(nav):not(#pcf-saved-builds-container){
-        display:none !important;
-      }
-      /* Also hide footer */
-      body:has(#pcf-saved-builds-container) footer,
-      body:has(#pcf-saved-builds-container) [class*="footer" i]{
+      #root:has(#pcf-saved-builds-container) > main,
+      #root:has(#pcf-saved-builds-container) > div:not(#pcf-saved-builds-container):not([class*="nav" i]):not([class*="header" i]){
         display:none !important;
       }
       .pcf-chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
