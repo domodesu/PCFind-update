@@ -8,13 +8,19 @@
     <script>
       (function(){
         try{
-          var path = (location.pathname||'/') + (location.search||'') + (location.hash||'');
-          var parts = (location.pathname||'/').split('/');
+          // Capture the full path that 404'd
+          var path = (location.pathname||'');
+          var parts = path.split('/');
           var repo = parts[1]||'';
+          // Strip repo prefix to get the SPA route
+          if(repo && path.toLowerCase().startsWith('/' + repo.toLowerCase() + '/')){
+            path = path.slice(('/' + repo).length) || '/';
+          }
+          // Store the intended path in sessionStorage so index.html can restore it
+          try{ sessionStorage.setItem('spa_redirect', path + (location.search||'') + (location.hash||'')); }catch{}
+          // Redirect to the index
           var base = repo ? ('/' + repo + '/') : '/';
-          // Redirect to index with hash-based path so it loads without 404
-          var target = base + '#' + path;
-          location.replace(target);
+          location.replace(base);
         }catch(e){ location.replace('./'); }
       })();
     </script>
