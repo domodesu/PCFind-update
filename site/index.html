@@ -354,10 +354,6 @@
       #root:has(~ #pcf-chat) > *:not(header):not(nav){
         display:none !important;
       }
-      /* Hide main app content when saved builds page is active - keep header/nav */
-      #root:has(#pcf-saved-builds-container) > main{
-        display:none !important;
-      }
       .pcf-chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
       .pcf-chat-msg{display:flex;gap:12px;max-width:80%;animation:slideIn 0.3s ease}
       @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -1086,6 +1082,14 @@
         // Render saved builds page
         function renderSavedBuilds(){
           if(!isSavedBuilds()) return;
+          
+          // Hide React app's main content but keep navigation
+          const main = document.querySelector('main');
+          if(main){
+            const mainContent = main.querySelector('div');
+            if(mainContent && !mainContent.id) mainContent.style.display = 'none';
+          }
+          
           const c = ensureContainer();
           const build = getCurrentBuild();
           const user = window.isUserLoggedIn && window.isUserLoggedIn();
@@ -1203,8 +1207,10 @@
         
         // Watch for route changes
         window.addEventListener('popstate', renderSavedBuilds);
-        window.addEventListener('load', renderSavedBuilds);
-        setTimeout(renderSavedBuilds, 100);
+        window.addEventListener('load', function(){
+          setTimeout(renderSavedBuilds, 300); // Wait for React app to render navigation
+        });
+        setTimeout(renderSavedBuilds, 500); // Fallback
       })();
     </script>
     <!-- Community forum (client-side, localStorage) -->
