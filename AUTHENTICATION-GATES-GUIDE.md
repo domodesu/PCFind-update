@@ -28,42 +28,55 @@ window.showSignInRequired('Your custom message here')
 
 ### **Browse Parts - "Add to Build" Button**
 
-When a user clicks "Add to Build", check if they're logged in:
+✅ **Guests CAN add items to build** (no sign-in required)
+🔒 **Sign-in required only when SAVING the build**
 
 ```javascript
 // Example: On "Add to Build" button click
 document.querySelector('.add-to-build-btn').addEventListener('click', function(e){
-  // Check if user is logged in
-  if(!window.isUserLoggedIn()){
-    e.preventDefault(); // Stop the action
-    window.showSignInRequired('Sign in to add items to your build!');
-    return;
-  }
-  
-  // User is logged in - proceed with adding to build
+  // Allow guests to add items (stored in sessionStorage temporarily)
   addItemToBuild(itemId);
+  showToast('✅ Added to build!');
+  
+  // Optional: Show reminder for guests
+  if(!window.isUserLoggedIn()){
+    showToast('💡 Sign in to save your build permanently!', 'info');
+  }
 });
 ```
 
 ---
 
-### **PC Builder Page**
+### **PC Builder Page - Save Build**
 
-Protect the entire PC Builder page:
+✅ **Guests CAN use the PC Builder freely**
+🔒 **Sign-in required only when clicking "Save Build"**
 
 ```javascript
-// Check on page load
-if(!window.isUserLoggedIn()){
-  // Show message and disable features
-  window.showSignInRequired('Sign in to use the PC Builder and create custom builds!');
+// On "Save Build" button click
+document.querySelector('.save-build-btn').addEventListener('click', function(e){
+  e.preventDefault();
   
-  // Optionally disable all interactive elements
-  document.querySelectorAll('.builder-controls').forEach(el => {
-    el.disabled = true;
-    el.style.opacity = '0.5';
-    el.style.cursor = 'not-allowed';
-  });
-}
+  // Check if user is logged in ONLY when saving
+  if(!window.isUserLoggedIn()){
+    window.showSignInRequired('Sign in to save your build and access it anytime from any device!');
+    return;
+  }
+  
+  // User is logged in - proceed with saving
+  saveBuildToAccount(buildData);
+  showToast('✅ Build saved successfully!');
+});
+```
+
+**Better UX Flow:**
+```
+Guest User:
+1. Browse Parts ✅ (Free)
+2. Add to Build ✅ (Free, temporary)
+3. Use PC Builder ✅ (Free, temporary)
+4. Click "Save Build" → 🔒 Sign-in modal appears!
+5. After sign-in → Build is saved permanently ✅
 ```
 
 ---
@@ -169,9 +182,10 @@ function addToCart(productId){
 | Feature | Guest Access | Signed-in Access |
 |---------|--------------|------------------|
 | **AI Chat** | 2 messages | Unlimited ✅ |
-| **Browse Parts** | View only | Add to Build ✅ |
-| **PC Builder** | Blocked | Full access ✅ |
-| **Saved Builds** | Blocked | View & Save ✅ |
+| **Browse Parts** | View + Add to Build ✅ | View + Add to Build ✅ |
+| **PC Builder** | Use builder (temp) ✅ | Use builder + Save ✅ |
+| **Save Build** | 🔒 Blocked | Save permanently ✅ |
+| **Saved Builds** | 🔒 Blocked | View all builds ✅ |
 | **Community** | Read only | Post & Comment ✅ |
 
 ---

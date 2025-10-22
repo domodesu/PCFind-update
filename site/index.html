@@ -1026,11 +1026,7 @@
         };
         
         // Show sign-in required modal (globally accessible)
-        // Usage example: 
-        //   if(!window.isUserLoggedIn()){ 
-        //     window.showSignInRequired('Sign in to add items to your build!'); 
-        //     return; 
-        //   }
+        // Usage: window.showSignInRequired('Sign in to save your build!')
         window.showSignInRequired = function(message){
           let overlay = document.getElementById('pcf-signin-required-overlay');
           if(!overlay){
