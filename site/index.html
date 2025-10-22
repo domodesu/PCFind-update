@@ -919,7 +919,9 @@
         
         function isChat(){ 
           const path = (location.pathname||'').toLowerCase();
-          return path === '/chat' || path.endsWith('/chat') || path === '/chat/' || path.endsWith('/chat/');
+          const result = path === '/chat' || path.endsWith('/chat') || path === '/chat/' || path.endsWith('/chat/');
+          console.log('isChat check:', { path, result });
+          return result;
         }
         function ensureChatContainer(){ 
           let c=document.getElementById('pcf-chat'); 
@@ -1109,6 +1111,8 @@
         };
         window.addEventListener('popstate', renderChat);
         window.addEventListener('load', renderChat);
+        // Also render after a short delay to catch SPA redirects
+        setTimeout(renderChat, 100);
       })();
     </script>
     <!-- Theme toggle (left of burger) + Burger drawer (Account/Community/About/Help) -->
