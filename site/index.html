@@ -1019,7 +1019,18 @@
         }
         function ensureContainer(){ 
           let c = document.getElementById('pcf-saved-builds-container'); 
-          if(!c){ c = document.createElement('div'); c.id = 'pcf-saved-builds-container'; c.style.cssText = 'max-width:1200px;margin:80px auto 40px;padding:0 20px'; document.getElementById('root').appendChild(c); } 
+          if(!c){ 
+            c = document.createElement('div'); 
+            c.id = 'pcf-saved-builds-container'; 
+            c.style.cssText = 'max-width:1200px;margin:40px auto;padding:0 20px'; 
+            // Insert into main element, not at end of #root
+            const main = document.querySelector('main');
+            if(main){
+              main.insertBefore(c, main.firstChild);
+            } else {
+              document.getElementById('root').appendChild(c);
+            }
+          } 
           return c; 
         }
         
@@ -1086,9 +1097,17 @@
           // Hide React app's main content but keep navigation
           const main = document.querySelector('main');
           if(main){
-            const mainContent = main.querySelector('div');
-            if(mainContent && !mainContent.id) mainContent.style.display = 'none';
+            // Hide all children except our saved builds container
+            Array.from(main.children).forEach(child => {
+              if(child.id !== 'pcf-saved-builds-container'){
+                child.style.display = 'none';
+              }
+            });
           }
+          
+          // Hide footer
+          const footer = document.querySelector('footer');
+          if(footer) footer.style.display = 'none';
           
           const c = ensureContainer();
           const build = getCurrentBuild();
