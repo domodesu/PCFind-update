@@ -272,16 +272,69 @@
       /* AI Chat page styles */
       .pcf-chat{
         display:flex !important;
-        flex-direction:column;
+        flex-direction:row;
         height:100vh;
-        max-width:1200px;
+        max-width:1400px;
         margin:0 auto;
         padding-top:70px;
         position:relative;
         z-index:1;
         background:#0b1220;
+        gap:20px;
       }
       .light .pcf-chat{background:#ffffff}
+      /* Chat sidebar navigation */
+      .pcf-chat-sidebar{
+        width:220px;
+        flex-shrink:0;
+        padding:20px 0;
+        display:flex;
+        flex-direction:column;
+        gap:8px;
+      }
+      .pcf-chat-sidebar-link{
+        display:block;
+        padding:12px 16px;
+        border-radius:10px;
+        background:#1f2937;
+        border:1px solid #374151;
+        color:#e5e7eb;
+        text-decoration:none;
+        transition:all 0.2s ease;
+        font-size:0.95rem;
+        font-weight:500;
+      }
+      .light .pcf-chat-sidebar-link{
+        background:#f3f4f6;
+        border-color:#d1d5db;
+        color:#111827;
+      }
+      .pcf-chat-sidebar-link:hover{
+        background:#2563eb;
+        border-color:#2563eb;
+        color:#ffffff;
+        transform:translateX(4px);
+        box-shadow:0 4px 12px rgba(37,99,235,0.3);
+      }
+      .light .pcf-chat-sidebar-link:hover{
+        background:#3b82f6;
+        border-color:#3b82f6;
+      }
+      /* Chat main area */
+      .pcf-chat-main{
+        flex:1;
+        display:flex;
+        flex-direction:column;
+        overflow:hidden;
+        border-radius:12px;
+        border:1px solid #374151;
+      }
+      .light .pcf-chat-main{border-color:#e5e7eb}
+      /* Hide sidebar on mobile */
+      @media (max-width: 768px){
+        .pcf-chat-sidebar{display:none}
+        .pcf-chat{padding:70px 10px 0 10px}
+      }
       /* Hide everything except nav when chat exists */
       #pcf-chat ~ #root,
       #pcf-chat ~ #root *:not(header):not(nav):not(header *):not(nav *){
@@ -990,7 +1043,19 @@
           const c = ensureChatContainer();
           console.log('Chat container:', c);
           
-          let html = '<div class="pcf-chat-messages" id="pcf-chat-messages">';
+          let html = '';
+          
+          // Sidebar navigation
+          html += '<div class="pcf-chat-sidebar">';
+          html += '<a href="/" class="pcf-chat-sidebar-link">🏠 Home</a>';
+          html += '<a href="/browse-parts" class="pcf-chat-sidebar-link">🔍 Browse Parts</a>';
+          html += '<a href="/pc-builder" class="pcf-chat-sidebar-link">🔧 PC Builder</a>';
+          html += '<a href="/saved-builds" class="pcf-chat-sidebar-link">💾 Saved Builds</a>';
+          html += '</div>';
+          
+          // Main chat area
+          html += '<div class="pcf-chat-main">';
+          html += '<div class="pcf-chat-messages" id="pcf-chat-messages">';
           
           if(chatHistory.length === 0){
             html += '<div style="text-align:center;padding:40px 20px;color:#9ca3af;">';
@@ -1020,6 +1085,7 @@
           html += '<textarea class="pcf-chat-input" id="pcf-chat-input" placeholder="Type your question..." rows="1"></textarea>';
           html += '<button class="pcf-chat-send" id="pcf-chat-send">Send</button>';
           html += '</div></div>';
+          html += '</div>'; // Close pcf-chat-main
           
           c.innerHTML = html;
           console.log('Chat HTML set, container:', c, 'visible:', c.offsetHeight > 0);
