@@ -289,10 +289,19 @@
         <div id="pcf-sec-signup" style="display:none">
           <h3>Sign up</h3>
           <div class="pcf-row"><input class="pcf-input" id="pcf-su-username" placeholder="Username" autocomplete="username" /></div>
+          
+          <!-- Email/Phone toggle -->
           <div class="pcf-row">
-            <label style="color:#666;font-size:.85rem;margin-bottom:4px;display:block;">Email or Phone Number</label>
-            <div style="display:flex;gap:8px;align-items:stretch;">
-              <select id="pcf-su-country" class="pcf-input" style="width:100px;flex-shrink:0;padding:8px;">
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+              <button type="button" id="pcf-su-mode-phone" class="pcf-btn primary" style="flex:1;padding:10px;">📱 Mobile Number</button>
+              <button type="button" id="pcf-su-mode-email" class="pcf-btn" style="flex:1;padding:10px;">📧 Email</button>
+            </div>
+          </div>
+          
+          <!-- Phone input (default visible) -->
+          <div class="pcf-row" id="pcf-su-phone-section">
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <select id="pcf-su-country" class="pcf-input" style="width:120px;flex-shrink:0;padding:10px;">
                 <option value="+63" selected>🇵🇭 +63</option>
                 <option value="+1">🇺🇸 +1</option>
                 <option value="+44">🇬🇧 +44</option>
@@ -313,12 +322,16 @@
                 <option value="+55">🇧🇷 +55</option>
                 <option value="+52">🇲🇽 +52</option>
                 <option value="+27">🇿🇦 +27</option>
-                <option value="email">📧 Email</option>
               </select>
-              <input class="pcf-input" id="pcf-su-contact" placeholder="09#########" type="text" autocomplete="tel" style="flex:1;" />
+              <input class="pcf-input" id="pcf-su-phone" placeholder="Enter your Mobile Number" type="tel" autocomplete="tel" style="flex:1;padding:10px;" />
             </div>
-            <small style="color:#666;font-size:.75rem;margin-top:4px;display:block;">For phone: 09#########  |  For email: select 📧 and enter email</small>
           </div>
+          
+          <!-- Email input (hidden by default) -->
+          <div class="pcf-row" id="pcf-su-email-section" style="display:none;">
+            <input class="pcf-input" id="pcf-su-email" placeholder="Enter Your Email" type="email" autocomplete="email" style="padding:10px;" />
+          </div>
+          
           <div class="pcf-row" style="display:flex;gap:8px;">
             <button class="pcf-btn" id="pcf-su-send-otp" style="flex:1">Send OTP</button>
             <div id="pcf-su-otp-status" style="display:none;color:#10b981;font-size:.85rem;align-self:center;padding:0 8px;">✓ OTP sent!</div>
@@ -534,66 +547,73 @@
         // Sign up actions - OTP flow
         let otpVerified = false;
         let verifiedContact = '';
+        let currentMode = 'phone'; // 'phone' or 'email'
         const suSendOtp = document.getElementById('pcf-su-send-otp');
         const suOtpStatus = document.getElementById('pcf-su-otp-status');
         const suOtpRow = document.getElementById('pcf-su-otp-row');
         const suOtpInput = document.getElementById('pcf-su-otp');
         const suResendOtp = document.getElementById('pcf-su-resend-otp');
         const suCountrySelect = document.getElementById('pcf-su-country');
-        const suContactInput = document.getElementById('pcf-su-contact');
+        const suPhoneInput = document.getElementById('pcf-su-phone');
+        const suEmailInput = document.getElementById('pcf-su-email');
+        const suPhoneSection = document.getElementById('pcf-su-phone-section');
+        const suEmailSection = document.getElementById('pcf-su-email-section');
+        const suModePhone = document.getElementById('pcf-su-mode-phone');
+        const suModeEmail = document.getElementById('pcf-su-mode-email');
         
-        // Update placeholder when country code changes
-        if(suCountrySelect && suContactInput){
-          suCountrySelect.addEventListener('change', ()=>{
-            const val = suCountrySelect.value;
-            if(val === 'email'){
-              suContactInput.placeholder = 'your-email@example.com';
-              suContactInput.type = 'email';
-            } else {
-              suContactInput.placeholder = '09#########';
-              suContactInput.type = 'tel';
-            }
-          });
-        }
+        // Toggle between phone and email mode
+        if(suModePhone){ suModePhone.addEventListener('click', ()=>{
+          currentMode = 'phone';
+          suPhoneSection.style.display = 'block';
+          suEmailSection.style.display = 'none';
+          suModePhone.classList.add('primary');
+          suModeEmail.classList.remove('primary');
+        }); }
+        
+        if(suModeEmail){ suModeEmail.addEventListener('click', ()=>{
+          currentMode = 'email';
+          suPhoneSection.style.display = 'none';
+          suEmailSection.style.display = 'block';
+          suModeEmail.classList.add('primary');
+          suModePhone.classList.remove('primary');
+        }); }
         
         async function sendOTP() {
-          // Ensure elements exist
-          if(!suCountrySelect || !suContactInput || !suErr || !suSendOtp){
-            console.error('OTP elements not found', {suCountrySelect, suContactInput, suErr, suSendOtp});
-            alert('Error: Form elements not loaded. Please refresh the page.');
-            return;
-          }
-          
-          const countryCode = (suCountrySelect.value||'').trim();
-          const contactInput = (suContactInput.value||'').trim();
-          let contact = contactInput;
-          
-          console.log('SendOTP called:', {countryCode, contactInput});
-          
           suErr.style.display='none';
-          if(!contactInput){ 
-            console.log('Contact input is empty');
-            suErr.textContent='Email or phone required'; 
-            suErr.style.display='block'; 
-            return; 
-          }
+          let contact = '';
           
-          // Build full contact (email or phone with country code)
-          if(countryCode === 'email'){
-            // Use as-is for email
-            contact = contactInput;
-            if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)){
-              suErr.textContent='Please enter a valid email address.'; suErr.style.display='block'; return;
+          // Get contact based on current mode
+          if(currentMode === 'email'){
+            const emailInput = (suEmailInput.value||'').trim();
+            if(!emailInput){ 
+              suErr.textContent='Email required'; 
+              suErr.style.display='block'; 
+              return; 
             }
+            if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput)){
+              suErr.textContent='Please enter a valid email address.'; 
+              suErr.style.display='block'; 
+              return;
+            }
+            contact = emailInput;
             console.log('Email mode:', contact);
           } else {
-            // Combine country code + phone number
+            // Phone mode
+            const countryCode = (suCountrySelect.value||'').trim();
+            const phoneInput = (suPhoneInput.value||'').trim();
+            if(!phoneInput){ 
+              suErr.textContent='Phone number required'; 
+              suErr.style.display='block'; 
+              return; 
+            }
             // Remove leading 0 if present (e.g., 09123456789 -> 9123456789)
-            let phone = contactInput.replace(/^0+/, '');
+            let phone = phoneInput.replace(/^0+/, '');
             contact = countryCode + phone;
-            console.log('Phone mode:', {original: contactInput, cleaned: phone, final: contact});
+            console.log('Phone mode:', {original: phoneInput, cleaned: phone, final: contact});
             if(phone.length < 8 || phone.length > 15){
-              suErr.textContent='Please enter a valid phone number (8-15 digits).'; suErr.style.display='block'; return;
+              suErr.textContent='Please enter a valid phone number.'; 
+              suErr.style.display='block'; 
+              return;
             }
           }
           
@@ -675,13 +695,15 @@
         
         if(suCreate){ suCreate.addEventListener('click', async ()=>{
           const uname = (document.getElementById('pcf-su-username').value||'').trim();
-          const countryCode = (suCountrySelect.value||'').trim();
-          const contactInput = (suContactInput.value||'').trim();
-          let contact = contactInput;
+          let contact = '';
           
-          // Build full contact (same as sendOTP)
-          if(countryCode !== 'email'){
-            let phone = contactInput.replace(/^0+/, '');
+          // Build full contact based on current mode (same as sendOTP)
+          if(currentMode === 'email'){
+            contact = (suEmailInput.value||'').trim();
+          } else {
+            const countryCode = (suCountrySelect.value||'').trim();
+            const phoneInput = (suPhoneInput.value||'').trim();
+            let phone = phoneInput.replace(/^0+/, '');
             contact = countryCode + phone;
           }
           
