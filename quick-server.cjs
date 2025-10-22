@@ -59,8 +59,12 @@ const server = http.createServer((req, res) => {
   }
 });
 
+server.on('error', (err) => {
+  console.error('Server error:', err && err.code ? err.code : err);
+});
+
 server.listen(port, '127.0.0.1', () => {
-  console.log(`Serving ./site on http://localhost:${port}`);
+  console.log(`Serving ${root} on http://localhost:${port}`);
 });
 
 
