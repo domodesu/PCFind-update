@@ -354,9 +354,8 @@
       #root:has(~ #pcf-chat) > *:not(header):not(nav){
         display:none !important;
       }
-      /* Hide main content when saved builds page is active */
-      #root:has(#pcf-saved-builds-container) > main,
-      #root:has(#pcf-saved-builds-container) > div:not(#pcf-saved-builds-container):not([class*="nav" i]):not([class*="header" i]){
+      /* Hide main app content when saved builds page is active - keep header/nav */
+      #root:has(#pcf-saved-builds-container) > main{
         display:none !important;
       }
       .pcf-chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
