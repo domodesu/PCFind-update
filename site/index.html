@@ -282,6 +282,13 @@
         background:#0b1220;
       }
       .light .pcf-chat{background:#ffffff}
+      /* Hide footer when chat container exists */
+      body:has(#pcf-chat) footer,
+      body:has(#pcf-chat) main,
+      body:has(#pcf-chat) [class*="footer"],
+      body:has(#pcf-chat) #root > div:not(header):not(nav){
+        display:none !important;
+      }
       .pcf-chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
       .pcf-chat-msg{display:flex;gap:12px;max-width:80%;animation:slideIn 0.3s ease}
       @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
