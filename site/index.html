@@ -221,8 +221,6 @@
       .light .pcf-dd-item:hover{background:#f3f4f6}
       /* Main app nav hover animations and filtering */
       nav a[href="/help"], nav a[href="/about"], nav a[href="/community"]{display:none !important}
-      /* Hide the white theme toggle button (keep only burger menu) */
-      #pcf-theme{display:none !important}
       :root{--pcf-hover-text:#ffffff;--pcf-hover-glow:rgba(37,99,235,.6)}
       .light{--pcf-hover-text:#111827;--pcf-hover-glow:rgba(37,99,235,.35)}
       nav a[href="/"], nav a[href="/browse-parts"], nav a[href="/pc-builder"], nav a[href="/saved-builds"]{
@@ -238,14 +236,32 @@
       @media (max-width: 900px){
         nav a[href="/"], nav a[href="/browse-parts"], nav a[href="/pc-builder"], nav a[href="/saved-builds"]{display:none !important}
         .pcf-nav-mobile{display:block}
-        /* Center PCFind logo in navigation bar on mobile */
-        header nav, nav{
+        /* Mobile layout: theme (left), PCFind logo (center), burger (right) */
+        .pcf-tools{
+          position:fixed !important;
+          top:12px !important;
+          left:0 !important;
+          right:0 !important;
+          width:100% !important;
           display:flex !important;
-          justify-content:center !important;
-          align-items:center !important;
+          justify-content:space-between !important;
+          padding:0 12px !important;
+          pointer-events:none !important;
+        }
+        .pcf-tools > *{
+          pointer-events:auto !important;
+        }
+        #pcf-theme{
+          order:-1 !important;
+          display:block !important;
+        }
+        #pcf-burger{
+          order:1 !important;
+        }
+        header nav, nav{
+          position:relative !important;
         }
         header a:first-child, nav a:first-child, nav > a[href="/"], header > div > a:first-child{
-          margin:0 auto !important;
           position:absolute !important;
           left:50% !important;
           transform:translateX(-50%) !important;
