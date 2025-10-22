@@ -269,6 +269,31 @@
       .pcf-forum .pcf-body{white-space:pre-wrap;line-height:1.5}
       .pcf-forum .pcf-comment{margin-top:10px;padding-top:10px;border-top:1px dashed #374151}
       .light .pcf-forum .pcf-comment{border-color:#e5e7eb}
+      /* AI Chat page styles */
+      .pcf-chat{display:flex;flex-direction:column;height:100vh;max-width:1200px;margin:0 auto;padding-top:70px}
+      .pcf-chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+      .pcf-chat-msg{display:flex;gap:12px;max-width:80%;animation:slideIn 0.3s ease}
+      @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+      .pcf-chat-msg.user{margin-left:auto;flex-direction:row-reverse}
+      .pcf-chat-avatar{width:36px;height:36px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+      .pcf-chat-msg.ai .pcf-chat-avatar{background:#10b981}
+      .pcf-chat-bubble{background:#1f2937;color:#e5e7eb;padding:12px 16px;border-radius:16px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word}
+      .light .pcf-chat-bubble{background:#f3f4f6;color:#111827}
+      .pcf-chat-msg.user .pcf-chat-bubble{background:#2563eb;color:#fff}
+      .light .pcf-chat-msg.user .pcf-chat-bubble{background:#3b82f6}
+      .pcf-chat-input-area{border-top:1px solid #374151;padding:16px 20px;background:#0b1220}
+      .light .pcf-chat-input-area{border-color:#e5e7eb;background:#ffffff}
+      .pcf-chat-input-wrap{display:flex;gap:12px;align-items:flex-end;max-width:100%}
+      .pcf-chat-input{flex:1;padding:12px 16px;border-radius:24px;border:1px solid #374151;background:#1f2937;color:#e5e7eb;resize:none;max-height:120px;min-height:48px;font-family:inherit;font-size:1rem}
+      .light .pcf-chat-input{background:#ffffff;border-color:#d1d5db;color:#111827}
+      .pcf-chat-send{padding:12px 24px;border-radius:24px;background:#2563eb;color:#fff;border:none;cursor:pointer;font-weight:600;transition:background 0.2s}
+      .pcf-chat-send:hover{background:#1d4ed8}
+      .pcf-chat-send:disabled{background:#4b5563;cursor:not-allowed}
+      .pcf-chat-typing{display:flex;gap:4px;padding:8px 16px}
+      .pcf-chat-typing span{width:8px;height:8px;border-radius:50%;background:#9ca3af;animation:typing 1.4s infinite}
+      .pcf-chat-typing span:nth-child(2){animation-delay:0.2s}
+      .pcf-chat-typing span:nth-child(3){animation-delay:0.4s}
+      @keyframes typing{0%,60%,100%{opacity:0.3}30%{opacity:1}}
     </style>
     <div class="pcf-account-btn" id="pcf-account">
       <button class="pcf-btn" id="pcf-signin-btn">Sign In</button>
@@ -886,6 +911,191 @@
         window.addEventListener('load', render);
       })();
     </script>
+    <!-- AI Chat Assistant -->
+    <script>
+      (function(){
+        const API_URL = 'https://pcfind-auth.onrender.com/chat';
+        let chatHistory = [];
+        
+        function isChat(){ return (location.pathname||'').toLowerCase().endsWith('/chat') }
+        function ensureChatContainer(){ 
+          let c=document.getElementById('pcf-chat'); 
+          if(!c){ 
+            c=document.createElement('div'); 
+            c.id='pcf-chat'; 
+            c.className='pcf-chat'; 
+            document.body.appendChild(c);
+          } 
+          return c;
+        }
+        
+        function renderChat(){
+          if(!isChat()) return;
+          const c = ensureChatContainer();
+          
+          let html = '<div class="pcf-chat-messages" id="pcf-chat-messages">';
+          
+          if(chatHistory.length === 0){
+            html += '<div style="text-align:center;padding:40px 20px;color:#9ca3af;">';
+            html += '<h2 style="color:#e5e7eb;margin-bottom:16px;">🤖 PC Building AI Assistant</h2>';
+            html += '<p>Ask me anything about PC parts, compatibility, builds, or recommendations!</p>';
+            html += '<p style="margin-top:12px;font-size:0.9rem;">Examples:</p>';
+            html += '<ul style="list-style:none;padding:0;margin-top:8px;font-size:0.9rem;">';
+            html += '<li>• What CPU should I pair with RTX 4070?</li>';
+            html += '<li>• Is 16GB RAM enough for gaming?</li>';
+            html += '<li>• Help me build a ₱50,000 gaming PC</li>';
+            html += '</ul></div>';
+          }
+          
+          chatHistory.forEach(msg =>{
+            const isUser = msg.role === 'user';
+            const avatar = isUser ? (msg.name||'You').charAt(0).toUpperCase() : 'AI';
+            html += '<div class="pcf-chat-msg '+(isUser?'user':'ai')+'">';
+            html += '<div class="pcf-chat-avatar">'+avatar+'</div>';
+            html += '<div class="pcf-chat-bubble">'+escapeHtml(msg.content)+'</div>';
+            html += '</div>';
+          });
+          
+          html += '</div>';
+          
+          html += '<div class="pcf-chat-input-area">';
+          html += '<div class="pcf-chat-input-wrap">';
+          html += '<textarea class="pcf-chat-input" id="pcf-chat-input" placeholder="Type your question..." rows="1"></textarea>';
+          html += '<button class="pcf-chat-send" id="pcf-chat-send">Send</button>';
+          html += '</div></div>';
+          
+          c.innerHTML = html;
+          
+          // Auto-resize textarea
+          const input = document.getElementById('pcf-chat-input');
+          const sendBtn = document.getElementById('pcf-chat-send');
+          
+          if(input){
+            input.addEventListener('input', function(){
+              this.style.height = 'auto';
+              this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+            
+            input.addEventListener('keydown', function(e){
+              if(e.key === 'Enter' && !e.shiftKey){
+                e.preventDefault();
+                sendBtn.click();
+              }
+            });
+          }
+          
+          if(sendBtn){
+            sendBtn.addEventListener('click', sendMessage);
+          }
+          
+          scrollToBottom();
+        }
+        
+        function escapeHtml(text){
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+        
+        function scrollToBottom(){
+          setTimeout(()=>{
+            const msgs = document.getElementById('pcf-chat-messages');
+            if(msgs){ msgs.scrollTop = msgs.scrollHeight; }
+          }, 100);
+        }
+        
+        function showTyping(){
+          const msgs = document.getElementById('pcf-chat-messages');
+          if(!msgs) return;
+          const typing = document.createElement('div');
+          typing.id = 'typing-indicator';
+          typing.className = 'pcf-chat-msg ai';
+          typing.innerHTML = '<div class="pcf-chat-avatar">AI</div><div class="pcf-chat-bubble"><div class="pcf-chat-typing"><span></span><span></span><span></span></div></div>';
+          msgs.appendChild(typing);
+          scrollToBottom();
+        }
+        
+        function hideTyping(){
+          const typing = document.getElementById('typing-indicator');
+          if(typing){ typing.remove(); }
+        }
+        
+        async function sendMessage(){
+          const input = document.getElementById('pcf-chat-input');
+          const sendBtn = document.getElementById('pcf-chat-send');
+          if(!input || !sendBtn) return;
+          
+          const message = input.value.trim();
+          if(!message) return;
+          
+          // Get current user
+          let userName = 'You';
+          try{
+            const s = sessionStorage.getItem('pcfind_user');
+            const l = localStorage.getItem('pcfind_user');
+            const user = s?JSON.parse(s):(l?JSON.parse(l):null);
+            if(user && user.name) userName = user.name;
+          }catch{}
+          
+          // Add user message
+          chatHistory.push({ role: 'user', content: message, name: userName });
+          input.value = '';
+          input.style.height = 'auto';
+          renderChat();
+          
+          // Show typing indicator
+          showTyping();
+          sendBtn.disabled = true;
+          
+          try{
+            const response = await fetch(API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                message,
+                history: chatHistory.slice(-10) // Send last 10 messages for context
+              })
+            });
+            
+            const data = await response.json();
+            
+            hideTyping();
+            
+            if(response.ok && data.reply){
+              chatHistory.push({ role: 'assistant', content: data.reply });
+              renderChat();
+            }else{
+              chatHistory.push({ 
+                role: 'assistant', 
+                content: 'Sorry, I encountered an error. The backend may be starting up (takes ~30s). Please try again!' 
+              });
+              renderChat();
+            }
+          }catch(err){
+            console.error('Chat error:', err);
+            hideTyping();
+            chatHistory.push({ 
+              role: 'assistant', 
+              content: 'Backend is waking up (this takes about 30 seconds on first request). Please try again in a moment!' 
+            });
+            renderChat();
+          }finally{
+            sendBtn.disabled = false;
+            const newInput = document.getElementById('pcf-chat-input');
+            if(newInput) newInput.focus();
+          }
+        }
+        
+        // Watch for route changes
+        const _push=history.pushState; 
+        history.pushState=function(){ 
+          _push.apply(this, arguments); 
+          window.dispatchEvent(new Event('popstate')); 
+        };
+        window.addEventListener('popstate', renderChat);
+        window.addEventListener('load', renderChat);
+      })();
+    </script>
     <!-- Theme toggle (left of burger) + Burger drawer (Account/Community/About/Help) -->
     <style>
       .pcf-tools{position:fixed;top:12px;right:12px;z-index:9999;display:flex;gap:8px}
@@ -963,6 +1173,7 @@
           <li class="pcf-nav-mobile"><a href="/pc-builder">PC Builder</a></li>
           <li class="pcf-nav-mobile"><a href="/saved-builds">Saved Builds</a></li>
           <li><button class="pcf-link" id="pcf-open-account">Sign in</button></li>
+          <li><a href="/chat">💬 AI Chat</a></li>
           <li><a href="/community">Community</a></li>
           <li><a href="/about">About</a></li>
           <li><a href="/help">Help</a></li>
