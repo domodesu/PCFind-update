@@ -3,8 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <base href="./">
     <title>PCFind - Your Trusted PC Building Guide in the Philippines</title>
+    <!-- Version: 2.0 - Current Build System -->
     <meta name="description" content="Find your perfect PC parts in the Philippines. Check compatibility, compare prices from Lazada, Shopee, PC Express, and EasyPC. Build with confidence using our interactive PC builder tool." />
     <meta property="og:title" content="PCFind - PC Building Made Easy in the Philippines" />
     <meta property="og:description" content="Compare PC parts, check compatibility, and build your dream computer with our comprehensive guide tailored for Filipino PC builders." />
@@ -1055,10 +1059,23 @@
         
         // Clear entire build
         function clearBuild(){
-          if(confirm('Clear all items from your current build?')){
-            saveCurrentBuild({items:[], name: 'My Build', lastModified: Date.now()});
-            renderSavedBuilds();
-            if(window.showToast) window.showToast('🗑️ Build cleared');
+          if(window.showConfirmModal){
+            window.showConfirmModal(
+              'Clear Build?',
+              'All components will be removed from your current build. This action cannot be undone.',
+              function(){
+                saveCurrentBuild({items:[], name: 'My Build', lastModified: Date.now()});
+                renderSavedBuilds();
+                if(window.showToast) window.showToast('🗑️ Build cleared');
+              }
+            );
+          }else{
+            // Fallback to browser confirm
+            if(confirm('Clear all items from your current build?')){
+              saveCurrentBuild({items:[], name: 'My Build', lastModified: Date.now()});
+              renderSavedBuilds();
+              if(window.showToast) window.showToast('🗑️ Build cleared');
+            }
           }
         }
         
