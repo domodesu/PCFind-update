@@ -282,11 +282,15 @@
         background:#0b1220;
       }
       .light .pcf-chat{background:#ffffff}
-      /* Hide footer when chat container exists */
-      body:has(#pcf-chat) footer,
-      body:has(#pcf-chat) main,
-      body:has(#pcf-chat) [class*="footer"],
-      body:has(#pcf-chat) #root > div:not(header):not(nav){
+      /* Hide everything except nav when chat exists */
+      #pcf-chat ~ #root,
+      #pcf-chat ~ #root *:not(header):not(nav):not(header *):not(nav *){
+        display:none !important;
+      }
+      #root:has(~ #pcf-chat){
+        min-height:auto !important;
+      }
+      #root:has(~ #pcf-chat) > *:not(header):not(nav){
         display:none !important;
       }
       .pcf-chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
@@ -1150,6 +1154,58 @@
         window.addEventListener('load', renderChat);
         // Also render after a short delay to catch SPA redirects
         setTimeout(renderChat, 100);
+        
+        // Redirect home search to chat
+        function setupSearchRedirect(){
+          const searchInputs = document.querySelectorAll('input[type="text"][placeholder*="search" i], input[placeholder*="Ask me" i], textarea[placeholder*="Ask me" i]');
+          searchInputs.forEach(input => {
+            if(input.hasAttribute('data-chat-redirect')) return;
+            input.setAttribute('data-chat-redirect', 'true');
+            
+            input.addEventListener('keydown', function(e){
+              if(e.key === 'Enter' && !e.shiftKey){
+                e.preventDefault();
+                const query = this.value.trim();
+                if(query){
+                  // Navigate to chat and store the query
+                  try{ sessionStorage.setItem('chat_initial_query', query); }catch{}
+                  if(location.pathname !== '/chat'){
+                    history.pushState({}, '', '/chat');
+                    window.dispatchEvent(new Event('popstate'));
+                  }
+                  // Clear the search input
+                  this.value = '';
+                }
+              }
+            });
+          });
+        }
+        
+        // Setup search redirect on load and periodically check for new inputs
+        setTimeout(setupSearchRedirect, 500);
+        setInterval(setupSearchRedirect, 2000);
+        
+        // Auto-send initial query if present
+        function checkInitialQuery(){
+          if(!isChat()) return;
+          try{
+            const query = sessionStorage.getItem('chat_initial_query');
+            if(query){
+              sessionStorage.removeItem('chat_initial_query');
+              setTimeout(()=>{
+                const input = document.getElementById('pcf-chat-input');
+                if(input){
+                  input.value = query;
+                  const sendBtn = document.getElementById('pcf-chat-send');
+                  if(sendBtn) sendBtn.click();
+                }
+              }, 500);
+            }
+          }catch{}
+        }
+        
+        window.addEventListener('popstate', checkInitialQuery);
+        setTimeout(checkInitialQuery, 600);
       })();
     </script>
     <!-- Theme toggle (left of burger) + Burger drawer (Account/Community/About/Help) -->
