@@ -1006,6 +1006,164 @@
         window.addEventListener('load', function(){ enhanceCards(document.body); obs.observe(document.body,{childList:true,subtree:true}); });
       })();
     </script>
+    <!-- Saved Builds / Current Selection -->
+    <script>
+      (function(){
+        function isSavedBuilds(){ 
+          const path = (location.pathname||'').toLowerCase();
+          return path === '/saved-builds' || path.endsWith('/saved-builds') || path === '/saved-builds/';
+        }
+        function ensureContainer(){ 
+          let c = document.getElementById('pcf-saved-builds-container'); 
+          if(!c){ c = document.createElement('div'); c.id = 'pcf-saved-builds-container'; c.style.cssText = 'max-width:1200px;margin:80px auto 40px;padding:0 20px'; document.getElementById('root').appendChild(c); } 
+          return c; 
+        }
+        
+        // Get current build from session/localStorage
+        function getCurrentBuild(){
+          try{
+            const session = sessionStorage.getItem('pcfind_current_build');
+            const stored = localStorage.getItem('pcfind_current_build');
+            return session ? JSON.parse(session) : (stored ? JSON.parse(stored) : {items:[], name: 'My Build', lastModified: Date.now()});
+          }catch{
+            return {items:[], name: 'My Build', lastModified: Date.now()};
+          }
+        }
+        
+        // Save current build
+        function saveCurrentBuild(build){
+          try{
+            const data = JSON.stringify(build);
+            sessionStorage.setItem('pcfind_current_build', data);
+            // If user is logged in, save to localStorage too
+            if(window.isUserLoggedIn && window.isUserLoggedIn()){
+              localStorage.setItem('pcfind_current_build', data);
+            }
+          }catch{}
+        }
+        
+        // Remove item from build
+        function removeFromBuild(index){
+          const build = getCurrentBuild();
+          build.items.splice(index, 1);
+          build.lastModified = Date.now();
+          saveCurrentBuild(build);
+          renderSavedBuilds();
+        }
+        
+        // Clear entire build
+        function clearBuild(){
+          if(confirm('Clear all items from your current build?')){
+            saveCurrentBuild({items:[], name: 'My Build', lastModified: Date.now()});
+            renderSavedBuilds();
+          }
+        }
+        
+        // Render saved builds page
+        function renderSavedBuilds(){
+          if(!isSavedBuilds()) return;
+          const c = ensureContainer();
+          const build = getCurrentBuild();
+          const user = window.isUserLoggedIn && window.isUserLoggedIn();
+          
+          let html = '';
+          html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:24px;margin-bottom:20px" class="light-mode-card">';
+          html += '<h1 style="color:#e5e7eb;margin:0 0 8px 0;font-size:2rem" class="light-mode-title">💾 Current Build</h1>';
+          html += '<p style="color:#9ca3af;margin:0" class="light-mode-text">Your selected components - modify or clear anytime</p>';
+          if(!user){
+            html += '<div style="background:#374151;border-radius:8px;padding:12px;margin-top:16px;color:#fbbf24;font-size:0.9rem" class="light-mode-warning">⚠️ <strong>Not signed in:</strong> Your build is temporary. <a href="#" onclick="if(window.showSignInRequired) window.showSignInRequired(\'Sign in to save your build permanently!\'); return false;" style="color:#60a5fa;text-decoration:underline">Sign in to save</a></div>';
+          }
+          html += '</div>';
+          
+          // Build items
+          if(build.items && build.items.length > 0){
+            html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:20px;margin-bottom:20px" class="light-mode-card">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">';
+            html += '<h2 style="color:#e5e7eb;margin:0;font-size:1.3rem" class="light-mode-title">Selected Components (' + build.items.length + ')</h2>';
+            html += '<button onclick="clearBuild()" style="background:#dc2626;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;transition:background 0.2s">Clear All</button>';
+            html += '</div>';
+            
+            build.items.forEach((item, index) => {
+              html += '<div style="background:#0b1220;border:1px solid #374151;border-radius:8px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center" class="light-mode-item">';
+              html += '<div style="flex:1">';
+              html += '<div style="color:#e5e7eb;font-weight:600;margin-bottom:4px" class="light-mode-title">' + (item.name || 'Component') + '</div>';
+              html += '<div style="color:#9ca3af;font-size:0.9rem" class="light-mode-text">' + (item.category || 'Category') + '</div>';
+              if(item.price){
+                html += '<div style="color:#10b981;font-weight:600;margin-top:4px">₱' + Number(item.price).toLocaleString() + '</div>';
+              }
+              html += '</div>';
+              html += '<button onclick="removeFromBuild(' + index + ')" style="background:#ef4444;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:500;transition:background 0.2s;margin-left:12px">Remove</button>';
+              html += '</div>';
+            });
+            
+            // Total price
+            const total = build.items.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+            if(total > 0){
+              html += '<div style="background:#1e3a8a;border:1px solid #2563eb;border-radius:8px;padding:16px;margin-top:16px;display:flex;justify-content:space-between;align-items:center" class="light-mode-total">';
+              html += '<div style="color:#e5e7eb;font-weight:600;font-size:1.2rem" class="light-mode-title">Total:</div>';
+              html += '<div style="color:#10b981;font-weight:700;font-size:1.5rem">₱' + total.toLocaleString() + '</div>';
+              html += '</div>';
+            }
+            
+            html += '</div>';
+            
+            // Actions
+            html += '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">';
+            html += '<a href="/pc-builder" style="background:#2563eb;color:#fff;border:none;padding:14px 28px;border-radius:8px;cursor:pointer;font-weight:600;text-decoration:none;display:inline-block;transition:background 0.2s">Continue Building</a>';
+            if(user){
+              html += '<button onclick="alert(\'Save functionality coming soon!\')" style="background:#10b981;color:#fff;border:none;padding:14px 28px;border-radius:8px;cursor:pointer;font-weight:600;transition:background 0.2s">Save Build</button>';
+            }else{
+              html += '<button onclick="if(window.showSignInRequired) window.showSignInRequired(\'Sign in to save your build permanently and access it from any device!\')" style="background:#10b981;color:#fff;border:none;padding:14px 28px;border-radius:8px;cursor:pointer;font-weight:600;transition:background 0.2s">Save Build</button>';
+            }
+            html += '</div>';
+          }else{
+            // Empty state
+            html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:60px 20px;text-align:center" class="light-mode-card">';
+            html += '<div style="font-size:4rem;margin-bottom:16px">🔧</div>';
+            html += '<h2 style="color:#e5e7eb;margin:0 0 12px 0" class="light-mode-title">No Components Selected</h2>';
+            html += '<p style="color:#9ca3af;margin:0 0 24px 0" class="light-mode-text">Start building your PC by browsing parts or using the PC Builder!</p>';
+            html += '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">';
+            html += '<a href="/browse-parts" style="background:#2563eb;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:600;text-decoration:none;display:inline-block">Browse Parts</a>';
+            html += '<a href="/pc-builder" style="background:#10b981;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:600;text-decoration:none;display:inline-block">PC Builder</a>';
+            html += '</div>';
+            html += '</div>';
+          }
+          
+          c.innerHTML = html;
+          
+          // Add light mode CSS
+          const style = document.createElement('style');
+          style.textContent = `
+            .light .light-mode-card { background: #ffffff !important; border-color: #e5e7eb !important; }
+            .light .light-mode-item { background: #f9fafb !important; border-color: #e5e7eb !important; }
+            .light .light-mode-title { color: #111827 !important; }
+            .light .light-mode-text { color: #6b7280 !important; }
+            .light .light-mode-warning { background: #fef3c7 !important; color: #92400e !important; }
+            .light .light-mode-total { background: #dbeafe !important; border-color: #3b82f6 !important; }
+          `;
+          if(!document.getElementById('saved-builds-styles')){
+            style.id = 'saved-builds-styles';
+            document.head.appendChild(style);
+          }
+        }
+        
+        // Make functions globally accessible
+        window.removeFromBuild = removeFromBuild;
+        window.clearBuild = clearBuild;
+        window.addToBuild = function(item){
+          const build = getCurrentBuild();
+          build.items.push(item);
+          build.lastModified = Date.now();
+          saveCurrentBuild(build);
+          if(window.showToast) window.showToast('✅ Added to build!');
+        };
+        
+        // Watch for route changes
+        window.addEventListener('popstate', renderSavedBuilds);
+        window.addEventListener('load', renderSavedBuilds);
+        setTimeout(renderSavedBuilds, 100);
+      })();
+    </script>
     <!-- Community forum (client-side, localStorage) -->
     <script>
       (function(){
