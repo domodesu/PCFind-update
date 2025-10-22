@@ -893,14 +893,16 @@
       .light .pcf-iconbtn{background:#f3f4f6;border-color:#d1d5db;color:#111827}
       /* Style theme toggle button - clean minimal appearance */
       #pcf-theme{
-        min-width:48px !important;
-        min-height:48px !important;
-        padding:12px !important;
-        border-radius:14px !important;
+        width:40px !important;
+        height:40px !important;
+        min-width:40px !important;
+        min-height:40px !important;
+        padding:8px !important;
+        border-radius:10px !important;
         display:flex !important;
         align-items:center !important;
         justify-content:center !important;
-        font-size:1.3rem !important;
+        font-size:1.1rem !important;
         border:1.5px solid #e5e7eb !important;
         background:#ffffff !important;
         color:#111827 !important;
@@ -932,7 +934,7 @@
       .light .pcf-list a:hover,.light .pcf-list .pcf-link:hover{background:#f3f4f6}
     </style>
     <div class="pcf-tools">
-      <button id="pcf-theme" class="pcf-iconbtn" aria-label="Toggle theme">🌙</button>
+      <button id="pcf-theme" class="pcf-iconbtn" aria-label="Toggle theme">☀</button>
       <button id="pcf-burger" class="pcf-iconbtn" aria-label="Open menu">☰</button>
     </div>
     <div id="pcf-drawer" class="pcf-drawer" aria-hidden="true">
@@ -957,7 +959,7 @@
         function applyTheme(t){
           var root = document.documentElement; root.classList.remove('light','dark'); root.classList.add(t);
           try { localStorage.setItem('theme', t); localStorage.setItem('pcfind_theme', t); } catch(e) {}
-          document.getElementById('pcf-theme').textContent = t==='dark'?'🌙':'☀️';
+          document.getElementById('pcf-theme').textContent = t==='dark'?'☾':'☀';
         }
         var saved = localStorage.getItem('theme')||localStorage.getItem('pcfind_theme')||'dark'; applyTheme(saved);
         document.getElementById('pcf-theme').addEventListener('click', function(){ applyTheme(document.documentElement.classList.contains('dark')?'light':'dark'); });
