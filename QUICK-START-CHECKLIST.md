@@ -10,13 +10,26 @@ Use this checklist to test and deploy OTP verification for your PCFind website.
 - [ ] Frontend: https://github.com/domodesu/domodesu.github.io/actions ✓
 - [ ] Backend: https://dashboard.render.com/ → Check "pcfind-auth-backend" status ✓
 
-🧪 **Test registration**:
+🧪 **Test registration** (choose Email OR Phone):
+
+**Option A - Email**:
 1. [ ] Open: https://domodesu.github.io/
 2. [ ] Click burger → "Sign In" → "Sign up"
-3. [ ] Enter test username and email (any email)
-4. [ ] Click "Send OTP"
-5. [ ] Look for toast: "Dev Mode - OTP: 123456"
-6. [ ] Enter OTP → Watch for "✓ Verified!"
+3. [ ] Enter test username
+4. [ ] Select country: **"📧 Email"**
+5. [ ] Enter: `test@example.com`
+6. [ ] Click "Send OTP"
+7. [ ] Look for toast: "Dev Mode - OTP: 123456"
+8. [ ] Enter OTP → Watch for "✓ Verified!"
+9. [ ] Complete registration
+
+**Option B - Phone (Philippines)**:
+1. [ ] Click "Sign up"
+2. [ ] Enter test username
+3. [ ] Country: **"🇵🇭 +63"** (default - already selected!)
+4. [ ] Enter: `09123456789` (just the number, no +63)
+5. [ ] Click "Send OTP" → System uses `+639123456789`
+6. [ ] Enter OTP from toast
 7. [ ] Complete registration
 
 **Expected**: Account created, username shows in burger menu ✓

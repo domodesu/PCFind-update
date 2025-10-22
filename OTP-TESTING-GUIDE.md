@@ -5,12 +5,13 @@
 1. **Open your site**: https://domodesu.github.io/
    - Wait 2-3 min if GitHub Actions is still deploying: https://github.com/domodesu/domodesu.github.io/actions
 
-2. **Test Registration with OTP**:
+2. **Test Registration with OTP (Email)**:
    - Click burger menu → "Sign In"
    - Click "Sign up" link
    - Enter:
      - Username: `TestUser123`
-     - Email: `test@example.com` (any email works in dev mode)
+     - Country Code: Select **"📧 Email"**
+     - Contact: `test@example.com` (any email works in dev mode)
    - Click **"Send OTP"**
    - **Look for toast notification** showing "Dev Mode - OTP: 123456"
    - Enter the OTP code (6 digits)
@@ -18,10 +19,29 @@
    - Create password and confirm
    - Click "Create Account"
 
-3. **Expected Result**:
+3. **Test Registration with OTP (Phone - Philippines)**:
+   - Click "Sign up" again (or use different username)
+   - Enter:
+     - Username: `TestUser456`
+     - Country Code: **"🇵🇭 +63"** (default)
+     - Contact: `09123456789` (no need to type +63!)
+   - Click **"Send OTP"**
+   - System automatically combines to: `+639123456789`
+   - Enter the OTP from toast
+   - Complete registration
+
+4. **Test Other Countries**:
+   - Try different country codes:
+     - 🇺🇸 +1 (USA)
+     - 🇯🇵 +81 (Japan)
+     - 🇸🇬 +65 (Singapore)
+   - Just enter your local phone number without country code!
+
+5. **Expected Result**:
    - ✅ Toast shows "Account created!"
-   - ✅ Burger menu shows "TestUser123" instead of "Sign In"
+   - ✅ Burger menu shows username instead of "Sign In"
    - ✅ You're logged in!
+   - ✅ Works for both email and phone numbers!
 
 ## Test 2: Backend OTP Verification (Render Logs)
 
