@@ -430,6 +430,24 @@
       .light .pcf-confirm-btn-cancel:hover{background:#d1d5db}
       .pcf-confirm-btn-delete{background:#dc2626;color:#fff;}
       .pcf-confirm-btn-delete:hover{background:#b91c1c;}
+      /* Sign in required modal */
+      .pcf-signin-required-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:10000;display:none;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;}
+      .pcf-signin-required-overlay.show{display:flex;}
+      .pcf-signin-required-modal{background:#1f2937;border-radius:16px;padding:32px;max-width:450px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:slideUp 0.3s ease;border:1px solid #374151;text-align:center;}
+      .light .pcf-signin-required-modal{background:#ffffff;border-color:#e5e7eb;}
+      .pcf-signin-required-icon{font-size:4rem;margin-bottom:16px;}
+      .pcf-signin-required-title{color:#e5e7eb;font-size:1.5rem;font-weight:600;margin-bottom:12px;}
+      .light .pcf-signin-required-title{color:#1f2937}
+      .pcf-signin-required-message{color:#9ca3af;margin-bottom:24px;line-height:1.6;font-size:1rem;}
+      .light .pcf-signin-required-message{color:#6b7280}
+      .pcf-signin-required-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+      .pcf-signin-required-btn{padding:14px 28px;border-radius:10px;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;font-size:1rem;min-width:120px;}
+      .pcf-signin-required-btn-cancel{background:#374151;color:#e5e7eb;}
+      .light .pcf-signin-required-btn-cancel{background:#e5e7eb;color:#1f2937}
+      .pcf-signin-required-btn-cancel:hover{background:#4b5563;}
+      .light .pcf-signin-required-btn-cancel:hover{background:#d1d5db}
+      .pcf-signin-required-btn-signin{background:#2563eb;color:#fff;}
+      .pcf-signin-required-btn-signin:hover{background:#1d4ed8;transform:translateY(-2px);box-shadow:0 6px 20px rgba(37,99,235,0.4);}
     </style>
     <div class="pcf-account-btn" id="pcf-account">
       <button class="pcf-btn" id="pcf-signin-btn">Sign In</button>
@@ -994,6 +1012,65 @@
         function currentUser(){
           try{ const s=sessionStorage.getItem('pcfind_user'); const l=localStorage.getItem('pcfind_user'); return s?JSON.parse(s):(l?JSON.parse(l):null);}catch{return null}
         }
+        
+        // Check if user is logged in (globally accessible)
+        window.isUserLoggedIn = function(){
+          try{
+            const s = sessionStorage.getItem('pcfind_user');
+            const l = localStorage.getItem('pcfind_user');
+            const user = s?JSON.parse(s):(l?JSON.parse(l):null);
+            return !!(user && user.name);
+          }catch{
+            return false;
+          }
+        };
+        
+        // Show sign-in required modal (globally accessible)
+        // Usage example: 
+        //   if(!window.isUserLoggedIn()){ 
+        //     window.showSignInRequired('Sign in to add items to your build!'); 
+        //     return; 
+        //   }
+        window.showSignInRequired = function(message){
+          let overlay = document.getElementById('pcf-signin-required-overlay');
+          if(!overlay){
+            overlay = document.createElement('div');
+            overlay.id = 'pcf-signin-required-overlay';
+            overlay.className = 'pcf-signin-required-overlay';
+            document.body.appendChild(overlay);
+          }
+          
+          overlay.innerHTML = `
+            <div class="pcf-signin-required-modal">
+              <div class="pcf-signin-required-icon">🔒</div>
+              <div class="pcf-signin-required-title">Sign In Required</div>
+              <div class="pcf-signin-required-message">${message || 'Please sign in to access this feature and unlock full functionality!'}</div>
+              <div class="pcf-signin-required-actions">
+                <button class="pcf-signin-required-btn pcf-signin-required-btn-cancel" id="pcf-signin-req-cancel">Maybe Later</button>
+                <button class="pcf-signin-required-btn pcf-signin-required-btn-signin" id="pcf-signin-req-signin">Sign In</button>
+              </div>
+            </div>
+          `;
+          
+          overlay.classList.add('show');
+          
+          const cancelBtn = document.getElementById('pcf-signin-req-cancel');
+          const signinBtn = document.getElementById('pcf-signin-req-signin');
+          
+          const closeModal = () => { overlay.classList.remove('show'); };
+          
+          cancelBtn.addEventListener('click', closeModal);
+          signinBtn.addEventListener('click', () => {
+            closeModal();
+            // Open the sign-in modal
+            const modal = document.getElementById('pcf-modal');
+            if(modal) modal.style.display = 'flex';
+          });
+          
+          overlay.addEventListener('click', (e) => {
+            if(e.target === overlay) closeModal();
+          });
+        };
         function readPosts(){ try{return JSON.parse(localStorage.getItem('pcfind_forum_posts')||'[]')}catch{return []} }
         function savePosts(p){ try{localStorage.setItem('pcfind_forum_posts', JSON.stringify(p))}catch{} }
         function esc(s){ return String(s||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])) }
@@ -1240,12 +1317,28 @@
           
           // Get current user
           let userName = 'You';
+          let isLoggedIn = false;
           try{
             const s = sessionStorage.getItem('pcfind_user');
             const l = localStorage.getItem('pcfind_user');
             const user = s?JSON.parse(s):(l?JSON.parse(l):null);
-            if(user && user.name) userName = user.name;
+            if(user && user.name){
+              userName = user.name;
+              isLoggedIn = true;
+            }
           }catch{}
+          
+          // Check guest message limit (2 messages max)
+          if(!isLoggedIn){
+            const guestMessageCount = chatHistory.filter(msg => msg.role === 'user').length;
+            if(guestMessageCount >= 2){
+              // Show sign-in required modal
+              if(window.showSignInRequired){
+                window.showSignInRequired('You\'ve reached the free chat limit (2 messages). Sign in to continue chatting with unlimited AI assistance!');
+              }
+              return;
+            }
+          }
           
           // Add user message
           chatHistory.push({ role: 'user', content: message, name: userName });
