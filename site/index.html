@@ -1271,13 +1271,14 @@
             
             hideTyping();
             
-            if(response.ok && data.reply){
+            // Show AI response or detailed error message
+            if(data.reply){
               chatHistory.push({ role: 'assistant', content: data.reply });
               renderChat();
             }else{
               chatHistory.push({ 
                 role: 'assistant', 
-                content: 'Sorry, I encountered an error. The backend may be starting up (takes ~30s). Please try again!' 
+                content: data.error || 'Sorry, I encountered an error. Please try again!' 
               });
               renderChat();
             }
@@ -1286,7 +1287,7 @@
             hideTyping();
             chatHistory.push({ 
               role: 'assistant', 
-              content: 'Backend is waking up (this takes about 30 seconds on first request). Please try again in a moment!' 
+              content: '⚠️ Connection error. The backend may be starting up (takes ~30s on first request). Please try again!\n\nError: ' + err.message
             });
             renderChat();
           }finally{
