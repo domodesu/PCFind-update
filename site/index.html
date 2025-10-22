@@ -410,6 +410,26 @@
       .pcf-chat-history-empty{color:#9ca3af;text-align:center;padding:40px 20px;font-size:0.9rem;}
       .light .pcf-chat-history-empty{color:#6b7280}
       @media (max-width: 768px){.pcf-chat-history-panel{width:100%}}
+      /* Custom confirmation modal */
+      .pcf-confirm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:10000;display:none;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;}
+      .pcf-confirm-overlay.show{display:flex;}
+      .pcf-confirm-modal{background:#1f2937;border-radius:16px;padding:24px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:slideUp 0.3s ease;border:1px solid #374151;}
+      .light .pcf-confirm-modal{background:#ffffff;border-color:#e5e7eb;}
+      @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+      @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+      .pcf-confirm-icon{text-align:center;font-size:3rem;margin-bottom:16px;}
+      .pcf-confirm-title{color:#e5e7eb;font-size:1.25rem;font-weight:600;text-align:center;margin-bottom:12px;}
+      .light .pcf-confirm-title{color:#1f2937}
+      .pcf-confirm-message{color:#9ca3af;text-align:center;margin-bottom:24px;line-height:1.5;}
+      .light .pcf-confirm-message{color:#6b7280}
+      .pcf-confirm-actions{display:flex;gap:12px;justify-content:center;}
+      .pcf-confirm-btn{padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;font-size:1rem;min-width:100px;}
+      .pcf-confirm-btn-cancel{background:#374151;color:#e5e7eb;}
+      .light .pcf-confirm-btn-cancel{background:#e5e7eb;color:#1f2937}
+      .pcf-confirm-btn-cancel:hover{background:#4b5563;}
+      .light .pcf-confirm-btn-cancel:hover{background:#d1d5db}
+      .pcf-confirm-btn-delete{background:#dc2626;color:#fff;}
+      .pcf-confirm-btn-delete:hover{background:#b91c1c;}
     </style>
     <div class="pcf-account-btn" id="pcf-account">
       <button class="pcf-btn" id="pcf-signin-btn">Sign In</button>
@@ -1346,21 +1366,80 @@
           }
         }
         
+        function showConfirmModal(title, message, onConfirm){
+          // Create modal if it doesn't exist
+          let overlay = document.getElementById('pcf-confirm-overlay');
+          if(!overlay){
+            overlay = document.createElement('div');
+            overlay.id = 'pcf-confirm-overlay';
+            overlay.className = 'pcf-confirm-overlay';
+            document.body.appendChild(overlay);
+          }
+          
+          overlay.innerHTML = `
+            <div class="pcf-confirm-modal">
+              <div class="pcf-confirm-icon">⚠️</div>
+              <div class="pcf-confirm-title">${title}</div>
+              <div class="pcf-confirm-message">${message}</div>
+              <div class="pcf-confirm-actions">
+                <button class="pcf-confirm-btn pcf-confirm-btn-cancel" id="pcf-confirm-cancel">Cancel</button>
+                <button class="pcf-confirm-btn pcf-confirm-btn-delete" id="pcf-confirm-delete">Delete</button>
+              </div>
+            </div>
+          `;
+          
+          overlay.classList.add('show');
+          
+          // Add event listeners
+          const cancelBtn = document.getElementById('pcf-confirm-cancel');
+          const deleteBtn = document.getElementById('pcf-confirm-delete');
+          
+          const closeModal = () => {
+            overlay.classList.remove('show');
+          };
+          
+          cancelBtn.addEventListener('click', closeModal);
+          
+          deleteBtn.addEventListener('click', () => {
+            closeModal();
+            if(onConfirm) onConfirm();
+          });
+          
+          // Close on overlay click
+          overlay.addEventListener('click', (e) => {
+            if(e.target === overlay) closeModal();
+          });
+          
+          // Close on Escape key
+          const handleEscape = (e) => {
+            if(e.key === 'Escape'){
+              closeModal();
+              document.removeEventListener('keydown', handleEscape);
+            }
+          };
+          document.addEventListener('keydown', handleEscape);
+        }
+        
         function deleteChatSession(sessionId, event){
           if(event){
             event.stopPropagation();
           }
-          if(!confirm('Delete this chat?')) return;
           
-          let sessions = getChatSessions();
-          sessions = sessions.filter(s => s.id !== sessionId);
-          saveChatSessions(sessions);
-          
-          if(currentSessionId === sessionId){
-            startNewChat();
-          }else{
-            renderHistoryPanel();
-          }
+          showConfirmModal(
+            'Delete Chat?',
+            'This conversation will be permanently deleted. This action cannot be undone.',
+            () => {
+              let sessions = getChatSessions();
+              sessions = sessions.filter(s => s.id !== sessionId);
+              saveChatSessions(sessions);
+              
+              if(currentSessionId === sessionId){
+                startNewChat();
+              }else{
+                renderHistoryPanel();
+              }
+            }
+          );
         }
         
         function startNewChat(){
