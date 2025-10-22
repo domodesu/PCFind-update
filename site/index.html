@@ -557,12 +557,26 @@
         }
         
         async function sendOTP() {
+          // Ensure elements exist
+          if(!suCountrySelect || !suContactInput || !suErr || !suSendOtp){
+            console.error('OTP elements not found', {suCountrySelect, suContactInput, suErr, suSendOtp});
+            alert('Error: Form elements not loaded. Please refresh the page.');
+            return;
+          }
+          
           const countryCode = (suCountrySelect.value||'').trim();
           const contactInput = (suContactInput.value||'').trim();
           let contact = contactInput;
           
+          console.log('SendOTP called:', {countryCode, contactInput});
+          
           suErr.style.display='none';
-          if(!contactInput){ suErr.textContent='Please enter your email or phone number.'; suErr.style.display='block'; return; }
+          if(!contactInput){ 
+            console.log('Contact input is empty');
+            suErr.textContent='Email or phone required'; 
+            suErr.style.display='block'; 
+            return; 
+          }
           
           // Build full contact (email or phone with country code)
           if(countryCode === 'email'){
@@ -571,13 +585,15 @@
             if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)){
               suErr.textContent='Please enter a valid email address.'; suErr.style.display='block'; return;
             }
+            console.log('Email mode:', contact);
           } else {
             // Combine country code + phone number
             // Remove leading 0 if present (e.g., 09123456789 -> 9123456789)
             let phone = contactInput.replace(/^0+/, '');
             contact = countryCode + phone;
+            console.log('Phone mode:', {original: contactInput, cleaned: phone, final: contact});
             if(phone.length < 8 || phone.length > 15){
-              suErr.textContent='Please enter a valid phone number.'; suErr.style.display='block'; return;
+              suErr.textContent='Please enter a valid phone number (8-15 digits).'; suErr.style.display='block'; return;
             }
           }
           
