@@ -27,12 +27,99 @@
       })();
     </script>
     <script>
+      // Strong GitHub Pages SPA prefix stripper and history hooks
+      (function(){
+        try{
+          var host = (location.hostname||'').toLowerCase();
+          if(!host.endsWith('.github.io')) return;
+          var parts = (location.pathname||'/').split('/');
+          var repo = parts[1]||''; if(!repo) return;
+          var prefix = '/' + repo;
+          function stripPrefix(url){
+            try{
+              var u = new URL(url, location.origin);
+              if(u.pathname.toLowerCase().startsWith((prefix + '/').toLowerCase())){
+                u.pathname = u.pathname.slice(prefix.length) || '/';
+              } else if(u.pathname.toLowerCase() === prefix.toLowerCase()){
+                u.pathname = '/';
+              }
+              return u.pathname + u.search + u.hash;
+            }catch{return url}
+          }
+          // Sanitize current URL early
+          (function(){
+            var fixed = stripPrefix(location.href);
+            if((fixed||'') !== (location.pathname + location.search + location.hash)){
+              history.replaceState({}, '', fixed);
+            }
+          })();
+          // Hook history to keep future pushes clean
+          var _ps = history.pushState; history.pushState = function(state, title, url){
+            try{ url = stripPrefix(url||location.href);}catch{}; return _ps.apply(this, [state, title, url]);
+          };
+          var _rs = history.replaceState; history.replaceState = function(state, title, url){
+            try{ url = stripPrefix(url||location.href);}catch{}; return _rs.apply(this, [state, title, url]);
+          };
+          window.addEventListener('popstate', function(){
+            var fixed = stripPrefix(location.href);
+            if((fixed||'') !== (location.pathname + location.search + location.hash)){
+              history.replaceState({}, '', fixed);
+            }
+          });
+        }catch(e){}
+      })();
+    </script>
+    <script>
+      // Normalize GitHub Pages project base so SPA routes work
+      (function(){
+        try{
+          var host = location.hostname || '';
+          if(host.endsWith('.github.io')){
+            var parts = (location.pathname||'/').split('/');
+            var repo = parts[1] || '';
+            if(repo){
+              var prefix = '/' + repo;
+              if((location.pathname||'').startsWith(prefix + '/')){
+                var newPath = (location.pathname||'').slice(prefix.length) || '/';
+                history.replaceState({}, '', newPath + (location.search||'') + (location.hash||''));
+              }
+            }
+          }
+        }catch(e){}
+      })();
+    </script>
+    <script>
       // Apply saved theme ASAP (prevents flicker) on every page load
       (function(){
         try{
           var t = localStorage.getItem('theme') || localStorage.getItem('pcfind_theme');
           if(t=== 'light' || t=== 'dark'){
             var root = document.documentElement; root.classList.remove('light','dark'); root.classList.add(t);
+          }
+        }catch(e){}
+      })();
+    </script>
+    <script>
+      // GitHub Pages SPA prefix remover: mount app at "/" while keeping asset base at /<repo>/
+      (function(){
+        try{
+          var host = location.hostname || '';
+          if(host && host.toLowerCase().endsWith('.github.io')){
+            var parts = (location.pathname||'/').split('/');
+            var repo = parts[1] || '';
+            if(repo){
+              // Ensure <base href> points to /<repo>/ so assets resolve correctly
+              var baseEl = document.querySelector('base');
+              if(baseEl){ baseEl.setAttribute('href','/' + repo + '/'); }
+              // Strip the /<repo> prefix from the visible URL for the SPA router
+              var prefix = '/' + repo;
+              if((location.pathname||'').toLowerCase().startsWith((prefix + '/').toLowerCase())){
+                var newPath = (location.pathname||'').slice(prefix.length) || '/';
+                history.replaceState({}, '', newPath + (location.search||'') + (location.hash||''));
+              } else if((location.pathname||'').toLowerCase() === prefix.toLowerCase()){
+                history.replaceState({}, '', '/' + (location.search||'') + (location.hash||''));
+              }
+            }
           }
         }catch(e){}
       })();
