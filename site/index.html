@@ -933,16 +933,18 @@
         }
         
         function renderChat(){
-          const root = document.getElementById('root');
           if(!isChat()){ 
             // Remove chat container if not on chat page
             const existing = document.getElementById('pcf-chat');
             if(existing) existing.remove();
-            if(root) root.style.display = 'block';
+            // Show main app content
+            const main = document.querySelector('main');
+            if(main) main.style.display = 'block';
             return;
           }
-          // Hide main app on chat page
-          if(root) root.style.display = 'none';
+          // Hide only main content on chat page (keep nav visible)
+          const main = document.querySelector('main');
+          if(main) main.style.display = 'none';
           
           const c = ensureChatContainer();
           
