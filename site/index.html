@@ -666,8 +666,11 @@
         var burgerLogout = document.getElementById('pcf-logout'); if(burgerLogout) burgerLogout.addEventListener('click', function(){
           closeDrawer();
           try{ localStorage.removeItem('pcfind_user'); sessionStorage.removeItem('pcfind_user'); }catch{}
-          // re-sync header state (updates burger label and hides logout based on state)
-          sync();
+          // Force sync by dispatching storage event (cross-window sync listener will update UI)
+          try{ window.dispatchEvent(new StorageEvent('storage', { key: 'pcfind_user' })); }catch{}
+          // Update burger menu immediately
+          var item = document.getElementById('pcf-open-account'); if(item) item.textContent = 'Sign in';
+          var lo = document.getElementById('pcf-logout'); if(lo) lo.style.display = 'none';
           // toast
           var toast=document.getElementById('pcf-toast'); toast.textContent='Signed out'; toast.style.display='block'; setTimeout(()=>{ toast.style.display='none'; }, 2000);
         });
