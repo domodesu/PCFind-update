@@ -221,6 +221,8 @@
       .light .pcf-dd-item:hover{background:#f3f4f6}
       /* Main app nav hover animations and filtering */
       nav a[href="/help"], nav a[href="/about"], nav a[href="/community"]{display:none !important}
+      /* Hide theme toggle in main navigation bar */
+      nav button[aria-label*="theme" i], nav button[aria-label*="dark" i], nav button[aria-label*="light" i]{display:none !important}
       :root{--pcf-hover-text:#ffffff;--pcf-hover-glow:rgba(37,99,235,.6)}
       .light{--pcf-hover-text:#111827;--pcf-hover-glow:rgba(37,99,235,.35)}
       nav a[href="/"], nav a[href="/browse-parts"], nav a[href="/pc-builder"], nav a[href="/saved-builds"]{
@@ -236,8 +238,6 @@
       @media (max-width: 900px){
         nav a[href="/"], nav a[href="/browse-parts"], nav a[href="/pc-builder"], nav a[href="/saved-builds"]{display:none !important}
         .pcf-nav-mobile{display:block}
-        /* Hide theme toggle on mobile, keep burger visible */
-        #pcf-theme{display:none !important}
       }
       /* Forum styles */
       .pcf-forum{max-width:960px;margin:80px auto 40px;padding:0 16px}
