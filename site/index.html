@@ -889,8 +889,26 @@
     <!-- Theme toggle (left of burger) + Burger drawer (Account/Community/About/Help) -->
     <style>
       .pcf-tools{position:fixed;top:12px;right:12px;z-index:9999;display:flex;gap:8px}
-      .pcf-iconbtn{padding:10px 12px;border-radius:10px;border:1px solid #374151;background:#1f2937;color:#e5e7eb;cursor:pointer}
-      .light .pcf-iconbtn{background:#f3f4f6;border-color:#d1d5db;color:#111827}
+      .pcf-iconbtn{
+        width:40px !important;
+        height:40px !important;
+        min-width:40px !important;
+        min-height:40px !important;
+        padding:8px !important;
+        border-radius:10px !important;
+        border:1.5px solid #374151;
+        background:#1f2937;
+        color:#e5e7eb;
+        cursor:pointer;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        font-size:1.1rem !important;
+        transition:all 0.15s ease !important;
+      }
+      .light .pcf-iconbtn{background:#ffffff;border-color:#e5e7eb;color:#111827}
+      .pcf-iconbtn:hover{background:#374151}
+      .light .pcf-iconbtn:hover{background:#f9fafb;border-color:#d1d5db}
       /* Style theme toggle button - clean minimal appearance */
       #pcf-theme{
         width:40px !important;
