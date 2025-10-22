@@ -430,6 +430,11 @@
             if(response.ok && data.success){
               const u = { name: data.user.username, email: data.user.email||'', registered:true };
               setUser(u, !!rememberEl.checked); modal.style.display='none'; showToast('Signed in as '+data.user.username);
+              // Force burger menu update
+              setTimeout(()=>{
+                const item = document.getElementById('pcf-open-account'); if(item) item.textContent = data.user.username;
+                const lo = document.getElementById('pcf-logout'); if(lo) lo.style.display = 'block';
+              }, 100);
             }else{
               errorEl.textContent=data.error||'Login failed. Please check your credentials.'; errorEl.style.display='block';
             }
@@ -512,6 +517,11 @@
               showToast('Account created! Signing you in...');
               setUser({ name: uname, email, registered:true }, true); modal.style.display='none';
               secSignup.style.display='none'; secSignin.style.display='block';
+              // Force burger menu update
+              setTimeout(()=>{
+                const item = document.getElementById('pcf-open-account'); if(item) item.textContent = uname;
+                const lo = document.getElementById('pcf-logout'); if(lo) lo.style.display = 'block';
+              }, 100);
             }else{
               suErr.textContent=data.error||'Registration failed.'; suErr.style.display='block';
             }
@@ -522,7 +532,9 @@
             suCreate.disabled=false; suCreate.textContent='Create Account';
           }
         }); }
-        sync();
+        // Initial sync with delay to ensure burger menu is in DOM
+        if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(sync, 50); }); }
+        else{ setTimeout(sync, 50); }
       })();
     </script>
     <!-- Inject images into Browse Parts / Builder cards using part names -->
