@@ -239,10 +239,11 @@
         nav a[href="/"], nav a[href="/browse-parts"], nav a[href="/pc-builder"], nav a[href="/saved-builds"]{display:none !important}
         .pcf-nav-mobile{display:block}
         /* Center logo in navigation bar on mobile */
-        nav{justify-content:center !important}
-        nav > *:first-child, nav a:first-child, nav h1, nav .logo, nav [class*="logo"], nav [class*="brand"]{
-          margin:0 auto !important;
-          text-align:center !important;
+        nav{position:relative !important}
+        nav > *:first-child, nav a:first-child, nav h1, nav .logo, nav [class*="logo" i], nav [class*="brand" i]{
+          position:absolute !important;
+          left:50% !important;
+          transform:translateX(-50%) !important;
         }
       }
       /* Forum styles */
