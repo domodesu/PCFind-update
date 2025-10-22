@@ -355,14 +355,15 @@
       .pcf-chat-avatar{width:36px;height:36px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
       .pcf-chat-msg.ai .pcf-chat-avatar{background:#10b981}
       .pcf-chat-bubble{background:#1f2937;color:#e5e7eb;padding:12px 16px;border-radius:16px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word}
-      .light .pcf-chat-bubble{background:#f3f4f6;color:#111827}
+      .light .pcf-chat-bubble{background:#f3f4f6;color:#1f2937;font-weight:500}
       .pcf-chat-msg.user .pcf-chat-bubble{background:#2563eb;color:#fff}
       .light .pcf-chat-msg.user .pcf-chat-bubble{background:#3b82f6}
       .pcf-chat-input-area{border-top:1px solid #374151;padding:16px 20px;background:#0b1220}
       .light .pcf-chat-input-area{border-color:#e5e7eb;background:#ffffff}
       .pcf-chat-input-wrap{display:flex;gap:12px;align-items:flex-end;max-width:100%}
       .pcf-chat-input{flex:1;padding:12px 16px;border-radius:24px;border:1px solid #374151;background:#1f2937;color:#e5e7eb;resize:none;max-height:120px;min-height:48px;font-family:inherit;font-size:1rem}
-      .light .pcf-chat-input{background:#ffffff;border-color:#d1d5db;color:#111827}
+      .light .pcf-chat-input{background:#ffffff;border-color:#d1d5db;color:#1f2937}
+      .light .pcf-chat-input::placeholder{color:#6b7280}
       .pcf-chat-send{padding:12px 24px;border-radius:24px;background:#2563eb;color:#fff;border:none;cursor:pointer;font-weight:600;transition:background 0.2s}
       .pcf-chat-send:hover{background:#1d4ed8}
       .pcf-chat-send:disabled{background:#4b5563;cursor:not-allowed}
@@ -371,6 +372,13 @@
       .pcf-chat-typing span:nth-child(2){animation-delay:0.2s}
       .pcf-chat-typing span:nth-child(3){animation-delay:0.4s}
       @keyframes typing{0%,60%,100%{opacity:0.3}30%{opacity:1}}
+      /* Welcome message styles */
+      .pcf-chat-welcome{color:#9ca3af}
+      .light .pcf-chat-welcome{color:#6b7280}
+      .pcf-chat-welcome-title{color:#e5e7eb}
+      .light .pcf-chat-welcome-title{color:#1f2937;font-weight:600}
+      .pcf-chat-welcome-text{color:#9ca3af}
+      .light .pcf-chat-welcome-text{color:#4b5563}
     </style>
     <div class="pcf-account-btn" id="pcf-account">
       <button class="pcf-btn" id="pcf-signin-btn">Sign In</button>
@@ -1060,11 +1068,11 @@
           html += '<div class="pcf-chat-messages" id="pcf-chat-messages">';
           
           if(chatHistory.length === 0){
-            html += '<div style="text-align:center;padding:40px 20px;color:#9ca3af;">';
-            html += '<h2 style="color:#e5e7eb;margin-bottom:16px;">🤖 PC Building AI Assistant</h2>';
-            html += '<p>Ask me anything about PC parts, compatibility, builds, or recommendations!</p>';
-            html += '<p style="margin-top:12px;font-size:0.9rem;">Examples:</p>';
-            html += '<ul style="list-style:none;padding:0;margin-top:8px;font-size:0.9rem;">';
+            html += '<div class="pcf-chat-welcome" style="text-align:center;padding:40px 20px;">';
+            html += '<h2 class="pcf-chat-welcome-title" style="margin-bottom:16px;">🤖 PC Building AI Assistant</h2>';
+            html += '<p class="pcf-chat-welcome-text">Ask me anything about PC parts, compatibility, builds, or recommendations!</p>';
+            html += '<p class="pcf-chat-welcome-text" style="margin-top:12px;font-size:0.9rem;">Examples:</p>';
+            html += '<ul class="pcf-chat-welcome-text" style="list-style:none;padding:0;margin-top:8px;font-size:0.9rem;">';
             html += '<li>• What CPU should I pair with RTX 4070?</li>';
             html += '<li>• Is 16GB RAM enough for gaming?</li>';
             html += '<li>• Help me build a ₱50,000 gaming PC</li>';
