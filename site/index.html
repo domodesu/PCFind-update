@@ -917,7 +917,10 @@
         const API_URL = 'https://pcfind-auth.onrender.com/chat';
         let chatHistory = [];
         
-        function isChat(){ return (location.pathname||'').toLowerCase().endsWith('/chat') }
+        function isChat(){ 
+          const path = (location.pathname||'').toLowerCase();
+          return path === '/chat' || path.endsWith('/chat') || path === '/chat/' || path.endsWith('/chat/');
+        }
         function ensureChatContainer(){ 
           let c=document.getElementById('pcf-chat'); 
           if(!c){ 
@@ -930,7 +933,17 @@
         }
         
         function renderChat(){
-          if(!isChat()) return;
+          const root = document.getElementById('root');
+          if(!isChat()){ 
+            // Remove chat container if not on chat page
+            const existing = document.getElementById('pcf-chat');
+            if(existing) existing.remove();
+            if(root) root.style.display = 'block';
+            return;
+          }
+          // Hide main app on chat page
+          if(root) root.style.display = 'none';
+          
           const c = ensureChatContainer();
           
           let html = '<div class="pcf-chat-messages" id="pcf-chat-messages">';
