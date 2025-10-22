@@ -238,12 +238,12 @@
       @media (max-width: 900px){
         nav a[href="/"], nav a[href="/browse-parts"], nav a[href="/pc-builder"], nav a[href="/saved-builds"]{display:none !important}
         .pcf-nav-mobile{display:block}
-        /* Center logo in navigation bar on mobile */
-        nav{position:relative !important}
-        nav > *:first-child, nav a:first-child, nav h1, nav .logo, nav [class*="logo" i], nav [class*="brand" i]{
-          position:absolute !important;
-          left:50% !important;
-          transform:translateX(-50%) !important;
+        /* Center PCFind logo/heading on mobile */
+        h1, .hero h1, .hero-title, [class*="hero"] h1, main h1:first-of-type{
+          text-align:center !important;
+        }
+        .hero, [class*="hero"], main > div:first-child{
+          text-align:center !important;
         }
       }
       /* Forum styles */
