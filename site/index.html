@@ -617,28 +617,35 @@
             }
           }
           
-          suSendOtp.disabled=true; suSendOtp.textContent='Sending...';
+          suSendOtp.disabled=true; suSendOtp.textContent='Sending (may take 30s)...';
           try{
+            console.log('Sending OTP to:', contact);
             const response = await fetch('https://pcfind-auth.onrender.com/send-otp', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ contact })
             });
+            console.log('Response status:', response.status);
             const data = await response.json();
+            console.log('Response data:', data);
             if(response.ok && data.success){
               suOtpStatus.style.display='block';
               suOtpRow.style.display='block';
               suOtpInput.focus();
               verifiedContact = contact;
-              showToast('OTP sent! Check your email/SMS.');
+              showToast('✅ OTP sent to ' + contact);
               // Dev mode: show OTP in toast if returned by backend
-              if(data.otp){ showToast('Dev Mode - OTP: '+data.otp); }
+              if(data.otp){ 
+                showToast('🔐 Dev Mode - Your OTP: ' + data.otp); 
+                console.log('DEV MODE OTP:', data.otp);
+              }
             }else{
-              suErr.textContent=data.error||'Failed to send OTP.'; suErr.style.display='block';
+              console.error('OTP send failed:', data);
+              suErr.textContent=data.error||'Failed to send OTP. Backend may be waking up, try again.'; suErr.style.display='block';
             }
           }catch(err){
             console.error('Send OTP error:', err);
-            suErr.textContent='Network error. Please try again.'; suErr.style.display='block';
+            suErr.textContent='Backend is waking up (30s). Please wait and try again.'; suErr.style.display='block';
           }finally{
             suSendOtp.disabled=false; suSendOtp.textContent='Send OTP';
           }
