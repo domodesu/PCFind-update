@@ -1045,10 +1045,12 @@
         // Remove item from build
         function removeFromBuild(index){
           const build = getCurrentBuild();
+          const itemName = build.items[index]?.name || 'Item';
           build.items.splice(index, 1);
           build.lastModified = Date.now();
           saveCurrentBuild(build);
           renderSavedBuilds();
+          if(window.showToast) window.showToast('🗑️ Removed ' + itemName);
         }
         
         // Clear entire build
@@ -1056,6 +1058,7 @@
           if(confirm('Clear all items from your current build?')){
             saveCurrentBuild({items:[], name: 'My Build', lastModified: Date.now()});
             renderSavedBuilds();
+            if(window.showToast) window.showToast('🗑️ Build cleared');
           }
         }
         
@@ -1110,11 +1113,7 @@
             // Actions
             html += '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">';
             html += '<a href="/pc-builder" style="background:#2563eb;color:#fff;border:none;padding:14px 28px;border-radius:8px;cursor:pointer;font-weight:600;text-decoration:none;display:inline-block;transition:background 0.2s">Continue Building</a>';
-            if(user){
-              html += '<button onclick="alert(\'Save functionality coming soon!\')" style="background:#10b981;color:#fff;border:none;padding:14px 28px;border-radius:8px;cursor:pointer;font-weight:600;transition:background 0.2s">Save Build</button>';
-            }else{
-              html += '<button onclick="if(window.showSignInRequired) window.showSignInRequired(\'Sign in to save your build permanently and access it from any device!\')" style="background:#10b981;color:#fff;border:none;padding:14px 28px;border-radius:8px;cursor:pointer;font-weight:600;transition:background 0.2s">Save Build</button>';
-            }
+            html += '<button onclick="window.saveBuildPermanently()" style="background:#10b981;color:#fff;border:none;padding:14px 28px;border-radius:8px;cursor:pointer;font-weight:600;transition:background 0.2s">💾 Save Build</button>';
             html += '</div>';
           }else{
             // Empty state
@@ -1147,9 +1146,32 @@
           }
         }
         
+        // Save build permanently
+        function saveBuildPermanently(){
+          if(!window.isUserLoggedIn || !window.isUserLoggedIn()){
+            if(window.showSignInRequired) window.showSignInRequired('Sign in to save your build permanently!');
+            return;
+          }
+          
+          const build = getCurrentBuild();
+          if(!build.items || build.items.length === 0){
+            if(window.showToast) window.showToast('⚠️ Add some components first!');
+            return;
+          }
+          
+          // Save to localStorage (permanent for logged-in users)
+          try{
+            localStorage.setItem('pcfind_current_build', JSON.stringify(build));
+            if(window.showToast) window.showToast('✅ Build saved successfully!');
+          }catch(e){
+            if(window.showToast) window.showToast('❌ Failed to save build');
+          }
+        }
+        
         // Make functions globally accessible
         window.removeFromBuild = removeFromBuild;
         window.clearBuild = clearBuild;
+        window.saveBuildPermanently = saveBuildPermanently;
         window.addToBuild = function(item){
           const build = getCurrentBuild();
           build.items.push(item);
