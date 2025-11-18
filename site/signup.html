@@ -333,7 +333,9 @@
       }
       
       async function sendOTP() {
+        // Clear any previous errors
         suErr.style.display = 'none';
+        suErr.textContent = '';
         let contact = '';
         
         // Ensure elements exist
@@ -342,6 +344,12 @@
           suErr.style.display = 'block';
           return;
         }
+        
+        // Debug: Log current state
+        console.log('Send OTP clicked. Current mode:', currentMode);
+        console.log('Phone input value:', suPhoneInput.value);
+        console.log('Email input value:', suEmailInput.value);
+        console.log('Country code:', suCountrySelect.value);
         
         // Get contact based on current mode
         if(currentMode === 'email'){
@@ -366,14 +374,20 @@
             suErr.style.display = 'block';
             return;
           }
-          // Remove leading 0 if present
-          let phone = phoneInput.replace(/^0+/, '');
+          // Remove leading 0 if present and any non-digit characters
+          let phone = phoneInput.replace(/^0+/, '').replace(/\D/g, '');
+          if(!phone || phone.length === 0){
+            suErr.textContent = 'Please enter a valid phone number.';
+            suErr.style.display = 'block';
+            return;
+          }
           if(phone.length < 8 || phone.length > 15){
             suErr.textContent = 'Please enter a valid phone number (8-15 digits).';
             suErr.style.display = 'block';
             return;
           }
           contact = countryCode + phone;
+          console.log('Phone contact:', contact, 'Country:', countryCode, 'Phone:', phone);
         } else {
           // Unknown mode
           suErr.textContent = 'Please select email or phone mode.';
@@ -383,18 +397,22 @@
         
         // Final check to ensure contact is not empty
         if(!contact || contact.trim() === ''){
+          console.error('Contact is empty! Mode:', currentMode, 'Phone input:', suPhoneInput?.value, 'Email input:', suEmailInput?.value);
           suErr.textContent = 'Email or phone is required';
           suErr.style.display = 'block';
           return;
         }
         
+        console.log('Sending OTP to contact:', contact);
         suSendOtp.disabled = true;
         suSendOtp.textContent = 'Sending...';
         try{
+          const requestBody = { contact: contact.trim() };
+          console.log('Request body:', requestBody);
           const response = await fetch('https://pcfind-auth.onrender.com/send-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contact: contact.trim() })
+            body: JSON.stringify(requestBody)
           });
           const data = await response.json();
           if(response.ok && data.success){
