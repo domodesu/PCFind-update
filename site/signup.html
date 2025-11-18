@@ -471,12 +471,8 @@
       
       if(suBack){
         suBack.addEventListener('click', () => {
-          // Close this tab/window or go back
-          if(window.opener){
-            window.close();
-          } else {
-            window.location.href = getBasePath() + '/index.html';
-          }
+          // Navigate back to main page
+          window.location.href = getBasePath() + '/index.html';
         });
       }
       
@@ -485,11 +481,7 @@
       if(backToSignin){
         backToSignin.addEventListener('click', (e) => {
           e.preventDefault();
-          if(window.opener){
-            window.close();
-          } else {
-            window.location.href = getBasePath() + '/index.html';
-          }
+          window.location.href = getBasePath() + '/index.html';
         });
       }
       
@@ -549,14 +541,8 @@
               
               // Redirect to main page after a short delay
               setTimeout(() => {
-                if(window.opener){
-                  // If opened in new tab, close and refresh parent
-                  window.opener.location.reload();
-                  window.close();
-                } else {
-                  // If standalone, redirect (with base path for GitHub Pages)
-                  window.location.href = getBasePath() + '/index.html';
-                }
+                // Navigate back to main page (with base path for GitHub Pages)
+                window.location.href = getBasePath() + '/index.html';
               }, 1500);
             } else {
               suErr.textContent = data.error || 'Registration failed.';

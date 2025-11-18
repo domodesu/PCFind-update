@@ -484,7 +484,7 @@
             <button class="pcf-btn" id="pcf-cancel">Cancel</button>
             <button class="pcf-btn primary" id="pcf-continue">Continue</button>
           </div>
-          <div class="pcf-row" style="justify-content:flex-start;gap:6px"><span class="pcf-muted">Create Account Here:</span><a href="signup.html" target="_blank" class="pcf-link--plain" id="pcf-goto-signup">Sign up</a></div>
+          <div class="pcf-row" style="justify-content:flex-start;gap:6px"><span class="pcf-muted">Create Account Here:</span><a href="signup.html" class="pcf-link--plain" id="pcf-goto-signup">Sign up</a></div>
           <div class="pcf-row" style="flex-direction:column;align-items:flex-start;color:#9ca3af;font-size:.85rem">
             <strong style="color:#93c5fd">Demo Accounts</strong>
             <div>Username: <code>Domo</code> &nbsp; Password: <code>Furi123</code></div>
@@ -747,28 +747,12 @@
         })();
         window.addEventListener('click', (e)=>{ if(!userWrap.contains(e.target)) dd.style.display='none'; });
         window.addEventListener('storage', (e)=>{ if(e.key==='pcfind_user') sync(); });
-        // Sign up link: opens in new tab
+        // Sign up link: navigates to signup page (like other pages)
         if(gotoSignup){
           gotoSignup.addEventListener('click', (e) => {
-            // Ensure it opens in new tab
-            e.preventDefault();
-            // Get base path for GitHub Pages (handles both user and project sites)
-            var basePath = '';
-            try{
-              var host = (location.hostname||'').toLowerCase();
-              if(host.endsWith('.github.io')){
-                var hostParts = host.split('.');
-                var username = hostParts[0] || '';
-                var isUserSite = (host === username + '.github.io');
-                if(!isUserSite){
-                  var parts = (location.pathname||'/').split('/');
-                  var repo = parts[1] || '';
-                  if(repo) basePath = '/' + repo;
-                }
-              }
-            }catch(ex){}
-            var signupUrl = basePath + '/signup.html';
-            window.open(signupUrl, '_blank');
+            // Close the modal before navigating
+            modal.style.display = 'none';
+            // Let the link navigate normally (no preventDefault)
           });
         }
         // Note: Sign up is now handled in separate signup.html page
