@@ -1023,7 +1023,6 @@
             c = document.createElement('div'); 
             c.id = 'pcf-saved-builds-container'; 
             c.style.cssText = 'max-width:1200px;margin:40px auto;padding:0 20px'; 
-            // Insert into main element, not at end of #root
             const main = document.querySelector('main');
             if(main){
               main.insertBefore(c, main.firstChild);
@@ -1032,6 +1031,36 @@
             }
           } 
           return c; 
+        }
+        
+        function cleanupSavedBuilds(){
+          const container = document.getElementById('pcf-saved-builds-container');
+          if(container){ container.remove(); }
+          
+          const main = document.querySelector('main');
+          if(main){
+            Array.from(main.children).forEach(child => {
+              if(child.dataset && child.dataset.originalDisplay !== undefined){
+                child.style.display = child.dataset.originalDisplay;
+                delete child.dataset.originalDisplay;
+              }else{
+                child.style.display = '';
+              }
+            });
+          }
+          
+          const footer = document.querySelector('footer');
+          if(footer){
+            if(footer.dataset && footer.dataset.originalDisplay !== undefined){
+              footer.style.display = footer.dataset.originalDisplay;
+              delete footer.dataset.originalDisplay;
+            }else{
+              footer.style.display = '';
+            }
+          }
+          
+          const styleEl = document.getElementById('saved-builds-styles');
+          if(styleEl) styleEl.remove();
         }
         
         // Get current build from session/localStorage
@@ -1092,22 +1121,31 @@
         
         // Render saved builds page
         function renderSavedBuilds(){
-          if(!isSavedBuilds()) return;
-          
-          // Hide React app's main content but keep navigation
           const main = document.querySelector('main');
+          const footerEl = document.querySelector('footer');
+          
+          if(!isSavedBuilds()){
+            cleanupSavedBuilds();
+            return;
+          }
+          
           if(main){
-            // Hide all children except our saved builds container
             Array.from(main.children).forEach(child => {
               if(child.id !== 'pcf-saved-builds-container'){
+                if(child.dataset.originalDisplay === undefined){
+                  child.dataset.originalDisplay = child.style.display || '';
+                }
                 child.style.display = 'none';
               }
             });
           }
           
-          // Hide footer
-          const footer = document.querySelector('footer');
-          if(footer) footer.style.display = 'none';
+          if(footerEl){
+            if(footerEl.dataset.originalDisplay === undefined){
+              footerEl.dataset.originalDisplay = footerEl.style.display || '';
+            }
+            footerEl.style.display = 'none';
+          }
           
           const c = ensureContainer();
           const build = getCurrentBuild();
@@ -1224,12 +1262,28 @@
           if(window.showToast) window.showToast('✅ Added to build!');
         };
         
-        // Watch for route changes
-        window.addEventListener('popstate', renderSavedBuilds);
-        window.addEventListener('load', function(){
-          setTimeout(renderSavedBuilds, 300); // Wait for React app to render navigation
-        });
-        setTimeout(renderSavedBuilds, 500); // Fallback
+        function hookHistoryEvents(){
+          if(window.__pcfSavedHooked) return;
+          window.__pcfSavedHooked = true;
+          const origPush = history.pushState;
+          history.pushState = function(){
+            const result = origPush.apply(this, arguments);
+            window.dispatchEvent(new Event('pcf-route-change'));
+            return result;
+          };
+          const origReplace = history.replaceState;
+          history.replaceState = function(){
+            const result = origReplace.apply(this, arguments);
+            window.dispatchEvent(new Event('pcf-route-change'));
+            return result;
+          };
+        }
+        
+        hookHistoryEvents();
+        window.addEventListener('pcf-route-change', () => setTimeout(renderSavedBuilds, 50));
+        window.addEventListener('popstate', () => setTimeout(renderSavedBuilds, 50));
+        window.addEventListener('load', () => setTimeout(renderSavedBuilds, 50));
+        setTimeout(renderSavedBuilds, 100);
       })();
     </script>
     <!-- Community forum (client-side, localStorage) -->
