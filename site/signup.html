@@ -425,10 +425,28 @@
             suOtpRow.style.display = 'block';
             suOtpInput.focus();
             verifiedContact = contact.trim();
-            showToast('OTP sent! Check your email/SMS.');
-            // Dev mode: show OTP in toast if returned by backend
+            
+            // Dev mode: show OTP prominently if returned by backend
             if(data.devOTP || data.otp){
-              showToast('Dev Mode - OTP: ' + (data.devOTP || data.otp));
+              const devOTP = data.devOTP || data.otp;
+              console.log('🔑 DEV MODE - Your OTP is:', devOTP);
+              // Show in status message
+              suOtpStatus.textContent = '✓ OTP sent! (Dev Mode: ' + devOTP + ')';
+              suOtpStatus.style.color = '#fbbf24';
+              // Also show in toast
+              showToast('Dev Mode - Your OTP: ' + devOTP);
+              // Auto-fill OTP in dev mode for convenience
+              if(suOtpInput){
+                suOtpInput.value = devOTP;
+                // Trigger verification automatically
+                setTimeout(() => {
+                  if(suOtpInput.value === devOTP){
+                    verifyOTP(devOTP);
+                  }
+                }, 500);
+              }
+            } else {
+              showToast('OTP sent! Check your email/SMS.');
             }
           } else {
             console.error('Backend error response:', data);
