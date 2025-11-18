@@ -23,10 +23,27 @@ To enable real SMS sending to phone numbers, you need to configure Twilio on you
 
 ## Step 2: Get a Twilio Phone Number
 
+### Option A: Get a US Number (Recommended for Free Trial)
 1. In Twilio Console, go to **Phone Numbers** → **Manage** → **Buy a number**
-2. Select your country (or use trial number)
-3. Choose a number (trial numbers are free)
-4. Copy the phone number (format: `+1234567890`)
+2. **Change country to United States** (US numbers are often free/cheaper)
+3. **Make sure "SMS" capability is checked** in filters
+4. Search for numbers
+5. Look for numbers that show **SMS capability** (not just Voice)
+6. Choose a number (many US numbers are free on trial)
+7. Copy the phone number (format: `+1234567890`)
+
+**Note**: You can use a US number to send SMS to ANY country, including Philippines!
+
+### Option B: Get a Philippines Number
+1. In Twilio Console, go to **Phone Numbers** → **Manage** → **Buy a number**
+2. Select **Philippines** as country
+3. **IMPORTANT**: Make sure "SMS" capability is checked in the filters
+4. Search for numbers
+5. Look for numbers that show **SMS** in the Capabilities column (not just Voice)
+6. Choose a number (may cost $15/month for Philippines)
+7. Copy the phone number (format: `+639123456789`)
+
+**Note**: Philippines numbers with SMS capability typically cost $15/month. US numbers are often free on trial.
 
 ---
 
@@ -53,13 +70,30 @@ To enable real SMS sending to phone numbers, you need to configure Twilio on you
 
 ---
 
-## Step 4: Test It!
+## Step 4: Verify Phone Numbers (Trial Account Requirement)
+
+**IMPORTANT**: Twilio trial accounts can only send SMS to **verified phone numbers**.
+
+### How to Verify Phone Numbers:
+
+1. **Go to Twilio Verified Numbers**: https://console.twilio.com/us1/develop/phone-numbers/manage/verified
+2. **Click "Add a new number"**
+3. **Select country** (e.g., Philippines: +63)
+4. **Enter phone number** you want to test with (e.g., `+639171234567`)
+5. **Click "Verify"**
+6. **Enter verification code** sent to that number
+7. **Repeat** for any other test numbers
+
+**Note**: After upgrading to a paid account, you can send SMS to any number without verification.
+
+## Step 5: Test It!
 
 1. Wait for deployment to complete (1-2 minutes)
-2. Go to your signup page
-3. Enter a phone number
-4. Click "Send OTP"
-5. **You should receive a real SMS** on that phone number! 📱
+2. **Make sure your test phone number is verified** in Twilio Console
+3. Go to your signup page
+4. Enter the **verified** phone number
+5. Click "Send OTP"
+6. **You should receive a real SMS** on that phone number! 📱
 
 ---
 
@@ -85,17 +119,22 @@ To enable real SMS sending to phone numbers, you need to configure Twilio on you
    - Go to Render dashboard → Your service → Logs
    - Look for Twilio errors
 
-2. **Verify environment variables**:
+2. **Common Error: "Unverified Number"**:
+   - **Error**: `The number +63XXXXX is unverified. Trial accounts cannot send messages to unverified numbers`
+   - **Solution**: Verify the phone number at https://console.twilio.com/us1/develop/phone-numbers/manage/verified
+   - **Note**: Trial accounts can only send to verified numbers
+
+3. **Verify environment variables**:
    - Make sure all 3 variables are set correctly
    - No extra spaces or quotes
    - Phone number includes `+` sign
 
-3. **Check Twilio Console**:
+4. **Check Twilio Console**:
    - Go to https://console.twilio.com/
    - Check "Monitor" → "Logs" → "Messaging"
    - See if messages are being sent
 
-4. **Verify phone number format**:
+5. **Verify phone number format**:
    - Must include country code: `+639171234567`
    - No spaces or dashes
    - E.164 format required
