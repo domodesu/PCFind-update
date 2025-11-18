@@ -373,6 +373,20 @@
       .pcf-chat-send{padding:12px 24px;border-radius:24px;background:#2563eb;color:#fff;border:none;cursor:pointer;font-weight:600;transition:background 0.2s}
       .pcf-chat-send:hover{background:#1d4ed8}
       .pcf-chat-send:disabled{background:#4b5563;cursor:not-allowed}
+      .pcf-chat-suggestions{margin-top:10px;display:flex;flex-direction:column;gap:10px}
+      .pcf-chat-part{border:1px solid #374151;border-radius:12px;padding:14px;background:#0f172a;box-shadow:0 8px 20px rgba(2,6,23,0.35)}
+      .light .pcf-chat-part{background:#f9fafb;border-color:#e5e7eb;box-shadow:0 8px 18px rgba(15,23,42,0.1)}
+      .pcf-chat-part-name{font-weight:600;font-size:1rem;margin-bottom:4px;color:#e5e7eb}
+      .light .pcf-chat-part-name{color:#0f172a}
+      .pcf-chat-part-meta{font-size:0.9rem;color:#94a3b8;margin-bottom:6px}
+      .light .pcf-chat-part-meta{color:#475569}
+      .pcf-chat-part-notes{font-size:0.9rem;color:#cbd5f5;margin-bottom:10px;line-height:1.4}
+      .light .pcf-chat-part-notes{color:#475569}
+      .pcf-chat-part-price{font-size:1rem;font-weight:600;color:#10b981;margin-bottom:10px}
+      .pcf-chat-part-actions{display:flex;justify-content:flex-end}
+      .pcf-chat-part-btn{border:none;border-radius:10px;padding:10px 16px;background:#2563eb;color:#fff;cursor:pointer;font-weight:600;transition:transform 0.2s,box-shadow 0.2s}
+      .pcf-chat-part-btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(37,99,235,0.4)}
+      .pcf-chat-part-btn:active{transform:translateY(0);box-shadow:none}
       .pcf-chat-typing{display:flex;gap:4px;padding:8px 16px}
       .pcf-chat-typing span{width:8px;height:8px;border-radius:50%;background:#9ca3af;animation:typing 1.4s infinite}
       .pcf-chat-typing span:nth-child(2){animation-delay:0.2s}
@@ -1169,12 +1183,17 @@
         window.removeFromBuild = removeFromBuild;
         window.clearBuild = clearBuild;
         window.saveBuildPermanently = saveBuildPermanently;
-        window.addToBuild = function(item){
+        window.addToBuild = function(item, options){
+          if(!item) return;
           const build = getCurrentBuild();
           build.items.push(item);
           build.lastModified = Date.now();
           saveCurrentBuild(build);
-          if(window.showToast) window.showToast('✅ Added to build!');
+          const silent = options && options.silent;
+          const toastMessage = (options && options.toastMessage) || '✅ Added to build!';
+          if(!silent && window.showToast){
+            window.showToast(toastMessage);
+          }
         };
         
         function hookHistoryEvents(){
@@ -1401,12 +1420,32 @@
             html += '</ul></div>';
           }
           
-          chatHistory.forEach(msg =>{
+          chatHistory.forEach((msg, msgIndex) =>{
             const isUser = msg.role === 'user';
             const avatar = isUser ? (msg.name||'You').charAt(0).toUpperCase() : 'AI';
             html += '<div class="pcf-chat-msg '+(isUser?'user':'ai')+'">';
             html += '<div class="pcf-chat-avatar">'+avatar+'</div>';
             html += '<div class="pcf-chat-bubble">'+escapeHtml(msg.content)+'</div>';
+            if(!isUser && Array.isArray(msg.parts) && msg.parts.length){
+              html += '<div class="pcf-chat-suggestions">';
+              msg.parts.forEach((part, partIndex) => {
+                const price = formatPrice(part.price);
+                html += '<div class="pcf-chat-part">';
+                html += '<div class="pcf-chat-part-name">'+escapeHtml(part.name || 'Component')+'</div>';
+                html += '<div class="pcf-chat-part-meta">'+escapeHtml((part.category || 'Component').toUpperCase())+'</div>';
+                if(price){
+                  html += '<div class="pcf-chat-part-price">'+price+'</div>';
+                }
+                if(part.notes){
+                  html += '<div class="pcf-chat-part-notes">'+escapeHtml(part.notes)+'</div>';
+                }
+                html += '<div class="pcf-chat-part-actions">';
+                html += '<button class="pcf-chat-part-btn" data-chat-add="1" data-msg-index="'+msgIndex+'" data-part-index="'+partIndex+'">Add to build</button>';
+                html += '</div>';
+                html += '</div>';
+              });
+              html += '</div>';
+            }
             html += '</div>';
           });
           
@@ -1466,6 +1505,7 @@
             newChatBtn.addEventListener('click', startNewChat);
           }
           
+          attachSuggestionHandlers();
           scrollToBottom();
         }
         
@@ -1480,6 +1520,91 @@
             const msgs = document.getElementById('pcf-chat-messages');
             if(msgs){ msgs.scrollTop = msgs.scrollHeight; }
           }, 100);
+        }
+        function parseAssistantReply(raw){
+          let working = raw || '';
+          const partsExtraction = extractTagPayload(working, 'PARTS');
+          working = partsExtraction.text;
+          const autoExtraction = extractTagPayload(working, 'AUTO_ADD');
+          working = autoExtraction.text;
+          return {
+            text: working.trim(),
+            parts: partArrayFromPayload(partsExtraction.payload),
+            autoAdd: partArrayFromPayload(autoExtraction.payload)
+          };
+        }
+        function extractTagPayload(text, tag){
+          if(!text) return { text: '', payload: null };
+          const regex = new RegExp(`\\[\\[${tag}\\]\\]([\\s\\S]*?)\\[\\[\\/${tag}\\]\\]`, 'gi');
+          let match;
+          let payload = null;
+          while((match = regex.exec(text))){
+            const json = (match[1] || '').trim();
+            if(json && !payload){
+              try{
+                payload = JSON.parse(json);
+              }catch(err){
+                console.warn('Failed to parse AI '+tag+' block', err);
+              }
+            }
+          }
+          return { text: text.replace(regex, '').trim(), payload };
+        }
+        function partArrayFromPayload(payload){
+          if(!payload) return [];
+          if(Array.isArray(payload)) return payload;
+          if(Array.isArray(payload.parts)) return payload.parts;
+          return [];
+        }
+        function normalizePart(part){
+          if(!part || typeof part !== 'object') return null;
+          const cleanedPrice = typeof part.price === 'number'
+            ? part.price
+            : parseFloat(String(part.price || '').replace(/[^0-9.]/g, ''));
+          const normalized = {
+            name: part.name || part.model || 'Component',
+            category: part.category || part.type || 'Custom',
+            price: isNaN(cleanedPrice) ? undefined : Math.round(cleanedPrice),
+            source: part.source || 'AI Assistant'
+          };
+          const notes = part.notes || part.reason || part.description;
+          if(notes) normalized.notes = notes;
+          return normalized;
+        }
+        function formatPrice(value){
+          if(typeof value !== 'number' || isNaN(value)) return '';
+          return '₱' + value.toLocaleString();
+        }
+        function addPartsToBuild(parts, opts){
+          if(!Array.isArray(parts) || parts.length === 0) return;
+          if(typeof window.addToBuild !== 'function') return;
+          const normalized = (opts && opts.normalized) ? parts.filter(Boolean) : parts.map(normalizePart).filter(Boolean);
+          if(!normalized.length) return;
+          normalized.forEach(item => window.addToBuild(item, { silent: true }));
+          const silent = opts && opts.silent;
+          if(!silent && window.showToast){
+            const label = normalized.length === 1 ? (normalized[0].name || 'component') : (normalized.length + ' components');
+            const message = (opts && opts.toast) || `✅ Added ${label} to your build`;
+            window.showToast(message);
+          }
+        }
+        function attachSuggestionHandlers(){
+          const buttons = document.querySelectorAll('[data-chat-add]');
+          buttons.forEach(btn => {
+            btn.addEventListener('click', handleAddPartClick);
+          });
+        }
+        function handleAddPartClick(e){
+          const btn = e.currentTarget;
+          const msgIndex = Number(btn.getAttribute('data-msg-index'));
+          const partIndex = Number(btn.getAttribute('data-part-index'));
+          if(isNaN(msgIndex) || isNaN(partIndex)) return;
+          const message = chatHistory[msgIndex];
+          if(!message || !Array.isArray(message.parts)) return;
+          const part = message.parts[partIndex];
+          if(part){
+            addPartsToBuild([part], { normalized: true, toast: `✅ Added ${part.name || 'component'} to your build` });
+          }
         }
         
         function showTyping(){
@@ -1557,12 +1682,21 @@
             
             // Show AI response or detailed error message
             if(data.reply){
-              chatHistory.push({ role: 'assistant', content: data.reply });
+              const parsed = parseAssistantReply(data.reply);
+              const displayParts = parsed.parts.map(normalizePart).filter(Boolean);
+              const autoParts = parsed.autoAdd.map(normalizePart).filter(Boolean);
+              const safeText = parsed.text || data.reply;
+              chatHistory.push({ role: 'assistant', content: safeText, parts: displayParts });
+              if(autoParts.length){
+                const label = autoParts.length === 1 ? (autoParts[0].name || 'component') : (autoParts.length + ' components');
+                addPartsToBuild(autoParts, { normalized: true, toast: `🤖 Added ${label} from AI` });
+              }
               renderChat();
             }else{
               chatHistory.push({ 
                 role: 'assistant', 
-                content: data.error || 'Sorry, I encountered an error. Please try again!' 
+                content: data.error || 'Sorry, I encountered an error. Please try again!',
+                parts: []
               });
               renderChat();
             }
@@ -1571,7 +1705,8 @@
             hideTyping();
             chatHistory.push({ 
               role: 'assistant', 
-              content: '⚠️ Connection error. The backend may be starting up (takes ~30s on first request). Please try again!\n\nError: ' + err.message
+              content: '⚠️ Connection error. The backend may be starting up (takes ~30s on first request). Please try again!\n\nError: ' + err.message,
+              parts: []
             });
             renderChat();
           }finally{
