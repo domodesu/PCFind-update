@@ -336,6 +336,13 @@
         suErr.style.display = 'none';
         let contact = '';
         
+        // Ensure elements exist
+        if(!suPhoneInput || !suEmailInput || !suCountrySelect){
+          suErr.textContent = 'Form elements not loaded. Please refresh the page.';
+          suErr.style.display = 'block';
+          return;
+        }
+        
         // Get contact based on current mode
         if(currentMode === 'email'){
           const emailInput = (suEmailInput.value || '').trim();
@@ -350,7 +357,7 @@
             return;
           }
           contact = emailInput;
-        } else {
+        } else if(currentMode === 'phone'){
           // Phone mode
           const countryCode = (suCountrySelect.value || '').trim();
           const phoneInput = (suPhoneInput.value || '').trim();
@@ -361,12 +368,24 @@
           }
           // Remove leading 0 if present
           let phone = phoneInput.replace(/^0+/, '');
-          contact = countryCode + phone;
           if(phone.length < 8 || phone.length > 15){
-            suErr.textContent = 'Please enter a valid phone number.';
+            suErr.textContent = 'Please enter a valid phone number (8-15 digits).';
             suErr.style.display = 'block';
             return;
           }
+          contact = countryCode + phone;
+        } else {
+          // Unknown mode
+          suErr.textContent = 'Please select email or phone mode.';
+          suErr.style.display = 'block';
+          return;
+        }
+        
+        // Final check to ensure contact is not empty
+        if(!contact || contact.trim() === ''){
+          suErr.textContent = 'Email or phone is required';
+          suErr.style.display = 'block';
+          return;
         }
         
         suSendOtp.disabled = true;
@@ -375,14 +394,14 @@
           const response = await fetch('https://pcfind-auth.onrender.com/send-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contact })
+            body: JSON.stringify({ contact: contact.trim() })
           });
           const data = await response.json();
           if(response.ok && data.success){
             suOtpStatus.style.display = 'block';
             suOtpRow.style.display = 'block';
             suOtpInput.focus();
-            verifiedContact = contact;
+            verifiedContact = contact.trim();
             showToast('OTP sent! Check your email/SMS.');
             // Dev mode: show OTP in toast if returned by backend
             if(data.otp){
