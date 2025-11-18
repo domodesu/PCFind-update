@@ -145,9 +145,7 @@ VONAGE_BRAND_NAME=PCFind
 
 **Brevo Email:**
 ```
-BREVO_SMTP_HOST=smtp-relay.brevo.com
-BREVO_SMTP_USER=...
-BREVO_SMTP_PASS=...
+BREVO_API_KEY=...
 BREVO_FROM_EMAIL=...
 BREVO_FROM_NAME=PCFind Support
 ```
@@ -169,4 +167,5 @@ BREVO_FROM_NAME=PCFind Support
 **Need help?**
 - See `VONAGE-SMS-SETUP.md` for detailed Vonage guide
 - See `BREVO-SETUP-NOW.md` for detailed email guide
+
 

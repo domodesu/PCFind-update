@@ -1,4 +1,4 @@
-	# 📧 Brevo Email Setup - Quick Guide
+                                                        # 📧 Brevo Email Setup - Quick Guide
 
 Follow these steps to receive **REAL OTPs via email**!
 
@@ -21,35 +21,19 @@ Follow these steps to receive **REAL OTPs via email**!
 
 ---
 
-## ✅ Step 2: Get SMTP Credentials
+## ✅ Step 2: Get Your API Key
 
-**Tab 2: https://app.brevo.com/settings/keys/smtp**
+**Tab 2: https://app.brevo.com/settings/keys/api**
 
 After logging in to Brevo:
 
-1. You'll see:
-   ```
-   SMTP Server: smtp-relay.brevo.com
-   Port: 587
-   Login: your-email@example.com
-   ```
-
-2. **Click "Create a new SMTP key"**
+1. Click **“Create a new API key”**
    - Name it: `PCFind-Auth`
-   - Click "Generate"
+   - Click **“Generate”**
+2. **COPY THE API KEY** – looks like `xkeysib-abc123...`
+   - ⚠️ **IMPORTANT**: Save it somewhere safe (you can only see it once!)
 
-3. **COPY THE KEY** - looks like: `xkeysib-abc123...`
-   - ⚠️ **IMPORTANT**: Save it somewhere - you can only see it once!
-
-4. **Write down these 4 values**:
-   ```
-   SMTP Host: smtp-relay.brevo.com
-   SMTP Port: 587
-   SMTP User: _____________________ (your Brevo login email)
-   SMTP Key:  _____________________ (the key you just copied)
-   ```
-
-✅ **Got all 4 values? Continue to Step 3**
+✅ **API key ready? Continue to Step 3**
 
 ---
 
@@ -82,10 +66,7 @@ After logging in to Brevo:
 
 | Key | Value |
 |-----|-------|
-| `BREVO_SMTP_HOST` | `smtp-relay.brevo.com` |
-| `BREVO_SMTP_PORT` | `587` |
-| `BREVO_SMTP_USER` | Your Brevo email (from Step 2) |
-| `BREVO_SMTP_PASS` | Your SMTP key (from Step 2) |
+| `BREVO_API_KEY` | Your Brevo API key (from Step 2) |
 | `BREVO_FROM_EMAIL` | Your verified email (from Step 3) |
 | `BREVO_FROM_NAME` | `PCFind Support` |
 
