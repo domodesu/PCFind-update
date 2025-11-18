@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <title>Sign Up - PCFind</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #0b1220;
+      color: #e5e7eb;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .light body {
+      background: #f9fafb;
+      color: #111827;
+    }
+    .pcf-card {
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid #374151;
+      border-radius: 12px;
+      padding: 32px;
+      min-width: 400px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    }
+    .light .pcf-card {
+      background: #ffffff;
+      color: #111827;
+      border-color: #e5e7eb;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    }
+    .pcf-card h3 {
+      margin: 0 0 24px 0;
+      font-size: 24px;
+    }
+    .pcf-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      flex-direction: column;
+    }
+    .pcf-row.horizontal {
+      flex-direction: row;
+    }
+    .pcf-input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #374151;
+      background: #0b1220;
+      color: #e5e7eb;
+      font-size: 14px;
+    }
+    .light .pcf-input {
+      background: #ffffff;
+      border-color: #e5e7eb;
+      color: #111827;
+    }
+    .pcf-input:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+    .pcf-btn {
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid #374151;
+      background: #1f2937;
+      color: #e5e7eb;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .light .pcf-btn {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+      color: #111827;
+    }
+    .pcf-btn:hover:not(:disabled) {
+      background: #374151;
+    }
+    .light .pcf-btn:hover:not(:disabled) {
+      background: #e5e7eb;
+    }
+    .pcf-btn.primary {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #fff;
+    }
+    .pcf-btn.primary:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+    .pcf-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .pcf-link {
+      color: #93c5fd;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .pcf-link:hover {
+      text-decoration: underline;
+    }
+    .pcf-error {
+      color: #f43f5e;
+      font-size: 14px;
+      margin-top: 8px;
+      display: none;
+    }
+    .pcf-success {
+      color: #10b981;
+      font-size: 14px;
+      margin-top: 8px;
+      display: none;
+    }
+    .pcf-toast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid #374151;
+      padding: 12px 16px;
+      border-radius: 10px;
+      z-index: 10002;
+      box-shadow: 0 10px 30px rgba(0,0,0,.3);
+      display: none;
+    }
+    .light .pcf-toast {
+      background: #ffffff;
+      color: #111827;
+      border-color: #e5e7eb;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    }
+    .pcf-back-link {
+      margin-top: 16px;
+      text-align: center;
+    }
+    .pcf-mode-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .pcf-mode-toggle .pcf-btn {
+      flex: 1;
+    }
+    .pcf-phone-input-group {
+      display: flex;
+      gap: 8px;
+    }
+    .pcf-phone-input-group select {
+      width: 140px;
+      flex-shrink: 0;
+    }
+    small {
+      color: #9ca3af;
+      font-size: 12px;
+      margin-top: 4px;
+      display: block;
+    }
+    .light small {
+      color: #6b7280;
+    }
+  </style>
+  <script>
+    // Apply saved theme
+    (function(){
+      try{
+        var t = localStorage.getItem('theme') || localStorage.getItem('pcfind_theme');
+        if(t === 'light' || t === 'dark'){
+          document.documentElement.classList.add(t);
+        }
+      }catch(e){}
+    })();
+  </script>
+</head>
+<body>
+  <div class="pcf-card">
+    <h3>Sign up</h3>
+    
+    <div class="pcf-row">
+      <input class="pcf-input" id="pcf-su-username" placeholder="Username" autocomplete="username" />
+    </div>
+    
+    <!-- Email/Phone toggle -->
+    <div class="pcf-row">
+      <div class="pcf-mode-toggle">
+        <button type="button" id="pcf-su-mode-phone" class="pcf-btn primary">📱 Mobile Number</button>
+        <button type="button" id="pcf-su-mode-email" class="pcf-btn">📧 Email</button>
+      </div>
+    </div>
+    
+    <!-- Phone input (default visible) -->
+    <div class="pcf-row" id="pcf-su-phone-section">
+      <div class="pcf-phone-input-group">
+        <select id="pcf-su-country" class="pcf-input">
+          <option value="+63" selected>🇵🇭 +63</option>
+          <option value="+1">🇺🇸 +1</option>
+          <option value="+44">🇬🇧 +44</option>
+          <option value="+81">🇯🇵 +81</option>
+          <option value="+82">🇰🇷 +82</option>
+          <option value="+86">🇨🇳 +86</option>
+          <option value="+91">🇮🇳 +91</option>
+          <option value="+65">🇸🇬 +65</option>
+          <option value="+60">🇲🇾 +60</option>
+          <option value="+66">🇹🇭 +66</option>
+          <option value="+61">🇦🇺 +61</option>
+          <option value="+64">🇳🇿 +64</option>
+          <option value="+49">🇩🇪 +49</option>
+          <option value="+33">🇫🇷 +33</option>
+          <option value="+39">🇮🇹 +39</option>
+          <option value="+34">🇪🇸 +34</option>
+          <option value="+7">🇷🇺 +7</option>
+          <option value="+55">🇧🇷 +55</option>
+          <option value="+52">🇲🇽 +52</option>
+          <option value="+27">🇿🇦 +27</option>
+        </select>
+        <input class="pcf-input" id="pcf-su-phone" placeholder="Enter your Mobile Number" type="tel" autocomplete="tel" />
+      </div>
+    </div>
+    
+    <!-- Email input (hidden by default) -->
+    <div class="pcf-row" id="pcf-su-email-section" style="display:none;">
+      <input class="pcf-input" id="pcf-su-email" placeholder="Enter Your Email" type="email" autocomplete="email" />
+    </div>
+    
+    <div class="pcf-row horizontal">
+      <button class="pcf-btn primary" id="pcf-su-send-otp" style="flex:1">Send OTP</button>
+      <div id="pcf-su-otp-status" class="pcf-success" style="align-self:center;padding:0 8px;">✓ OTP sent!</div>
+    </div>
+    
+    <div class="pcf-row" id="pcf-su-otp-row" style="display:none">
+      <input class="pcf-input" id="pcf-su-otp" placeholder="Enter 6-digit OTP" maxlength="6" />
+      <small>Check your email/SMS for the verification code. <a href="#" id="pcf-su-resend-otp" class="pcf-link">Resend</a></small>
+    </div>
+    
+    <div class="pcf-row">
+      <input class="pcf-input" id="pcf-su-pass" placeholder="Create password" type="password" autocomplete="new-password" />
+    </div>
+    
+    <div class="pcf-row">
+      <input class="pcf-input" id="pcf-su-pass2" placeholder="Confirm password" type="password" autocomplete="new-password" />
+    </div>
+    
+    <div class="pcf-error" id="pcf-su-error">Please complete all fields. Passwords must match.</div>
+    
+    <div class="pcf-row horizontal">
+      <button class="pcf-btn" id="pcf-su-back">Back</button>
+      <button class="pcf-btn primary" id="pcf-su-create" disabled>Create Account</button>
+    </div>
+    
+    <div class="pcf-back-link">
+      <a href="index.html" class="pcf-link">Already have an account? Sign in</a>
+    </div>
+  </div>
+  
+  <div class="pcf-toast" id="pcf-toast"></div>
+  
+  <script>
+    (function(){
+      // Toast function
+      function showToast(msg){
+        var t = document.getElementById('pcf-toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        setTimeout(() => {
+          t.style.display = 'none';
+        }, 3000);
+      }
+      
+      // User management
+      function setUser(u, remember){
+        try{
+          if(remember){
+            localStorage.setItem('pcfind_user', JSON.stringify(u));
+            sessionStorage.removeItem('pcfind_user');
+          } else {
+            sessionStorage.setItem('pcfind_user', JSON.stringify(u));
+            localStorage.removeItem('pcfind_user');
+          }
+        }catch(e){}
+      }
+      
+      // OTP flow variables
+      let otpVerified = false;
+      let verifiedContact = '';
+      let currentMode = 'phone'; // 'phone' or 'email'
+      
+      const suSendOtp = document.getElementById('pcf-su-send-otp');
+      const suOtpStatus = document.getElementById('pcf-su-otp-status');
+      const suOtpRow = document.getElementById('pcf-su-otp-row');
+      const suOtpInput = document.getElementById('pcf-su-otp');
+      const suResendOtp = document.getElementById('pcf-su-resend-otp');
+      const suCountrySelect = document.getElementById('pcf-su-country');
+      const suPhoneInput = document.getElementById('pcf-su-phone');
+      const suEmailInput = document.getElementById('pcf-su-email');
+      const suPhoneSection = document.getElementById('pcf-su-phone-section');
+      const suEmailSection = document.getElementById('pcf-su-email-section');
+      const suModePhone = document.getElementById('pcf-su-mode-phone');
+      const suModeEmail = document.getElementById('pcf-su-mode-email');
+      const suErr = document.getElementById('pcf-su-error');
+      const suCreate = document.getElementById('pcf-su-create');
+      const suBack = document.getElementById('pcf-su-back');
+      
+      // Toggle between phone and email mode
+      if(suModePhone){
+        suModePhone.addEventListener('click', () => {
+          currentMode = 'phone';
+          suPhoneSection.style.display = 'block';
+          suEmailSection.style.display = 'none';
+          suModePhone.classList.add('primary');
+          suModeEmail.classList.remove('primary');
+        });
+      }
+      
+      if(suModeEmail){
+        suModeEmail.addEventListener('click', () => {
+          currentMode = 'email';
+          suPhoneSection.style.display = 'none';
+          suEmailSection.style.display = 'block';
+          suModeEmail.classList.add('primary');
+          suModePhone.classList.remove('primary');
+        });
+      }
+      
+      async function sendOTP() {
+        suErr.style.display = 'none';
+        let contact = '';
+        
+        // Get contact based on current mode
+        if(currentMode === 'email'){
+          const emailInput = (suEmailInput.value || '').trim();
+          if(!emailInput){
+            suErr.textContent = 'Email required';
+            suErr.style.display = 'block';
+            return;
+          }
+          if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput)){
+            suErr.textContent = 'Please enter a valid email address.';
+            suErr.style.display = 'block';
+            return;
+          }
+          contact = emailInput;
+        } else {
+          // Phone mode
+          const countryCode = (suCountrySelect.value || '').trim();
+          const phoneInput = (suPhoneInput.value || '').trim();
+          if(!phoneInput){
+            suErr.textContent = 'Phone number required';
+            suErr.style.display = 'block';
+            return;
+          }
+          // Remove leading 0 if present
+          let phone = phoneInput.replace(/^0+/, '');
+          contact = countryCode + phone;
+          if(phone.length < 8 || phone.length > 15){
+            suErr.textContent = 'Please enter a valid phone number.';
+            suErr.style.display = 'block';
+            return;
+          }
+        }
+        
+        suSendOtp.disabled = true;
+        suSendOtp.textContent = 'Sending...';
+        try{
+          const response = await fetch('https://pcfind-auth.onrender.com/send-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contact })
+          });
+          const data = await response.json();
+          if(response.ok && data.success){
+            suOtpStatus.style.display = 'block';
+            suOtpRow.style.display = 'block';
+            suOtpInput.focus();
+            verifiedContact = contact;
+            showToast('OTP sent! Check your email/SMS.');
+            // Dev mode: show OTP in toast if returned by backend
+            if(data.otp){
+              showToast('Dev Mode - OTP: ' + data.otp);
+            }
+          } else {
+            suErr.textContent = data.error || 'Failed to send OTP.';
+            suErr.style.display = 'block';
+          }
+        } catch(err){
+          console.error('Send OTP error:', err);
+          suErr.textContent = 'Network error. Please try again.';
+          suErr.style.display = 'block';
+        } finally {
+          suSendOtp.disabled = false;
+          suSendOtp.textContent = 'Send OTP';
+        }
+      }
+      
+      async function verifyOTP(code) {
+        if(!code || code.length !== 6){ return; }
+        try{
+          const response = await fetch('https://pcfind-auth.onrender.com/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contact: verifiedContact, code })
+          });
+          const data = await response.json();
+          if(response.ok && data.success){
+            otpVerified = true;
+            suOtpStatus.textContent = '✓ Verified!';
+            suOtpStatus.style.color = '#10b981';
+            suOtpInput.disabled = true;
+            suCreate.disabled = false;
+            showToast('Email/Phone verified!');
+          } else {
+            suErr.textContent = data.error || 'Invalid OTP.';
+            suErr.style.display = 'block';
+            otpVerified = false;
+          }
+        } catch(err){
+          console.error('Verify OTP error:', err);
+          suErr.textContent = 'Network error. Please try again.';
+          suErr.style.display = 'block';
+        }
+      }
+      
+      if(suSendOtp){
+        suSendOtp.addEventListener('click', sendOTP);
+      }
+      
+      if(suResendOtp){
+        suResendOtp.addEventListener('click', (e) => {
+          e.preventDefault();
+          sendOTP();
+        });
+      }
+      
+      if(suOtpInput){
+        suOtpInput.addEventListener('input', (e) => {
+          const code = e.target.value.trim();
+          if(code.length === 6){
+            verifyOTP(code);
+          }
+        });
+      }
+      
+      if(suBack){
+        suBack.addEventListener('click', () => {
+          // Close this tab/window or go back
+          if(window.opener){
+            window.close();
+          } else {
+            window.location.href = 'index.html';
+          }
+        });
+      }
+      
+      if(suCreate){
+        suCreate.addEventListener('click', async () => {
+          const uname = (document.getElementById('pcf-su-username').value || '').trim();
+          let contact = '';
+          
+          // Build full contact based on current mode
+          if(currentMode === 'email'){
+            contact = (suEmailInput.value || '').trim();
+          } else {
+            const countryCode = (suCountrySelect.value || '').trim();
+            const phoneInput = (suPhoneInput.value || '').trim();
+            let phone = phoneInput.replace(/^0+/, '');
+            contact = countryCode + phone;
+          }
+          
+          const otp = (suOtpInput.value || '').trim();
+          const p1 = (document.getElementById('pcf-su-pass').value || '');
+          const p2 = (document.getElementById('pcf-su-pass2').value || '');
+          suErr.style.display = 'none';
+          
+          if(!otpVerified){
+            suErr.textContent = 'Please verify your email/phone with OTP first.';
+            suErr.style.display = 'block';
+            return;
+          }
+          if(!uname || !p1){
+            suErr.textContent = 'Username and password required.';
+            suErr.style.display = 'block';
+            return;
+          }
+          if(p1 !== p2){
+            suErr.textContent = 'Passwords do not match.';
+            suErr.style.display = 'block';
+            return;
+          }
+          if(p1.length < 6){
+            suErr.textContent = 'Password must be at least 6 characters.';
+            suErr.style.display = 'block';
+            return;
+          }
+          
+          suCreate.disabled = true;
+          suCreate.textContent = 'Creating...';
+          try{
+            const response = await fetch('https://pcfind-auth.onrender.com/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: uname, contact, code: otp, password: p1 })
+            });
+            const data = await response.json();
+            if(response.ok && data.success){
+              showToast('Account created! Signing you in...');
+              setUser({ name: uname, email: contact, registered: true }, true);
+              
+              // Redirect to main page after a short delay
+              setTimeout(() => {
+                if(window.opener){
+                  // If opened in new tab, close and refresh parent
+                  window.opener.location.reload();
+                  window.close();
+                } else {
+                  // If standalone, redirect
+                  window.location.href = 'index.html';
+                }
+              }, 1500);
+            } else {
+              suErr.textContent = data.error || 'Registration failed.';
+              suErr.style.display = 'block';
+            }
+          } catch(err){
+            console.error('Registration error:', err);
+            suErr.textContent = 'Network error. Please try again.';
+            suErr.style.display = 'block';
+          } finally {
+            suCreate.disabled = false;
+            suCreate.textContent = 'Create Account';
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
+
