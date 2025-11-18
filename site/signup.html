@@ -191,46 +191,8 @@
       <input class="pcf-input" id="pcf-su-username" placeholder="Username" autocomplete="username" />
     </div>
     
-    <!-- Email/Phone toggle -->
     <div class="pcf-row">
-      <div class="pcf-mode-toggle">
-        <button type="button" id="pcf-su-mode-phone" class="pcf-btn primary">📱 Mobile Number</button>
-        <button type="button" id="pcf-su-mode-email" class="pcf-btn">📧 Email</button>
-      </div>
-    </div>
-    
-    <!-- Phone input (default visible) -->
-    <div class="pcf-row" id="pcf-su-phone-section">
-      <div class="pcf-phone-input-group">
-        <select id="pcf-su-country" class="pcf-input">
-          <option value="+63" selected>🇵🇭 +63</option>
-          <option value="+1">🇺🇸 +1</option>
-          <option value="+44">🇬🇧 +44</option>
-          <option value="+81">🇯🇵 +81</option>
-          <option value="+82">🇰🇷 +82</option>
-          <option value="+86">🇨🇳 +86</option>
-          <option value="+91">🇮🇳 +91</option>
-          <option value="+65">🇸🇬 +65</option>
-          <option value="+60">🇲🇾 +60</option>
-          <option value="+66">🇹🇭 +66</option>
-          <option value="+61">🇦🇺 +61</option>
-          <option value="+64">🇳🇿 +64</option>
-          <option value="+49">🇩🇪 +49</option>
-          <option value="+33">🇫🇷 +33</option>
-          <option value="+39">🇮🇹 +39</option>
-          <option value="+34">🇪🇸 +34</option>
-          <option value="+7">🇷🇺 +7</option>
-          <option value="+55">🇧🇷 +55</option>
-          <option value="+52">🇲🇽 +52</option>
-          <option value="+27">🇿🇦 +27</option>
-        </select>
-        <input class="pcf-input" id="pcf-su-phone" placeholder="Enter your Mobile Number" type="tel" autocomplete="tel" />
-      </div>
-    </div>
-    
-    <!-- Email input (hidden by default) -->
-    <div class="pcf-row" id="pcf-su-email-section" style="display:none;">
-      <input class="pcf-input" id="pcf-su-email" placeholder="Enter Your Email" type="email" autocomplete="email" />
+      <input class="pcf-input" id="pcf-su-email" placeholder="Enter your Email" type="email" autocomplete="email" />
     </div>
     
     <div class="pcf-row horizontal">
@@ -290,47 +252,19 @@
         }catch(e){}
       }
       
-      // OTP flow variables
+      // OTP flow variables (email only)
       let otpVerified = false;
       let verifiedContact = '';
-      let currentMode = 'phone'; // 'phone' or 'email'
       
       const suSendOtp = document.getElementById('pcf-su-send-otp');
       const suOtpStatus = document.getElementById('pcf-su-otp-status');
       const suOtpRow = document.getElementById('pcf-su-otp-row');
       const suOtpInput = document.getElementById('pcf-su-otp');
       const suResendOtp = document.getElementById('pcf-su-resend-otp');
-      const suCountrySelect = document.getElementById('pcf-su-country');
-      const suPhoneInput = document.getElementById('pcf-su-phone');
       const suEmailInput = document.getElementById('pcf-su-email');
-      const suPhoneSection = document.getElementById('pcf-su-phone-section');
-      const suEmailSection = document.getElementById('pcf-su-email-section');
-      const suModePhone = document.getElementById('pcf-su-mode-phone');
-      const suModeEmail = document.getElementById('pcf-su-mode-email');
       const suErr = document.getElementById('pcf-su-error');
       const suCreate = document.getElementById('pcf-su-create');
       const suBack = document.getElementById('pcf-su-back');
-      
-      // Toggle between phone and email mode
-      if(suModePhone){
-        suModePhone.addEventListener('click', () => {
-          currentMode = 'phone';
-          suPhoneSection.style.display = 'block';
-          suEmailSection.style.display = 'none';
-          suModePhone.classList.add('primary');
-          suModeEmail.classList.remove('primary');
-        });
-      }
-      
-      if(suModeEmail){
-        suModeEmail.addEventListener('click', () => {
-          currentMode = 'email';
-          suPhoneSection.style.display = 'none';
-          suEmailSection.style.display = 'block';
-          suModeEmail.classList.add('primary');
-          suModePhone.classList.remove('primary');
-        });
-      }
       
       async function sendOTP() {
         // Clear any previous errors
@@ -339,66 +273,29 @@
         let contact = '';
         
         // Ensure elements exist
-        if(!suPhoneInput || !suEmailInput || !suCountrySelect){
+        if(!suEmailInput){
           suErr.textContent = 'Form elements not loaded. Please refresh the page.';
           suErr.style.display = 'block';
           return;
         }
         
-        // Debug: Log current state
-        console.log('Send OTP clicked. Current mode:', currentMode);
-        console.log('Phone input value:', suPhoneInput.value);
-        console.log('Email input value:', suEmailInput.value);
-        console.log('Country code:', suCountrySelect.value);
-        
-        // Get contact based on current mode
-        if(currentMode === 'email'){
-          const emailInput = (suEmailInput.value || '').trim();
-          if(!emailInput){
-            suErr.textContent = 'Email required';
-            suErr.style.display = 'block';
-            return;
-          }
-          if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput)){
-            suErr.textContent = 'Please enter a valid email address.';
-            suErr.style.display = 'block';
-            return;
-          }
-          contact = emailInput;
-        } else if(currentMode === 'phone'){
-          // Phone mode
-          const countryCode = (suCountrySelect.value || '').trim();
-          const phoneInput = (suPhoneInput.value || '').trim();
-          if(!phoneInput){
-            suErr.textContent = 'Phone number required';
-            suErr.style.display = 'block';
-            return;
-          }
-          // Remove leading 0 if present and any non-digit characters
-          let phone = phoneInput.replace(/^0+/, '').replace(/\D/g, '');
-          if(!phone || phone.length === 0){
-            suErr.textContent = 'Please enter a valid phone number.';
-            suErr.style.display = 'block';
-            return;
-          }
-          if(phone.length < 8 || phone.length > 15){
-            suErr.textContent = 'Please enter a valid phone number (8-15 digits).';
-            suErr.style.display = 'block';
-            return;
-          }
-          contact = countryCode + phone;
-          console.log('Phone contact:', contact, 'Country:', countryCode, 'Phone:', phone);
-        } else {
-          // Unknown mode
-          suErr.textContent = 'Please select email or phone mode.';
+        const emailInput = (suEmailInput.value || '').trim();
+        if(!emailInput){
+          suErr.textContent = 'Email required';
           suErr.style.display = 'block';
           return;
         }
+        if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput)){
+          suErr.textContent = 'Please enter a valid email address.';
+          suErr.style.display = 'block';
+          return;
+        }
+        contact = emailInput;
         
         // Final check to ensure contact is not empty
         if(!contact || contact.trim() === ''){
-          console.error('Contact is empty! Mode:', currentMode, 'Phone input:', suPhoneInput?.value, 'Email input:', suEmailInput?.value);
-          suErr.textContent = 'Email or phone is required';
+          console.error('Contact is empty! Email input:', suEmailInput?.value);
+          suErr.textContent = 'Email is required';
           suErr.style.display = 'block';
           return;
         }
@@ -407,10 +304,7 @@
         suSendOtp.disabled = true;
         suSendOtp.textContent = 'Sending...';
         try{
-          // Backend expects 'email' or 'phone' field, not 'contact'
-          const requestBody = currentMode === 'email' 
-            ? { email: contact.trim() }
-            : { phone: contact.trim() };
+          const requestBody = { email: contact.trim() };
           console.log('Request body:', requestBody);
           const response = await fetch('https://pcfind-auth.onrender.com/send-otp', {
             method: 'POST',
@@ -446,7 +340,7 @@
                 }, 500);
               }
             } else {
-              showToast('OTP sent! Check your email/SMS.');
+              showToast('OTP sent! Check your email.');
             }
           } else {
             console.error('Backend error response:', data);
@@ -467,11 +361,7 @@
       async function verifyOTP(code) {
         if(!code || code.length !== 6){ return; }
         try{
-          // Backend expects 'email' or 'phone' and 'otp' (not 'code')
-          const isEmail = verifiedContact.includes('@');
-          const requestBody = isEmail
-            ? { email: verifiedContact, otp: code }
-            : { phone: verifiedContact, otp: code };
+          const requestBody = { email: verifiedContact, otp: code };
           console.log('Verify OTP request body:', requestBody);
           const response = await fetch('https://pcfind-auth.onrender.com/verify-otp', {
             method: 'POST',
@@ -485,7 +375,7 @@
             suOtpStatus.style.color = '#10b981';
             suOtpInput.disabled = true;
             suCreate.disabled = false;
-            showToast('Email/Phone verified!');
+            showToast('Email verified!');
           } else {
             suErr.textContent = data.error || 'Invalid OTP.';
             suErr.style.display = 'block';
@@ -556,25 +446,15 @@
       if(suCreate){
         suCreate.addEventListener('click', async () => {
           const uname = (document.getElementById('pcf-su-username').value || '').trim();
-          let contact = '';
-          
-          // Build full contact based on current mode
-          if(currentMode === 'email'){
-            contact = (suEmailInput.value || '').trim();
-          } else {
-            const countryCode = (suCountrySelect.value || '').trim();
-            const phoneInput = (suPhoneInput.value || '').trim();
-            let phone = phoneInput.replace(/^0+/, '');
-            contact = countryCode + phone;
-          }
+        let contact = (suEmailInput.value || '').trim();
           
           const otp = (suOtpInput.value || '').trim();
           const p1 = (document.getElementById('pcf-su-pass').value || '');
           const p2 = (document.getElementById('pcf-su-pass2').value || '');
           suErr.style.display = 'none';
           
-          if(!otpVerified){
-            suErr.textContent = 'Please verify your email/phone with OTP first.';
+        if(!otpVerified){
+          suErr.textContent = 'Please verify your email with OTP first.';
             suErr.style.display = 'block';
             return;
           }
@@ -597,11 +477,9 @@
           suCreate.disabled = true;
           suCreate.textContent = 'Creating...';
           try{
-            // Backend expects 'email' or 'phone' separately, and 'code' is not needed (OTP already verified)
+            // Backend expects 'email' (OTP already verified, so no code needed here)
             const isEmail = contact.includes('@');
-            const requestBody = isEmail
-              ? { username: uname, email: contact, password: p1 }
-              : { username: uname, phone: contact, password: p1 };
+          const requestBody = { username: uname, email: contact, password: p1 };
             console.log('Register request body:', requestBody);
             const response = await fetch('https://pcfind-auth.onrender.com/register', {
               method: 'POST',
