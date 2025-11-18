@@ -407,7 +407,10 @@
         suSendOtp.disabled = true;
         suSendOtp.textContent = 'Sending...';
         try{
-          const requestBody = { contact: contact.trim() };
+          // Backend expects 'email' or 'phone' field, not 'contact'
+          const requestBody = currentMode === 'email' 
+            ? { email: contact.trim() }
+            : { phone: contact.trim() };
           console.log('Request body:', requestBody);
           const response = await fetch('https://pcfind-auth.onrender.com/send-otp', {
             method: 'POST',
@@ -415,6 +418,8 @@
             body: JSON.stringify(requestBody)
           });
           const data = await response.json();
+          console.log('Backend response status:', response.status);
+          console.log('Backend response data:', data);
           if(response.ok && data.success){
             suOtpStatus.style.display = 'block';
             suOtpRow.style.display = 'block';
@@ -422,11 +427,13 @@
             verifiedContact = contact.trim();
             showToast('OTP sent! Check your email/SMS.');
             // Dev mode: show OTP in toast if returned by backend
-            if(data.otp){
-              showToast('Dev Mode - OTP: ' + data.otp);
+            if(data.devOTP || data.otp){
+              showToast('Dev Mode - OTP: ' + (data.devOTP || data.otp));
             }
           } else {
-            suErr.textContent = data.error || 'Failed to send OTP.';
+            console.error('Backend error response:', data);
+            const errorMsg = data.error || data.message || 'Failed to send OTP.';
+            suErr.textContent = errorMsg;
             suErr.style.display = 'block';
           }
         } catch(err){
@@ -442,10 +449,16 @@
       async function verifyOTP(code) {
         if(!code || code.length !== 6){ return; }
         try{
+          // Backend expects 'email' or 'phone' and 'otp' (not 'code')
+          const isEmail = verifiedContact.includes('@');
+          const requestBody = isEmail
+            ? { email: verifiedContact, otp: code }
+            : { phone: verifiedContact, otp: code };
+          console.log('Verify OTP request body:', requestBody);
           const response = await fetch('https://pcfind-auth.onrender.com/verify-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contact: verifiedContact, code })
+            body: JSON.stringify(requestBody)
           });
           const data = await response.json();
           if(response.ok && data.success){
@@ -566,10 +579,16 @@
           suCreate.disabled = true;
           suCreate.textContent = 'Creating...';
           try{
+            // Backend expects 'email' or 'phone' separately, and 'code' is not needed (OTP already verified)
+            const isEmail = contact.includes('@');
+            const requestBody = isEmail
+              ? { username: uname, email: contact, password: p1 }
+              : { username: uname, phone: contact, password: p1 };
+            console.log('Register request body:', requestBody);
             const response = await fetch('https://pcfind-auth.onrender.com/register', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username: uname, contact, code: otp, password: p1 })
+              body: JSON.stringify(requestBody)
             });
             const data = await response.json();
             if(response.ok && data.success){
