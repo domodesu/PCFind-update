@@ -1377,14 +1377,50 @@
           var stockImage = '';
           
           if(cat.includes('cpu') || cat.includes('processor')){
-            // Check if Intel or AMD/Ryzen
-            if(partName.includes('intel') || partName.includes('core i') || partName.includes('pentium') || partName.includes('celeron')){
+            // Check if Intel or AMD/Ryzen - check Intel first with more specific patterns
+            // Check for Intel patterns (more specific first)
+            var isIntel = false;
+            var isAMD = false;
+            
+            // Intel detection - check for specific patterns
+            if(partName.includes('intel')){
+              isIntel = true;
+            }else if(partName.includes('core i9') || partName.includes('i9-')){
+              isIntel = true;
+            }else if(partName.includes('core i7') || partName.includes('i7-')){
+              isIntel = true;
+            }else if(partName.includes('core i5') || partName.includes('i5-')){
+              isIntel = true;
+            }else if(partName.includes('core i3') || partName.includes('i3-')){
+              isIntel = true;
+            }else if(partName.includes('core i ') || partName.includes('core i')){
+              isIntel = true;
+            }else if(partName.includes('pentium')){
+              isIntel = true;
+            }else if(partName.includes('celeron')){
+              isIntel = true;
+            }else if(partName.includes('xeon')){
+              isIntel = true;
+            }
+            
+            // AMD detection
+            if(partName.includes('amd')){
+              isAMD = true;
+            }else if(partName.includes('ryzen')){
+              isAMD = true;
+            }else if(partName.includes('athlon')){
+              isAMD = true;
+            }else if(partName.includes('threadripper')){
+              isAMD = true;
+            }
+            
+            if(isIntel){
               stockImage = basePath + '/assets/PCPartsStock/IntelCpuStock.jpg';
-            }else if(partName.includes('amd') || partName.includes('ryzen') || partName.includes('athlon') || partName.includes('threadripper')){
+            }else if(isAMD){
               stockImage = basePath + '/assets/PCPartsStock/RyzenCpuStock.jpg';
             }else{
-              // Default to Ryzen for AMD
-              stockImage = basePath + '/assets/PCPartsStock/RyzenCpuStock.jpg';
+              // Default to Intel if no match (most common)
+              stockImage = basePath + '/assets/PCPartsStock/IntelCpuStock.jpg';
             }
           }else if(cat.includes('gpu') || cat.includes('graphics') || cat.includes('video card')){
             stockImage = basePath + '/assets/PCPartsStock/GPUStock.jpg';
@@ -1419,6 +1455,27 @@
             var name = nameEl ? (nameEl.textContent||'').trim() : '';
             var catEl = card.querySelector('.text-muted-foreground, .badge, .mb-2');
             var cat = catEl ? (catEl.textContent||'').trim() : '';
+            // Also check for category in the card itself if not found
+            if(!cat){
+              var catText = card.textContent || '';
+              if(catText.toLowerCase().includes('cpu')) cat = 'CPU';
+              else if(catText.toLowerCase().includes('gpu')) cat = 'GPU';
+              else if(catText.toLowerCase().includes('motherboard')) cat = 'Motherboard';
+              else if(catText.toLowerCase().includes('ram') || catText.toLowerCase().includes('memory')) cat = 'RAM';
+              else if(catText.toLowerCase().includes('storage') || catText.toLowerCase().includes('ssd') || catText.toLowerCase().includes('hdd')) cat = 'Storage';
+              else if(catText.toLowerCase().includes('psu') || catText.toLowerCase().includes('power')) cat = 'PSU';
+              else if(catText.toLowerCase().includes('case')) cat = 'Case';
+              else if(catText.toLowerCase().includes('cooler')) cat = 'Cooler';
+            }
+            // If name not found, try to extract from card text (look for product names)
+            if(!name){
+              var cardText = card.textContent || '';
+              // Try to find Intel or AMD CPU names
+              var intelMatch = cardText.match(/(Intel\s+Core\s+i[0-9]-[0-9A-Z]+|Intel\s+[A-Za-z0-9\s]+)/i);
+              var amdMatch = cardText.match(/(AMD\s+Ryzen\s+[0-9]+\s+[0-9A-Z]+|AMD\s+[A-Za-z0-9\s]+)/i);
+              if(intelMatch) name = intelMatch[1];
+              else if(amdMatch) name = amdMatch[1];
+            }
             var url = makeImageUrl(name, cat);
             imgBox.style.backgroundImage = 'url("'+url+'")';
             imgBox.classList.add('pcf-img');
