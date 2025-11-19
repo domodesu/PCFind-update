@@ -1329,9 +1329,84 @@
         box-sizing: border-box;
       }
       
-      /* Fix category tabs - only on PC Builder page */
+      /* PC Builder Filter and Layout Fixes */
+      #pcf-builder-filter {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 0 20px;
+        flex-wrap: wrap;
+      }
+      #pcf-builder-filter select {
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid #374151;
+        background: #1f2937;
+        color: #e5e7eb;
+        font-size: 14px;
+        cursor: pointer;
+        min-width: 180px;
+        transition: all 0.2s;
+      }
+      #pcf-builder-filter select:hover {
+        border-color: #4b5563;
+        background: #374151;
+      }
+      #pcf-builder-filter select:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+      .light #pcf-builder-filter select {
+        background: #ffffff;
+        border-color: #e5e7eb;
+        color: #111827;
+      }
+      .light #pcf-builder-filter select:hover {
+        border-color: #d1d5db;
+        background: #f9fafb;
+      }
+      
+      /* Hide category tabs on PC Builder */
       body[data-page="pc-builder"] [role="tablist"] {
-        box-sizing: border-box;
+        display: none !important;
+      }
+      
+      /* Move Add to Build button to bottom of cards */
+      body[data-page="pc-builder"] [data-testid^="card-builder-part-"] {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      body[data-page="pc-builder"] [data-testid^="card-builder-part-"] > * {
+        flex: 0 0 auto;
+      }
+      body[data-page="pc-builder"] [data-testid^="card-builder-part-"] button:contains("Add to Build"),
+      body[data-page="pc-builder"] [data-testid^="card-builder-part-"] button:contains("Add"),
+      body[data-page="pc-builder"] [data-testid^="card-builder-part-"] a:contains("Add to Build"),
+      body[data-page="pc-builder"] [data-testid^="card-builder-part-"] a:contains("Add") {
+        margin-top: auto;
+        margin-bottom: 0;
+        align-self: stretch;
+        width: 100%;
+      }
+      
+      /* Better card spacing */
+      body[data-page="pc-builder"] [data-testid^="card-builder-part-"] {
+        padding: 16px;
+        gap: 12px;
+      }
+      
+      /* Mobile adjustments */
+      @media (max-width: 768px) {
+        #pcf-builder-filter {
+          padding: 0 12px;
+          flex-direction: column;
+        }
+        #pcf-builder-filter select {
+          width: 100%;
+        }
       }
       
       /* Mobile specific fixes - only for PC Builder */
@@ -1824,6 +1899,198 @@
           }
         });
         layoutObserver.observe(document.body, {childList: true, subtree: true});
+      })();
+      
+      // PC Builder Filter and Button Rearrangement
+      (function(){
+        function initPCBuilderFilter(){
+          var path = (location.pathname||'').toLowerCase();
+          var isPCBuilder = path.includes('/pc-builder') || path.endsWith('/pc-builder') || path === '/pc-builder/';
+          if(!isPCBuilder) {
+            var filter = document.getElementById('pcf-builder-filter');
+            if(filter) filter.remove();
+            return;
+          }
+          
+          // Check if filter already exists
+          if(document.getElementById('pcf-builder-filter')) {
+            setTimeout(rearrangeCardButtons, 100);
+            return;
+          }
+          
+          var main = document.querySelector('main');
+          if(!main) return;
+          
+          // Create filter dropdown
+          var filterHtml = '<div id="pcf-builder-filter">';
+          filterHtml += '<select id="pcf-builder-category-filter">';
+          filterHtml += '<option value="">All Categories</option>';
+          filterHtml += '<option value="CPU">CPU</option>';
+          filterHtml += '<option value="GPU">GPU</option>';
+          filterHtml += '<option value="Motherboard">Motherboard</option>';
+          filterHtml += '<option value="RAM">RAM</option>';
+          filterHtml += '<option value="Storage">Storage</option>';
+          filterHtml += '<option value="PSU">PSU</option>';
+          filterHtml += '<option value="Case">Case</option>';
+          filterHtml += '<option value="Cooling">Cooling</option>';
+          filterHtml += '</select>';
+          filterHtml += '</div>';
+          
+          // Insert filter at the top of main
+          var firstChild = main.firstElementChild;
+          if(firstChild && firstChild.id !== 'pcf-builder-filter'){
+            main.insertAdjacentHTML('afterbegin', filterHtml);
+          } else if(!firstChild){
+            main.innerHTML = filterHtml + main.innerHTML;
+          }
+          
+          // Get saved filter preference
+          var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
+          var filterSelect = document.getElementById('pcf-builder-category-filter');
+          if(filterSelect && savedFilter){
+            filterSelect.value = savedFilter;
+          }
+          
+          // Add filter functionality
+          if(filterSelect){
+            filterSelect.addEventListener('change', function(){
+              var selectedCategory = this.value.toLowerCase();
+              localStorage.setItem('pcfind_builder_filter', selectedCategory);
+              filterBuilderParts();
+            });
+            
+            // Initial filter
+            setTimeout(function(){
+              filterBuilderParts();
+              rearrangeCardButtons();
+            }, 300);
+          }
+          
+          // Watch for new cards
+          var main = document.querySelector('main');
+          if(main){
+            var cardObserver = new MutationObserver(function(){
+              setTimeout(function(){
+                rearrangeCardButtons();
+                filterBuilderParts();
+              }, 100);
+            });
+            cardObserver.observe(main, {childList: true, subtree: true});
+          }
+        }
+        
+        function filterBuilderParts(){
+          var filterSelect = document.getElementById('pcf-builder-category-filter');
+          if(!filterSelect) return;
+          
+          var selectedCategory = filterSelect.value.toLowerCase();
+          var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+          
+          cards.forEach(function(card){
+            var cardText = (card.textContent || '').toLowerCase();
+            var categoryMatch = false;
+            
+            if(!selectedCategory){
+              categoryMatch = true;
+            } else {
+              var categoryMap = {
+                'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i'],
+                'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'amd', 'radeon'],
+                'motherboard': ['motherboard', 'mobo', 'mainboard', 'board'],
+                'ram': ['ram', 'memory', 'ddr'],
+                'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2'],
+                'psu': ['psu', 'power supply', 'power'],
+                'case': ['case', 'chassis', 'tower', 'cabinet'],
+                'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid']
+              };
+              
+              var patterns = categoryMap[selectedCategory] || [selectedCategory];
+              categoryMatch = patterns.some(function(pattern){
+                return cardText.includes(pattern);
+              });
+            }
+            
+            card.style.display = categoryMatch ? '' : 'none';
+          });
+        }
+        
+        function rearrangeCardButtons(){
+          var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+          
+          cards.forEach(function(card){
+            // Ensure card uses flexbox column
+            if(getComputedStyle(card).display !== 'flex'){
+              card.style.display = 'flex';
+            }
+            card.style.flexDirection = 'column';
+            card.style.height = '100%';
+            
+            // Find Add to Build button or link
+            var buttons = card.querySelectorAll('button, a');
+            var addButton = null;
+            
+            buttons.forEach(function(btn){
+              var text = (btn.textContent || '').toLowerCase().trim();
+              var href = btn.getAttribute('href') || '';
+              if((text.includes('add to build') || text.includes('add') && !text.includes('compare')) || 
+                 href.includes('add') || btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('add')){
+                addButton = btn;
+              }
+            });
+            
+            if(addButton){
+              // Move button to bottom
+              var parent = addButton.parentElement;
+              
+              // If parent is the card, move button
+              if(parent === card){
+                card.appendChild(addButton);
+              } else {
+                // Make parent flex if it isn't
+                if(getComputedStyle(parent).display !== 'flex'){
+                  parent.style.display = 'flex';
+                }
+                parent.style.flexDirection = 'column';
+                parent.style.flex = '1';
+                parent.appendChild(addButton);
+              }
+              
+              // Style button at bottom
+              addButton.style.marginTop = 'auto';
+              addButton.style.marginBottom = '0';
+              addButton.style.alignSelf = 'stretch';
+              addButton.style.width = '100%';
+              addButton.style.order = '999';
+              
+              // Make button more prominent
+              if(!addButton.style.padding || addButton.style.padding === ''){
+                addButton.style.padding = '10px 16px';
+              }
+              if(!addButton.style.fontWeight || addButton.style.fontWeight === ''){
+                addButton.style.fontWeight = '600';
+              }
+              if(!addButton.style.borderRadius || addButton.style.borderRadius === ''){
+                addButton.style.borderRadius = '8px';
+              }
+            }
+          });
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', function(){
+          setTimeout(initPCBuilderFilter, 600);
+        });
+        
+        // Initialize on route changes
+        window.addEventListener('popstate', function(){
+          setTimeout(initPCBuilderFilter, 400);
+        });
+        
+        // Watch for route changes
+        var routeObserver = new MutationObserver(function(){
+          setTimeout(initPCBuilderFilter, 300);
+        });
+        routeObserver.observe(document.body, {childList: true, subtree: true});
       })();
       
       // View Toggle Functionality
