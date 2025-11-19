@@ -1360,7 +1360,7 @@
           teamHtml += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;max-width:900px;margin:0 auto" class="pcf-team-grid">';
           
           teamMembers.forEach((member, index) => {
-            teamHtml += '<div style="background:#0b1220;border:1px solid #374151;border-radius:12px;padding:18px;text-align:center;transition:all 0.3s ease;position:relative;overflow:hidden;opacity:0;transform:translateY(20px)" class="light-mode-item pcf-team-member pcf-scroll-fade-in" data-delay="' + (index * 100) + '" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'0 6px 20px rgba(0,0,0,0.4)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
+            teamHtml += '<div style="background:#0b1220;border:1px solid #374151;border-radius:12px;padding:18px;text-align:center;transition:all 0.3s ease;position:relative;overflow:hidden" class="light-mode-item pcf-team-member pcf-scroll-fade-in" data-delay="' + (index * 100) + '" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'0 6px 20px rgba(0,0,0,0.4)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
             
             // Photo - smaller
             if(member.photo){
@@ -1469,8 +1469,14 @@
             }
             
             .pcf-team-member.visible {
-              opacity: 1;
-              transform: translateY(0);
+              opacity: 1 !important;
+              transform: translateY(0) !important;
+            }
+            
+            /* Make team members visible by default */
+            .pcf-team-member {
+              opacity: 1 !important;
+              transform: translateY(0) !important;
             }
             
             /* Animate other About page sections - only apply to elements with inline styles set by JS */
@@ -1540,10 +1546,15 @@
               teamSection.classList.add('visible');
             }, 100);
             
-            // Observe individual team members
+            // Make team members visible immediately with staggered animation
             const teamMembers = teamSection.querySelectorAll('.pcf-team-member');
-            teamMembers.forEach(member => {
-              observer.observe(member);
+            teamMembers.forEach((member, index) => {
+              // Make visible immediately with a slight delay for animation effect
+              setTimeout(() => {
+                member.style.opacity = '1';
+                member.style.transform = 'translateY(0)';
+                member.classList.add('visible');
+              }, index * 50);
             });
           }
           
