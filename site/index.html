@@ -387,6 +387,24 @@
       .pcf-chat-part-btn{border:none;border-radius:10px;padding:10px 16px;background:#2563eb;color:#fff;cursor:pointer;font-weight:600;transition:transform 0.2s,box-shadow 0.2s}
       .pcf-chat-part-btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(37,99,235,0.4)}
       .pcf-chat-part-btn:active{transform:translateY(0);box-shadow:none}
+      .pcf-chat-suggestions.compact{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:8px}
+      .pcf-chat-part.compact{border:1px solid #374151;border-radius:8px;padding:10px 12px;background:#0f172a;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.2s}
+      .pcf-chat-part.compact:hover{background:#1e293b}
+      .light .pcf-chat-part.compact{background:#f9fafb;border-color:#e5e7eb}
+      .light .pcf-chat-part.compact:hover{background:#f1f5f9}
+      .pcf-chat-part-checkbox{width:18px;height:18px;cursor:pointer;flex-shrink:0;accent-color:#2563eb}
+      .pcf-chat-part-compact-info{flex:1;min-width:0}
+      .pcf-chat-part-compact-name{font-weight:600;font-size:0.9rem;color:#e5e7eb;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .light .pcf-chat-part-compact-name{color:#0f172a}
+      .pcf-chat-part-compact-meta{font-size:0.75rem;color:#94a3b8;display:flex;justify-content:space-between;align-items:center;gap:8px}
+      .light .pcf-chat-part-compact-meta{color:#475569}
+      .pcf-chat-part-compact-price{font-size:0.85rem;font-weight:600;color:#10b981;white-space:nowrap}
+      .pcf-chat-suggestions-actions{display:flex;gap:8px;margin-top:8px;justify-content:flex-end}
+      .pcf-chat-suggestions-btn{border:none;border-radius:8px;padding:8px 16px;background:#2563eb;color:#fff;cursor:pointer;font-weight:600;font-size:0.9rem;transition:transform 0.2s,box-shadow 0.2s}
+      .pcf-chat-suggestions-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,0.4)}
+      .pcf-chat-suggestions-btn:active{transform:translateY(0);box-shadow:none}
+      .pcf-chat-suggestions-btn.secondary{background:#374151}
+      .pcf-chat-suggestions-btn.secondary:hover{background:#4b5563}
       .pcf-chat-typing{display:flex;gap:4px;padding:8px 16px}
       .pcf-chat-typing span{width:8px;height:8px;border-radius:50%;background:#9ca3af;animation:typing 1.4s infinite}
       .pcf-chat-typing span:nth-child(2){animation-delay:0.2s}
@@ -1466,23 +1484,46 @@
             html += '<div class="pcf-chat-avatar">'+avatar+'</div>';
             html += '<div class="pcf-chat-bubble">'+escapeHtml(cleanedContent)+'</div>';
             if(!isUser && Array.isArray(msg.parts) && msg.parts.length){
-              html += '<div class="pcf-chat-suggestions">';
+              const isCompact = msg.parts.length >= 3;
+              html += '<div class="pcf-chat-suggestions'+(isCompact?' compact':'')+'">';
               msg.parts.forEach((part, partIndex) => {
                 const price = formatPrice(part.price);
-                html += '<div class="pcf-chat-part">';
-                html += '<div class="pcf-chat-part-name">'+escapeHtml(part.name || 'Component')+'</div>';
-                html += '<div class="pcf-chat-part-meta">'+escapeHtml((part.category || 'Component').toUpperCase())+'</div>';
-                if(price){
-                  html += '<div class="pcf-chat-part-price">'+price+'</div>';
+                if(isCompact){
+                  html += '<div class="pcf-chat-part compact" data-msg-index="'+msgIndex+'" data-part-index="'+partIndex+'">';
+                  html += '<input type="checkbox" class="pcf-chat-part-checkbox" data-msg-index="'+msgIndex+'" data-part-index="'+partIndex+'" checked>';
+                  html += '<div class="pcf-chat-part-compact-info">';
+                  html += '<div class="pcf-chat-part-compact-name">'+escapeHtml(part.name || 'Component')+'</div>';
+                  html += '<div class="pcf-chat-part-compact-meta">';
+                  html += '<span>'+escapeHtml((part.category || 'Component').toUpperCase())+'</span>';
+                  if(price){
+                    html += '<span class="pcf-chat-part-compact-price">'+price+'</span>';
+                  }
+                  html += '</div>';
+                  html += '</div>';
+                  html += '</div>';
+                }else{
+                  html += '<div class="pcf-chat-part">';
+                  html += '<div class="pcf-chat-part-name">'+escapeHtml(part.name || 'Component')+'</div>';
+                  html += '<div class="pcf-chat-part-meta">'+escapeHtml((part.category || 'Component').toUpperCase())+'</div>';
+                  if(price){
+                    html += '<div class="pcf-chat-part-price">'+price+'</div>';
+                  }
+                  if(part.notes){
+                    html += '<div class="pcf-chat-part-notes">'+escapeHtml(part.notes)+'</div>';
+                  }
+                  html += '<div class="pcf-chat-part-actions">';
+                  html += '<button class="pcf-chat-part-btn" data-chat-add="1" data-msg-index="'+msgIndex+'" data-part-index="'+partIndex+'">Add to build</button>';
+                  html += '</div>';
+                  html += '</div>';
                 }
-                if(part.notes){
-                  html += '<div class="pcf-chat-part-notes">'+escapeHtml(part.notes)+'</div>';
-                }
-                html += '<div class="pcf-chat-part-actions">';
-                html += '<button class="pcf-chat-part-btn" data-chat-add="1" data-msg-index="'+msgIndex+'" data-part-index="'+partIndex+'">Add to build</button>';
-                html += '</div>';
-                html += '</div>';
               });
+              if(isCompact){
+                html += '<div class="pcf-chat-suggestions-actions">';
+                html += '<button class="pcf-chat-suggestions-btn secondary" data-msg-index="'+msgIndex+'" data-action="select-all">Select All</button>';
+                html += '<button class="pcf-chat-suggestions-btn" data-msg-index="'+msgIndex+'" data-action="add-selected">Add Selected</button>';
+                html += '<button class="pcf-chat-suggestions-btn" data-msg-index="'+msgIndex+'" data-action="add-all">Add All</button>';
+                html += '</div>';
+              }
               html += '</div>';
             }
             html += '</div>';
@@ -1636,8 +1677,30 @@
           buttons.forEach(btn => {
             btn.addEventListener('click', handleAddPartClick);
           });
+          
+          const compactCards = document.querySelectorAll('.pcf-chat-part.compact');
+          compactCards.forEach(card => {
+            const checkbox = card.querySelector('.pcf-chat-part-checkbox');
+            if(checkbox){
+              checkbox.addEventListener('click', function(e){
+                e.stopPropagation();
+              });
+            }
+            card.addEventListener('click', function(e){
+              if(e.target.type === 'checkbox' || e.target.closest('.pcf-chat-part-checkbox')) return;
+              if(checkbox){
+                checkbox.checked = !checkbox.checked;
+              }
+            });
+          });
+          
+          const actionButtons = document.querySelectorAll('[data-action]');
+          actionButtons.forEach(btn => {
+            btn.addEventListener('click', handleSuggestionAction);
+          });
         }
         function handleAddPartClick(e){
+          e.stopPropagation();
           const btn = e.currentTarget;
           const msgIndex = Number(btn.getAttribute('data-msg-index'));
           const partIndex = Number(btn.getAttribute('data-part-index'));
@@ -1647,6 +1710,44 @@
           const part = message.parts[partIndex];
           if(part){
             addPartsToBuild([part], { normalized: true, toast: `✅ Added ${part.name || 'component'} to your build` });
+          }
+        }
+        function handleSuggestionAction(e){
+          e.stopPropagation();
+          const btn = e.currentTarget;
+          const msgIndex = Number(btn.getAttribute('data-msg-index'));
+          const action = btn.getAttribute('data-action');
+          if(isNaN(msgIndex) || !action) return;
+          const message = chatHistory[msgIndex];
+          if(!message || !Array.isArray(message.parts)) return;
+          
+          const container = btn.closest('.pcf-chat-suggestions');
+          if(!container) return;
+          
+          if(action === 'select-all'){
+            const checkboxes = container.querySelectorAll('.pcf-chat-part-checkbox');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            checkboxes.forEach(cb => { cb.checked = !allChecked; });
+            btn.textContent = allChecked ? 'Select All' : 'Deselect All';
+          }else if(action === 'add-selected'){
+            const checkboxes = container.querySelectorAll('.pcf-chat-part-checkbox:checked');
+            if(checkboxes.length === 0){
+              if(window.showToast) window.showToast('Please select at least one part');
+              return;
+            }
+            const selectedParts = [];
+            checkboxes.forEach(cb => {
+              const partIndex = Number(cb.getAttribute('data-part-index'));
+              if(!isNaN(partIndex) && message.parts[partIndex]){
+                selectedParts.push(message.parts[partIndex]);
+              }
+            });
+            if(selectedParts.length > 0){
+              const label = selectedParts.length === 1 ? (selectedParts[0].name || 'component') : (selectedParts.length + ' components');
+              addPartsToBuild(selectedParts, { normalized: true, toast: `✅ Added ${label} to your build` });
+            }
+          }else if(action === 'add-all'){
+            addPartsToBuild(message.parts, { normalized: true, toast: `✅ Added ${message.parts.length} components to your build` });
           }
         }
         
