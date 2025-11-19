@@ -1666,10 +1666,19 @@
           if(!normalized.length) return;
           normalized.forEach(item => window.addToBuild(item, { silent: true }));
           const silent = opts && opts.silent;
-          if(!silent && window.showToast){
+          if(!silent){
             const label = normalized.length === 1 ? (normalized[0].name || 'component') : (normalized.length + ' components');
             const message = (opts && opts.toast) || `✅ Added ${label} to your build`;
-            window.showToast(message);
+            if(window.showToast){
+              window.showToast(message);
+            }else{
+              const toastEl = document.getElementById('pcf-toast');
+              if(toastEl){
+                toastEl.textContent = message;
+                toastEl.style.display = 'block';
+                setTimeout(() => { toastEl.style.display = 'none'; }, 2200);
+              }
+            }
           }
         }
         function attachSuggestionHandlers(){
@@ -1709,7 +1718,7 @@
           if(!message || !Array.isArray(message.parts)) return;
           const part = message.parts[partIndex];
           if(part){
-            addPartsToBuild([part], { normalized: true, toast: `✅ Added ${part.name || 'component'} to your build` });
+            addPartsToBuild([part], { normalized: true, toast: `✅ Successfully added ${part.name || 'component'} to your build` });
           }
         }
         function handleSuggestionAction(e){
@@ -1743,11 +1752,18 @@
               }
             });
             if(selectedParts.length > 0){
-              const label = selectedParts.length === 1 ? (selectedParts[0].name || 'component') : (selectedParts.length + ' components');
-              addPartsToBuild(selectedParts, { normalized: true, toast: `✅ Added ${label} to your build` });
+              const count = selectedParts.length;
+              const toastMsg = count === 1 
+                ? `✅ Successfully added ${selectedParts[0].name || 'component'} to your build`
+                : `✅ Successfully added ${count} components to your build`;
+              addPartsToBuild(selectedParts, { normalized: true, toast: toastMsg });
             }
           }else if(action === 'add-all'){
-            addPartsToBuild(message.parts, { normalized: true, toast: `✅ Added ${message.parts.length} components to your build` });
+            const count = message.parts.length;
+            const toastMsg = count === 1 
+              ? `✅ Successfully added 1 component to your build`
+              : `✅ Successfully added ${count} components to your build`;
+            addPartsToBuild(message.parts, { normalized: true, toast: toastMsg });
           }
         }
         
