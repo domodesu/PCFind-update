@@ -1347,7 +1347,7 @@
     </style>
     <script>
       (function(){
-        function makeImageUrl(name, category){
+        function makeImageUrl(name, category, cardText){
           // Always use stock images based on category, ignore imageUrl from parts-data
           // Get base path for GitHub Pages
           function getBasePath(){
@@ -1373,45 +1373,48 @@
           // Map category to stock image
           var cat = (category||'').toLowerCase();
           var partName = (name||'').toLowerCase();
+          var fullText = ((cardText||'') + ' ' + partName).toLowerCase();
           var basePath = getBasePath();
           var stockImage = '';
           
           if(cat.includes('cpu') || cat.includes('processor')){
             // Check if Intel or AMD/Ryzen - check Intel first with more specific patterns
-            // Check for Intel patterns (more specific first)
+            // Check for Intel patterns (check both name and full card text)
             var isIntel = false;
             var isAMD = false;
             
-            // Intel detection - check for specific patterns
-            if(partName.includes('intel')){
+            // Intel detection - check for specific patterns (check Intel keyword first)
+            if(fullText.indexOf('intel') !== -1 || partName.indexOf('intel') !== -1){
               isIntel = true;
-            }else if(partName.includes('core i9') || partName.includes('i9-')){
+            }else if(fullText.indexOf('i9-') !== -1 || partName.indexOf('i9-') !== -1 || fullText.indexOf('core i9') !== -1 || partName.indexOf('core i9') !== -1){
               isIntel = true;
-            }else if(partName.includes('core i7') || partName.includes('i7-')){
+            }else if(fullText.indexOf('i7-') !== -1 || partName.indexOf('i7-') !== -1 || fullText.indexOf('core i7') !== -1 || partName.indexOf('core i7') !== -1){
               isIntel = true;
-            }else if(partName.includes('core i5') || partName.includes('i5-')){
+            }else if(fullText.indexOf('i5-') !== -1 || partName.indexOf('i5-') !== -1 || fullText.indexOf('core i5') !== -1 || partName.indexOf('core i5') !== -1){
               isIntel = true;
-            }else if(partName.includes('core i3') || partName.includes('i3-')){
+            }else if(fullText.indexOf('i3-') !== -1 || partName.indexOf('i3-') !== -1 || fullText.indexOf('core i3') !== -1 || partName.indexOf('core i3') !== -1){
               isIntel = true;
-            }else if(partName.includes('core i ') || partName.includes('core i')){
+            }else if(fullText.indexOf('core i ') !== -1 || partName.indexOf('core i ') !== -1 || (fullText.indexOf('core i') !== -1 && fullText.indexOf('core i') < fullText.indexOf('ryzen'))){
               isIntel = true;
-            }else if(partName.includes('pentium')){
+            }else if(fullText.indexOf('pentium') !== -1 || partName.indexOf('pentium') !== -1){
               isIntel = true;
-            }else if(partName.includes('celeron')){
+            }else if(fullText.indexOf('celeron') !== -1 || partName.indexOf('celeron') !== -1){
               isIntel = true;
-            }else if(partName.includes('xeon')){
+            }else if(fullText.indexOf('xeon') !== -1 || partName.indexOf('xeon') !== -1){
               isIntel = true;
             }
             
-            // AMD detection
-            if(partName.includes('amd')){
-              isAMD = true;
-            }else if(partName.includes('ryzen')){
-              isAMD = true;
-            }else if(partName.includes('athlon')){
-              isAMD = true;
-            }else if(partName.includes('threadripper')){
-              isAMD = true;
+            // AMD detection - only if not Intel
+            if(!isIntel){
+              if(fullText.indexOf('amd') !== -1 || partName.indexOf('amd') !== -1){
+                isAMD = true;
+              }else if(fullText.indexOf('ryzen') !== -1 || partName.indexOf('ryzen') !== -1){
+                isAMD = true;
+              }else if(fullText.indexOf('athlon') !== -1 || partName.indexOf('athlon') !== -1){
+                isAMD = true;
+              }else if(fullText.indexOf('threadripper') !== -1 || partName.indexOf('threadripper') !== -1){
+                isAMD = true;
+              }
             }
             
             if(isIntel){
@@ -1467,16 +1470,24 @@
               else if(catText.toLowerCase().includes('case')) cat = 'Case';
               else if(catText.toLowerCase().includes('cooler')) cat = 'Cooler';
             }
-            // If name not found, try to extract from card text (look for product names)
-            if(!name){
-              var cardText = card.textContent || '';
-              // Try to find Intel or AMD CPU names
-              var intelMatch = cardText.match(/(Intel\s+Core\s+i[0-9]-[0-9A-Z]+|Intel\s+[A-Za-z0-9\s]+)/i);
+            // If name not found or doesn't contain brand, try to extract from card text (look for product names)
+            var cardText = card.textContent || '';
+            var nameLower = (name || '').toLowerCase();
+            // Check if name already has Intel/AMD, if not, search card text
+            if(!name || (!nameLower.includes('intel') && !nameLower.includes('amd') && !nameLower.includes('ryzen'))){
+              // Try to find Intel or AMD CPU names in card text
+              var intelMatch = cardText.match(/(Intel\s+Core\s+i[0-9]-[0-9A-Z]+|Intel\s+Core\s+i[0-9]+\s+[0-9A-Z]+|Intel\s+[A-Za-z0-9\s]+)/i);
               var amdMatch = cardText.match(/(AMD\s+Ryzen\s+[0-9]+\s+[0-9A-Z]+|AMD\s+[A-Za-z0-9\s]+)/i);
               if(intelMatch) name = intelMatch[1];
               else if(amdMatch) name = amdMatch[1];
+              // If still no name but we have "Core i" pattern, prepend "Intel"
+              if(!name && cardText.match(/Core\s+i[0-9]/i)){
+                var coreMatch = cardText.match(/(Core\s+i[0-9][^\s]*\s*[0-9A-Z-]+)/i);
+                if(coreMatch) name = 'Intel ' + coreMatch[1];
+              }
             }
-            var url = makeImageUrl(name, cat);
+            // Pass card text as additional context for better detection
+            var url = makeImageUrl(name, cat, cardText);
             imgBox.style.backgroundImage = 'url("'+url+'")';
             imgBox.classList.add('pcf-img');
             imgBox.setAttribute('data-pcf-img','1');
