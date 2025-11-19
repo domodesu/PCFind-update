@@ -2758,12 +2758,13 @@
       }
       @media (max-width:640px){
         #pcf-pricing{
-          padding-top:140px;
+          padding-top:100px;
         }
         #pcf-pricing .pcf-pricing-header{
           flex-direction:column;
           align-items:center;
           gap:16px;
+          position:relative;
         }
         #pcf-pricing .pcf-pricing-logo{
           width:100%;
@@ -2772,25 +2773,29 @@
           margin-bottom:8px;
         }
         #pcf-pricing .pcf-pricing-back-btn{
-          order:2;
-          width:100%;
-          max-width:200px;
-          position:fixed;
-          top:60px;
-          right:12px;
-          z-index:9998;
+          position:fixed !important;
+          top:60px !important;
+          right:12px !important;
+          left:auto !important;
+          width:auto !important;
+          max-width:200px !important;
+          z-index:9998 !important;
+          margin:0 !important;
+          order:0 !important;
+          align-self:auto !important;
         }
         #pcf-pricing .pcf-pricing-back-btn a{
           width:100%;
           text-align:center;
-          font-size:0.9rem;
+          font-size:0.85rem;
           padding:8px 14px;
+          white-space:nowrap;
         }
         #pcf-pricing .pcf-pricing-cta{
           width:100%;
           flex-direction:column;
           gap:10px;
-          order:3;
+          order:2;
           margin-top:8px;
         }
         #pcf-pricing .pcf-pricing-cta a{
@@ -2898,10 +2903,35 @@
         function syncPricing(){
           const active = isPricingPath(location.pathname);
           document.body.classList.toggle('pcf-mode-pricing', active);
+          
+          // On mobile, move back button outside header for proper positioning
+          if(active && window.innerWidth <= 640){
+            const pricingSection = document.getElementById('pcf-pricing');
+            const backBtn = pricingSection?.querySelector('.pcf-pricing-back-btn');
+            if(backBtn && backBtn.parentElement?.classList.contains('pcf-pricing-header')){
+              // Clone and move to body for fixed positioning
+              const cloned = backBtn.cloneNode(true);
+              cloned.id = 'pcf-pricing-back-mobile';
+              cloned.style.position = 'fixed';
+              cloned.style.top = '60px';
+              cloned.style.right = '12px';
+              cloned.style.zIndex = '9998';
+              cloned.style.maxWidth = '200px';
+              document.body.appendChild(cloned);
+              backBtn.style.display = 'none';
+            }
+          } else {
+            // Remove mobile clone if exists
+            const mobileClone = document.getElementById('pcf-pricing-back-mobile');
+            if(mobileClone) mobileClone.remove();
+            const backBtn = document.querySelector('#pcf-pricing .pcf-pricing-back-btn');
+            if(backBtn) backBtn.style.display = '';
+          }
         }
         
         window.addEventListener('popstate', syncPricing);
         window.addEventListener('load', syncPricing);
+        window.addEventListener('resize', syncPricing);
         syncPricing();
       })();
     </script>
