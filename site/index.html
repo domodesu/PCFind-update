@@ -1403,11 +1403,16 @@
           }
           
           // If partner section found, insert team section before it
-          if(partnerSection && partnerSection.parentElement){
-            partnerSection.parentElement.insertAdjacentHTML('beforebegin', teamHtml);
+          if(partnerSection){
+            partnerSection.insertAdjacentHTML('beforebegin', teamHtml);
           } else {
-            // If no partner section found, append to main
-            main.insertAdjacentHTML('beforeend', teamHtml);
+            // If no partner section found, insert at the beginning of main content
+            const firstChild = main.firstElementChild;
+            if(firstChild){
+              firstChild.insertAdjacentHTML('beforebegin', teamHtml);
+            } else {
+              main.insertAdjacentHTML('afterbegin', teamHtml);
+            }
           }
           
           // Add styles
