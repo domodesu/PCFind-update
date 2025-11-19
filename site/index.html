@@ -1290,6 +1290,254 @@
         setTimeout(renderSavedBuilds, 100);
       })();
     </script>
+    <!-- About Us Page -->
+    <script>
+      (function(){
+        function isAbout(){ 
+          const path = (location.pathname||'').toLowerCase();
+          return path === '/about' || path.endsWith('/about') || path === '/about/';
+        }
+        function ensureContainer(){ 
+          let c = document.getElementById('pcf-about-container'); 
+          if(!c){ 
+            c = document.createElement('div'); 
+            c.id = 'pcf-about-container'; 
+            c.style.cssText = 'max-width:1200px;margin:40px auto;padding:0 20px'; 
+            const main = document.querySelector('main');
+            if(main){
+              main.insertBefore(c, main.firstChild);
+            } else {
+              document.getElementById('root').appendChild(c);
+            }
+          } 
+          return c; 
+        }
+        
+        function cleanupAbout(){
+          const container = document.getElementById('pcf-about-container');
+          if(container){ container.remove(); }
+          
+          const main = document.querySelector('main');
+          if(main){
+            Array.from(main.children).forEach(child => {
+              if(child.dataset && child.dataset.originalDisplay !== undefined){
+                child.style.display = child.dataset.originalDisplay;
+                delete child.dataset.originalDisplay;
+              }else{
+                child.style.display = '';
+              }
+            });
+          }
+          
+          const footer = document.querySelector('footer');
+          if(footer){
+            if(footer.dataset && footer.dataset.originalDisplay !== undefined){
+              footer.style.display = footer.dataset.originalDisplay;
+              delete footer.dataset.originalDisplay;
+            }else{
+              footer.style.display = '';
+            }
+          }
+          
+          const styleEl = document.getElementById('about-styles');
+          if(styleEl) styleEl.remove();
+        }
+        
+        function renderAbout(){
+          const main = document.querySelector('main');
+          const footerEl = document.querySelector('footer');
+          
+          if(!isAbout()){
+            cleanupAbout();
+            return;
+          }
+          
+          if(main){
+            Array.from(main.children).forEach(child => {
+              if(child.id !== 'pcf-about-container'){
+                if(child.dataset.originalDisplay === undefined){
+                  child.dataset.originalDisplay = child.style.display || '';
+                }
+                child.style.display = 'none';
+              }
+            });
+          }
+          
+          if(footerEl){
+            if(footerEl.dataset.originalDisplay === undefined){
+              footerEl.dataset.originalDisplay = footerEl.style.display || '';
+            }
+            footerEl.style.display = 'none';
+          }
+          
+          const c = ensureContainer();
+          
+          // Team members data (photos and descriptions will be added later)
+          const teamMembers = [
+            { name: 'Team Member 1', role: 'Founder & CEO', photo: '', description: '' },
+            { name: 'Team Member 2', role: 'Lead Developer', photo: '', description: '' },
+            { name: 'Team Member 3', role: 'UI/UX Designer', photo: '', description: '' },
+            { name: 'Team Member 4', role: 'Product Manager', photo: '', description: '' },
+            { name: 'Team Member 5', role: 'Marketing Lead', photo: '', description: '' }
+          ];
+          
+          let html = '';
+          
+          // Header section
+          html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:40px 24px;margin-bottom:40px;text-align:center" class="light-mode-card">';
+          html += '<h1 style="color:#e5e7eb;margin:0 0 12px 0;font-size:2.5rem;font-weight:700" class="light-mode-title">About PCFind</h1>';
+          html += '<p style="color:#9ca3af;margin:0;font-size:1.1rem;max-width:700px;margin-left:auto;margin-right:auto;line-height:1.6" class="light-mode-text">Your trusted companion for building the perfect PC in the Philippines</p>';
+          html += '</div>';
+          
+          // Team section
+          html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:40px 24px;margin-bottom:40px" class="light-mode-card">';
+          html += '<h2 style="color:#e5e7eb;margin:0 0 32px 0;font-size:2rem;font-weight:600;text-align:center" class="light-mode-title">Our Team</h2>';
+          
+          // Team grid
+          html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px;max-width:1000px;margin:0 auto" class="pcf-team-grid">';
+          
+          teamMembers.forEach((member, index) => {
+            html += '<div style="background:#0b1220;border:1px solid #374151;border-radius:16px;padding:24px;text-align:center;transition:all 0.3s ease;position:relative;overflow:hidden" class="light-mode-item pcf-team-member" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 24px rgba(0,0,0,0.4)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
+            
+            // Photo placeholder
+            html += '<div style="width:150px;height:150px;border-radius:50%;background:linear-gradient(135deg,#374151 0%,#1f2937 100%);border:4px solid #4b5563;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative" class="pcf-team-photo">';
+            html += '<div style="color:#9ca3af;font-size:3rem;opacity:0.5">👤</div>';
+            html += '</div>';
+            
+            // Name
+            html += '<h3 style="color:#e5e7eb;margin:0 0 8px 0;font-size:1.3rem;font-weight:600" class="light-mode-title">' + (member.name || 'Team Member') + '</h3>';
+            
+            // Role badge
+            html += '<div style="display:inline-block;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);color:#fff;padding:6px 16px;border-radius:20px;font-size:0.85rem;font-weight:600;margin-bottom:20px;box-shadow:0 2px 8px rgba(37,99,235,0.3)">' + (member.role || 'Team Member') + '</div>';
+            
+            // Description container
+            html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:20px;min-height:120px;margin-top:16px" class="light-mode-description">';
+            html += '<p style="color:#9ca3af;margin:0;font-size:0.95rem;line-height:1.6;font-style:italic" class="light-mode-text">';
+            html += member.description || 'Description coming soon...';
+            html += '</p>';
+            html += '</div>';
+            
+            html += '</div>';
+          });
+          
+          html += '</div>'; // Close team grid
+          html += '</div>'; // Close team section
+          
+          // Partner Store section
+          html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:40px 24px;margin-bottom:40px" class="light-mode-card">';
+          html += '<h2 style="color:#e5e7eb;margin:0 0 32px 0;font-size:2rem;font-weight:600;text-align:center" class="light-mode-title">Partner Stores</h2>';
+          html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;max-width:1000px;margin:0 auto" class="pcf-partner-grid">';
+          
+          // Partner stores (can be customized later)
+          const partnerStores = [
+            { name: 'Lazada', logo: '' },
+            { name: 'Shopee', logo: '' },
+            { name: 'PC Express', logo: '' },
+            { name: 'EasyPC', logo: '' }
+          ];
+          
+          partnerStores.forEach((store) => {
+            html += '<div style="background:#0b1220;border:1px solid #374151;border-radius:12px;padding:24px;text-align:center;transition:all 0.3s ease" class="light-mode-item pcf-partner-item" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 24px rgba(0,0,0,0.4)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
+            html += '<div style="width:120px;height:120px;border-radius:12px;background:linear-gradient(135deg,#374151 0%,#1f2937 100%);border:2px solid #4b5563;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;overflow:hidden" class="pcf-partner-logo">';
+            html += '<div style="color:#9ca3af;font-size:2rem;opacity:0.5">🏪</div>';
+            html += '</div>';
+            html += '<h3 style="color:#e5e7eb;margin:0;font-size:1.1rem;font-weight:600" class="light-mode-title">' + (store.name || 'Partner Store') + '</h3>';
+            html += '</div>';
+          });
+          
+          html += '</div>'; // Close partner grid
+          html += '</div>'; // Close partner section
+          
+          c.innerHTML = html;
+          
+          // Add styles
+          const style = document.createElement('style');
+          style.textContent = `
+            .light .light-mode-card { background: #ffffff !important; border-color: #e5e7eb !important; }
+            .light .light-mode-item { background: #f9fafb !important; border-color: #e5e7eb !important; }
+            .light .light-mode-title { color: #111827 !important; }
+            .light .light-mode-text { color: #6b7280 !important; }
+            .light .light-mode-description { background: #f3f4f6 !important; border-color: #e5e7eb !important; }
+            
+            .pcf-team-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+              gap: 32px;
+            }
+            
+            @media (max-width: 768px) {
+              .pcf-team-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+              }
+            }
+            
+            @media (min-width: 769px) and (max-width: 1024px) {
+              .pcf-team-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 24px;
+              }
+            }
+            
+            .pcf-team-member {
+              transition: all 0.3s ease;
+            }
+            
+            .pcf-team-photo {
+              transition: transform 0.3s ease;
+            }
+            
+            .pcf-team-member:hover .pcf-team-photo {
+              transform: scale(1.05);
+            }
+            
+            .pcf-partner-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 24px;
+            }
+            
+            @media (max-width: 768px) {
+              .pcf-partner-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 16px;
+              }
+            }
+            
+            .pcf-partner-item {
+              transition: all 0.3s ease;
+            }
+          `;
+          if(!document.getElementById('about-styles')){
+            style.id = 'about-styles';
+            document.head.appendChild(style);
+          }
+        }
+        
+        function hookAboutHistoryEvents(){
+          if(window.__pcfAboutHooked) return;
+          window.__pcfAboutHooked = true;
+          const origPush = history.pushState;
+          history.pushState = function(){
+            const result = origPush.apply(this, arguments);
+            window.dispatchEvent(new Event('pcf-route-change'));
+            return result;
+          };
+          const origReplace = history.replaceState;
+          history.replaceState = function(){
+            const result = origReplace.apply(this, arguments);
+            window.dispatchEvent(new Event('pcf-route-change'));
+            return result;
+          };
+        }
+        
+        hookAboutHistoryEvents();
+        window.addEventListener('pcf-route-change', () => setTimeout(renderAbout, 50));
+        window.addEventListener('popstate', () => setTimeout(renderAbout, 50));
+        window.addEventListener('load', () => setTimeout(renderAbout, 50));
+        setTimeout(renderAbout, 100);
+      })();
+    </script>
     <!-- Community forum (client-side, localStorage) -->
     <script>
       (function(){
