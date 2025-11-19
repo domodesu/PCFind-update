@@ -1309,19 +1309,46 @@
     <!-- Inject images into Browse Parts / Builder cards using part names -->
     <style>
       .pcf-img{background-size:cover !important;background-position:center !important}
+      /* Hide text overlays on part images */
+      .pcf-img::before,
+      .pcf-img::after,
+      .aspect-video::before,
+      .aspect-video::after,
+      .bg-muted::before,
+      .bg-muted::after {
+        display: none !important;
+        content: none !important;
+      }
+      /* Hide any text content inside image containers */
+      .pcf-img > *,
+      .aspect-video > *:not(img),
+      .bg-muted > *:not(img) {
+        display: none !important;
+      }
+      /* Hide text that might be positioned absolutely over images */
+      [data-pcf-img="1"]::before,
+      [data-pcf-img="1"]::after {
+        display: none !important;
+        content: none !important;
+      }
+      /* Hide any absolutely positioned text overlays */
+      .aspect-video[data-pcf-img="1"] *,
+      .bg-muted[data-pcf-img="1"] * {
+        display: none !important;
+      }
+      /* Ensure image containers don't show text content */
+      .aspect-video[data-pcf-img="1"],
+      .bg-muted[data-pcf-img="1"] {
+        color: transparent !important;
+        text-indent: -9999px !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+      }
     </style>
     <script>
       (function(){
         function makeImageUrl(name, category){
-          try{
-            // Prefer parts-data mapping if present
-            var el = document.getElementById('parts-data');
-            if(el){ var list = JSON.parse(el.textContent||'[]');
-              var found = list.find(function(p){ return (p.name||'').toLowerCase()===String(name||'').toLowerCase(); });
-              if(found && found.imageUrl) return found.imageUrl;
-            }
-          }catch(e){}
-          
+          // Always use stock images based on category, ignore imageUrl from parts-data
           // Get base path for GitHub Pages
           function getBasePath(){
             var basePath = '';
@@ -1396,6 +1423,26 @@
             imgBox.style.backgroundImage = 'url("'+url+'")';
             imgBox.classList.add('pcf-img');
             imgBox.setAttribute('data-pcf-img','1');
+            // Remove any text content or child elements that might be overlaying the image
+            var children = imgBox.children;
+            for(var i = children.length - 1; i >= 0; i--){
+              var child = children[i];
+              if(child.tagName !== 'IMG'){
+                child.style.display = 'none';
+              }
+            }
+            // Clear any text content
+            var textNodes = [];
+            var walker = document.createTreeWalker(imgBox, NodeFilter.SHOW_TEXT, null, false);
+            var node;
+            while(node = walker.nextNode()){
+              if(node.textContent.trim()){
+                textNodes.push(node);
+              }
+            }
+            textNodes.forEach(function(textNode){
+              textNode.textContent = '';
+            });
           });
         }
         var obs = new MutationObserver(function(m){ m.forEach(function(){ enhanceCards(document.body); }); });
