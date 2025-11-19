@@ -1353,29 +1353,29 @@
           let teamHtml = '';
           
           // Team section
-          teamHtml += '<div id="pcf-team-section" style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:40px 24px;margin-bottom:40px" class="light-mode-card">';
-          teamHtml += '<h2 style="color:#e5e7eb;margin:0 0 32px 0;font-size:2rem;font-weight:600;text-align:center" class="light-mode-title">Our Team</h2>';
+          teamHtml += '<div id="pcf-team-section" style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:30px 20px;margin-bottom:30px" class="light-mode-card pcf-scroll-fade-in">';
+          teamHtml += '<h2 style="color:#e5e7eb;margin:0 0 24px 0;font-size:1.75rem;font-weight:600;text-align:center" class="light-mode-title">Our Team</h2>';
           
-          // Team grid
-          teamHtml += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px;max-width:1000px;margin:0 auto" class="pcf-team-grid">';
+          // Team grid - more compact
+          teamHtml += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;max-width:900px;margin:0 auto" class="pcf-team-grid">';
           
           teamMembers.forEach((member, index) => {
-            teamHtml += '<div style="background:#0b1220;border:1px solid #374151;border-radius:16px;padding:24px;text-align:center;transition:all 0.3s ease;position:relative;overflow:hidden" class="light-mode-item pcf-team-member" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 24px rgba(0,0,0,0.4)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
+            teamHtml += '<div style="background:#0b1220;border:1px solid #374151;border-radius:12px;padding:18px;text-align:center;transition:all 0.3s ease;position:relative;overflow:hidden;opacity:0;transform:translateY(20px)" class="light-mode-item pcf-team-member pcf-scroll-fade-in" data-delay="' + (index * 100) + '" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'0 6px 20px rgba(0,0,0,0.4)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
             
-            // Photo placeholder
-            teamHtml += '<div style="width:150px;height:150px;border-radius:50%;background:linear-gradient(135deg,#374151 0%,#1f2937 100%);border:4px solid #4b5563;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative" class="pcf-team-photo">';
-            teamHtml += '<div style="color:#9ca3af;font-size:3rem;opacity:0.5">👤</div>';
+            // Photo placeholder - smaller
+            teamHtml += '<div style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#374151 0%,#1f2937 100%);border:3px solid #4b5563;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative" class="pcf-team-photo">';
+            teamHtml += '<div style="color:#9ca3af;font-size:2.5rem;opacity:0.5">👤</div>';
             teamHtml += '</div>';
             
-            // Name
-            teamHtml += '<h3 style="color:#e5e7eb;margin:0 0 8px 0;font-size:1.3rem;font-weight:600" class="light-mode-title">' + (member.name || 'Team Member') + '</h3>';
+            // Name - smaller
+            teamHtml += '<h3 style="color:#e5e7eb;margin:0 0 6px 0;font-size:1.1rem;font-weight:600" class="light-mode-title">' + (member.name || 'Team Member') + '</h3>';
             
-            // Role badge
-            teamHtml += '<div style="display:inline-block;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);color:#fff;padding:6px 16px;border-radius:20px;font-size:0.85rem;font-weight:600;margin-bottom:20px;box-shadow:0 2px 8px rgba(37,99,235,0.3)">' + (member.role || 'Team Member') + '</div>';
+            // Role badge - smaller
+            teamHtml += '<div style="display:inline-block;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);color:#fff;padding:4px 12px;border-radius:16px;font-size:0.75rem;font-weight:600;margin-bottom:12px;box-shadow:0 2px 6px rgba(37,99,235,0.3)">' + (member.role || 'Team Member') + '</div>';
             
-            // Description container
-            teamHtml += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:20px;min-height:120px;margin-top:16px" class="light-mode-description">';
-            teamHtml += '<p style="color:#9ca3af;margin:0;font-size:0.95rem;line-height:1.6;font-style:italic" class="light-mode-text">';
+            // Description container - smaller
+            teamHtml += '<div style="background:#1f2937;border:1px solid #374151;border-radius:8px;padding:12px;min-height:80px;margin-top:12px" class="light-mode-description">';
+            teamHtml += '<p style="color:#9ca3af;margin:0;font-size:0.85rem;line-height:1.5;font-style:italic" class="light-mode-text">';
             teamHtml += member.description || 'Description coming soon...';
             teamHtml += '</p>';
             teamHtml += '</div>';
@@ -1415,21 +1415,21 @@
             
             .pcf-team-grid {
               display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-              gap: 32px;
+              grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+              gap: 20px;
             }
             
             @media (max-width: 768px) {
               .pcf-team-grid {
                 grid-template-columns: 1fr;
-                gap: 24px;
+                gap: 16px;
               }
             }
             
             @media (min-width: 769px) and (max-width: 1024px) {
               .pcf-team-grid {
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 24px;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 18px;
               }
             }
             
@@ -1443,6 +1443,35 @@
             
             .pcf-team-member:hover .pcf-team-photo {
               transform: scale(1.05);
+            }
+            
+            /* Scroll animations */
+            .pcf-scroll-fade-in {
+              opacity: 0;
+              transform: translateY(30px);
+              transition: opacity 0.6s ease, transform 0.6s ease;
+            }
+            
+            .pcf-scroll-fade-in.visible {
+              opacity: 1;
+              transform: translateY(0);
+            }
+            
+            .pcf-team-member.visible {
+              opacity: 1;
+              transform: translateY(0);
+            }
+            
+            /* Animate other About page sections - only apply to elements with inline styles set by JS */
+            main .pcf-animate-on-scroll {
+              opacity: 0;
+              transform: translateY(20px);
+              transition: opacity 0.5s ease, transform 0.5s ease;
+            }
+            
+            main .pcf-animate-on-scroll.visible {
+              opacity: 1;
+              transform: translateY(0);
             }
             
             .pcf-partner-grid {
@@ -1465,6 +1494,70 @@
           if(!document.getElementById('about-styles')){
             style.id = 'about-styles';
             document.head.appendChild(style);
+          }
+          
+          // Initialize scroll animations
+          initAboutScrollAnimations();
+        }
+        
+        function initAboutScrollAnimations(){
+          // Use Intersection Observer for scroll animations
+          const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+          };
+          
+          const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+              if(entry.isIntersecting){
+                const element = entry.target;
+                const delay = element.dataset.delay || 0;
+                
+                setTimeout(() => {
+                  element.classList.add('visible');
+                }, delay);
+                
+                observer.unobserve(element);
+              }
+            });
+          }, observerOptions);
+          
+          // Observe team section
+          const teamSection = document.getElementById('pcf-team-section');
+          if(teamSection){
+            setTimeout(() => {
+              teamSection.classList.add('visible');
+            }, 100);
+            
+            // Observe individual team members
+            const teamMembers = teamSection.querySelectorAll('.pcf-team-member');
+            teamMembers.forEach(member => {
+              observer.observe(member);
+            });
+          }
+          
+          // Observe other About page elements
+          const main = document.querySelector('main');
+          if(main && isAbout()){
+            // Animate partner items and other key sections
+            const partnerItems = main.querySelectorAll('.pcf-partner-item');
+            partnerItems.forEach((el, index) => {
+              el.classList.add('pcf-animate-on-scroll');
+              setTimeout(() => {
+                observer.observe(el);
+              }, index * 100);
+            });
+            
+            // Animate headings and key content sections
+            const headings = main.querySelectorAll('h2:not(.light-mode-title), h3:not(.light-mode-title)');
+            headings.forEach((el, index) => {
+              if(!el.closest('#pcf-team-section')){
+                el.classList.add('pcf-animate-on-scroll');
+                setTimeout(() => {
+                  observer.observe(el);
+                }, index * 80);
+              }
+            });
           }
         }
         
