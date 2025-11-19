@@ -1314,33 +1314,15 @@
         }
         
         function cleanupAbout(){
+          // Remove team section if it exists
+          const teamSection = document.getElementById('pcf-team-section');
+          if(teamSection){ teamSection.remove(); }
+          
+          // Remove custom container if it exists
           const container = document.getElementById('pcf-about-container');
           if(container){ container.remove(); }
           
-          const main = document.querySelector('main');
-          if(main){
-            Array.from(main.children).forEach(child => {
-              if(child.dataset && child.dataset.originalDisplay !== undefined){
-                child.style.display = child.dataset.originalDisplay;
-                delete child.dataset.originalDisplay;
-              }else{
-                child.style.display = '';
-              }
-            });
-          }
-          
-          const footer = document.querySelector('footer');
-          if(footer){
-            if(footer.dataset && footer.dataset.originalDisplay !== undefined){
-              footer.style.display = footer.dataset.originalDisplay;
-              delete footer.dataset.originalDisplay;
-            }else{
-              footer.style.display = '';
-            }
-          }
-          
-          const styleEl = document.getElementById('about-styles');
-          if(styleEl) styleEl.remove();
+          // Don't interfere with main content - let it show normally
         }
         
         function renderAbout(){
@@ -1349,15 +1331,17 @@
             return;
           }
           
-          // Don't hide main content - preserve existing UI
-          const c = ensureContainer();
+          // Don't create container or hide content - let original UI show
+          // Just find where to insert team section above partner stores
+          const main = document.querySelector('main');
+          if(!main) return;
           
           // Check if team section already exists to avoid duplicates
           if(document.getElementById('pcf-team-section')){
             return;
           }
           
-          // Team members data (photos and descriptions will be added later)
+          // Team members data
           const teamMembers = [
             { name: 'Gabriel Austria', role: 'CEO', photo: '', description: '' },
             { name: 'Sofia Quillope', role: 'General Manager', photo: '', description: '' },
@@ -1402,53 +1386,22 @@
           teamHtml += '</div>'; // Close team grid
           teamHtml += '</div>'; // Close team section
           
-          // Find partner store section - check for existing partner section or create one
+          // Find partner store section in main content
           let partnerSection = null;
-          const allH2s = c.querySelectorAll('h2');
+          const allH2s = main.querySelectorAll('h2');
           for(let h2 of allH2s){
             if(h2.textContent && h2.textContent.toLowerCase().includes('partner')){
-              partnerSection = h2;
+              partnerSection = h2.closest('div, section, article') || h2.parentElement;
               break;
             }
           }
           
-          // If no existing partner section, create it first
-          if(!partnerSection){
-            let partnerHtml = '';
-            partnerHtml += '<div id="pcf-partner-section" style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:40px 24px;margin-bottom:40px" class="light-mode-card">';
-            partnerHtml += '<h2 style="color:#e5e7eb;margin:0 0 32px 0;font-size:2rem;font-weight:600;text-align:center" class="light-mode-title">Partner Stores</h2>';
-            partnerHtml += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;max-width:1000px;margin:0 auto" class="pcf-partner-grid">';
-            
-            const partnerStores = [
-              { name: 'Lazada', logo: '' },
-              { name: 'Shopee', logo: '' },
-              { name: 'PC Express', logo: '' },
-              { name: 'EasyPC', logo: '' }
-            ];
-            
-            partnerStores.forEach((store) => {
-              partnerHtml += '<div style="background:#0b1220;border:1px solid #374151;border-radius:12px;padding:24px;text-align:center;transition:all 0.3s ease" class="light-mode-item pcf-partner-item" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 24px rgba(0,0,0,0.4)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
-              partnerHtml += '<div style="width:120px;height:120px;border-radius:12px;background:linear-gradient(135deg,#374151 0%,#1f2937 100%);border:2px solid #4b5563;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;overflow:hidden" class="pcf-partner-logo">';
-              partnerHtml += '<div style="color:#9ca3af;font-size:2rem;opacity:0.5">🏪</div>';
-              partnerHtml += '</div>';
-              partnerHtml += '<h3 style="color:#e5e7eb;margin:0;font-size:1.1rem;font-weight:600" class="light-mode-title">' + (store.name || 'Partner Store') + '</h3>';
-              partnerHtml += '</div>';
-            });
-            
-            partnerHtml += '</div>'; // Close partner grid
-            partnerHtml += '</div>'; // Close partner section
-            
-            // Append partner section to container
-            c.insertAdjacentHTML('beforeend', partnerHtml);
-            partnerSection = document.getElementById('pcf-partner-section');
-          }
-          
-          // Insert team section before partner section
+          // If partner section found, insert team section before it
           if(partnerSection && partnerSection.parentElement){
             partnerSection.parentElement.insertAdjacentHTML('beforebegin', teamHtml);
           } else {
-            // Fallback: prepend to container
-            c.insertAdjacentHTML('afterbegin', teamHtml);
+            // If no partner section found, append to main
+            main.insertAdjacentHTML('beforeend', teamHtml);
           }
           
           // Add styles
