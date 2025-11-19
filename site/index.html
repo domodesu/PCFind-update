@@ -338,10 +338,76 @@
         order:2;
       }
       .light .pcf-chat-main{border-color:#e5e7eb}
+      /* Mobile chat header */
+      .pcf-chat-mobile-header{
+        display:none;
+        position:fixed;
+        top:0;
+        left:0;
+        right:0;
+        background:#0b1220;
+        border-bottom:1px solid #374151;
+        padding:12px 60px 12px 16px;
+        z-index:9998;
+        gap:8px;
+      }
+      .light .pcf-chat-mobile-header{
+        background:#ffffff;
+        border-color:#e5e7eb;
+      }
+      .pcf-chat-mobile-actions{
+        display:flex;
+        gap:8px;
+        flex:1;
+      }
+      .pcf-chat-mobile-btn{
+        flex:1;
+        padding:10px 16px;
+        border-radius:8px;
+        border:1px solid #374151;
+        background:#1f2937;
+        color:#e5e7eb;
+        font-size:0.9rem;
+        font-weight:500;
+        cursor:pointer;
+        transition:all 0.2s ease;
+        text-align:center;
+      }
+      .light .pcf-chat-mobile-btn{
+        background:#f3f4f6;
+        border-color:#d1d5db;
+        color:#111827;
+      }
+      .pcf-chat-mobile-btn:hover{
+        background:#2563eb;
+        border-color:#2563eb;
+        color:#fff;
+      }
+      .light .pcf-chat-mobile-btn:hover{
+        background:#3b82f6;
+        border-color:#3b82f6;
+      }
+      .pcf-chat-mobile-btn.new-chat{
+        background:#10b981;
+        border-color:#10b981;
+        color:#fff;
+      }
+      .pcf-chat-mobile-btn.new-chat:hover{
+        background:#059669;
+        border-color:#059669;
+      }
       /* Hide sidebar on mobile */
       @media (max-width: 768px){
         .pcf-chat-sidebar{display:none}
-        .pcf-chat{padding:70px 10px 0 10px}
+        .pcf-chat{padding-top:70px}
+        .pcf-chat-mobile-header{
+          display:flex;
+          align-items:center;
+        }
+        /* Ensure burger menu is visible on chat page */
+        body:has(#pcf-chat) .pcf-tools{
+          display:flex !important;
+        }
       }
       /* Hide everything except nav when chat exists */
       #pcf-chat ~ #root,
@@ -1809,6 +1875,14 @@
           
           let html = '';
           
+          // Mobile header with New Chat and History buttons
+          html += '<div class="pcf-chat-mobile-header">';
+          html += '<div class="pcf-chat-mobile-actions">';
+          html += '<button class="pcf-chat-mobile-btn new-chat" id="pcf-new-chat-btn-mobile">➕ New Chat</button>';
+          html += '<button class="pcf-chat-mobile-btn" id="pcf-history-btn-mobile">📜 History</button>';
+          html += '</div>';
+          html += '</div>';
+          
           // Sidebar navigation
           html += '<div class="pcf-chat-sidebar">';
           html += '<button class="pcf-chat-sidebar-link" id="pcf-new-chat-btn" style="border:none;width:100%;text-align:left;background:#10b981;cursor:pointer;">➕ New Chat</button>';
@@ -1939,10 +2013,22 @@
             historyBtn.addEventListener('click', toggleHistoryPanel);
           }
           
+          // Mobile history button
+          const historyBtnMobile = document.getElementById('pcf-history-btn-mobile');
+          if(historyBtnMobile){
+            historyBtnMobile.addEventListener('click', toggleHistoryPanel);
+          }
+          
           // New chat button
           const newChatBtn = document.getElementById('pcf-new-chat-btn');
           if(newChatBtn){
             newChatBtn.addEventListener('click', startNewChat);
+          }
+          
+          // Mobile new chat button
+          const newChatBtnMobile = document.getElementById('pcf-new-chat-btn-mobile');
+          if(newChatBtnMobile){
+            newChatBtnMobile.addEventListener('click', startNewChat);
           }
           
           attachSuggestionHandlers();
