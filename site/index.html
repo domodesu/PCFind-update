@@ -1391,6 +1391,25 @@
           // Don't interfere with main content - let it show normally
         }
         
+        // Helper function to get base path for GitHub Pages
+        function getBasePath(){
+          let basePath = '';
+          try{
+            const host = (location.hostname||'').toLowerCase();
+            if(host.endsWith('.github.io')){
+              const hostParts = host.split('.');
+              const username = hostParts[0] || '';
+              const isUserSite = (host === username + '.github.io');
+              if(!isUserSite){
+                const parts = (location.pathname||'/').split('/');
+                const repo = parts[1] || '';
+                if(repo) basePath = '/' + repo;
+              }
+            }
+          }catch(ex){}
+          return basePath;
+        }
+        
         function renderAbout(){
           if(!isAbout()){
             cleanupAbout();
@@ -1407,13 +1426,17 @@
             return;
           }
           
+          // Get base path for GitHub Pages
+          const basePath = getBasePath();
+          const assetPath = basePath ? (basePath + '/assets/team/') : '/assets/team/';
+          
           // Team members data
           const teamMembers = [
-            { name: 'Gabriel Austria', role: 'CEO', photo: 'assets/team/gabriel.jpg', placeholder: 'https://ui-avatars.com/api/?name=Gabriel+Austria&size=200&background=374151&color=e5e7eb&bold=true', description: '' },
-            { name: 'Sofia Quillope', role: 'General Manager', photo: 'assets/team/sofia.jpg', placeholder: 'https://ui-avatars.com/api/?name=Sofia+Quillope&size=200&background=374151&color=e5e7eb&bold=true', description: '' },
-            { name: 'Julius Bartolome', role: 'Lead Website Developer', photo: 'assets/team/julius.jpg', placeholder: 'https://ui-avatars.com/api/?name=Julius+Bartolome&size=200&background=374151&color=e5e7eb&bold=true', description: '' },
-            { name: 'Ramqui Antonio', role: 'Website Developer', photo: 'assets/team/ramqui.jpg', placeholder: 'https://ui-avatars.com/api/?name=Ramqui+Antonio&size=200&background=374151&color=e5e7eb&bold=true', description: '' },
-            { name: 'Raven Borja', role: 'Marketing Manager', photo: 'assets/team/raven.jpg', placeholder: 'https://ui-avatars.com/api/?name=Raven+Borja&size=200&background=374151&color=e5e7eb&bold=true', description: '' }
+            { name: 'Gabriel Austria', role: 'CEO', photo: assetPath + 'gabriel.jpg', placeholder: 'https://ui-avatars.com/api/?name=Gabriel+Austria&size=200&background=374151&color=e5e7eb&bold=true', description: '' },
+            { name: 'Sofia Quillope', role: 'General Manager', photo: assetPath + 'sofia.jpg', placeholder: 'https://ui-avatars.com/api/?name=Sofia+Quillope&size=200&background=374151&color=e5e7eb&bold=true', description: '' },
+            { name: 'Julius Bartolome', role: 'Lead Website Developer', photo: assetPath + 'julius.jpg', placeholder: 'https://ui-avatars.com/api/?name=Julius+Bartolome&size=200&background=374151&color=e5e7eb&bold=true', description: '' },
+            { name: 'Ramqui Antonio', role: 'Website Developer', photo: assetPath + 'ramqui.jpg', placeholder: 'https://ui-avatars.com/api/?name=Ramqui+Antonio&size=200&background=374151&color=e5e7eb&bold=true', description: '' },
+            { name: 'Raven Borja', role: 'Marketing Manager', photo: assetPath + 'raven.jpg', placeholder: 'https://ui-avatars.com/api/?name=Raven+Borja&size=200&background=374151&color=e5e7eb&bold=true', description: '' }
           ];
           
           let teamHtml = '';
