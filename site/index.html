@@ -1309,6 +1309,125 @@
     <!-- Inject images into Browse Parts / Builder cards using part names -->
     <style>
       .pcf-img{background-size:cover !important;background-position:center !important}
+      
+      /* View Toggle Styles */
+      .pcf-view-toggle {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 0 20px;
+        justify-content: flex-end;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      @media (max-width: 768px) {
+        .pcf-view-toggle {
+          justify-content: center;
+        }
+      }
+      .pcf-view-toggle-btn {
+        background: #1f2937;
+        border: 1px solid #374151;
+        color: #9ca3af;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .pcf-view-toggle-btn:hover {
+        background: #374151;
+        color: #e5e7eb;
+        border-color: #4b5563;
+      }
+      .pcf-view-toggle-btn.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #fff;
+      }
+      .light .pcf-view-toggle-btn {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+        color: #6b7280;
+      }
+      .light .pcf-view-toggle-btn:hover {
+        background: #e5e7eb;
+        color: #111827;
+      }
+      .light .pcf-view-toggle-btn.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #fff;
+      }
+      
+      /* Grid View (default) */
+      .pcf-parts-container.grid-view {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+      }
+      .pcf-parts-container.grid-view [data-testid^="card-part-"],
+      .pcf-parts-container.grid-view [data-testid^="card-builder-part-"] {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* Stack View */
+      .pcf-parts-container.stack-view {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .pcf-parts-container.stack-view [data-testid^="card-part-"],
+      .pcf-parts-container.stack-view [data-testid^="card-builder-part-"] {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        max-width: 100%;
+      }
+      .pcf-parts-container.stack-view [data-testid^="card-part-"] .aspect-video,
+      .pcf-parts-container.stack-view [data-testid^="card-part-"] .bg-muted,
+      .pcf-parts-container.stack-view [data-testid^="card-builder-part-"] .aspect-video,
+      .pcf-parts-container.stack-view [data-testid^="card-builder-part-"] .bg-muted {
+        width: 200px;
+        min-width: 200px;
+        height: 150px;
+        flex-shrink: 0;
+      }
+      .pcf-parts-container.stack-view [data-testid^="card-part-"] > div:not(.aspect-video):not(.bg-muted),
+      .pcf-parts-container.stack-view [data-testid^="card-builder-part-"] > div:not(.aspect-video):not(.bg-muted) {
+        flex: 1;
+        padding-left: 16px;
+      }
+      
+      /* Mobile adjustments */
+      @media (max-width: 768px) {
+        .pcf-view-toggle {
+          padding: 0 16px;
+          margin-bottom: 16px;
+        }
+        .pcf-view-toggle-btn {
+          padding: 6px 10px;
+          font-size: 12px;
+        }
+        .pcf-parts-container.grid-view {
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          gap: 12px;
+        }
+        .pcf-parts-container.stack-view [data-testid^="card-part-"] .aspect-video,
+        .pcf-parts-container.stack-view [data-testid^="card-part-"] .bg-muted,
+        .pcf-parts-container.stack-view [data-testid^="card-builder-part-"] .aspect-video,
+        .pcf-parts-container.stack-view [data-testid^="card-builder-part-"] .bg-muted {
+          width: 120px;
+          min-width: 120px;
+          height: 90px;
+        }
+      }
       /* Hide text overlays on part images */
       .pcf-img::before,
       .pcf-img::after,
@@ -1515,6 +1634,126 @@
         }
         var obs = new MutationObserver(function(m){ m.forEach(function(){ enhanceCards(document.body); }); });
         window.addEventListener('load', function(){ enhanceCards(document.body); obs.observe(document.body,{childList:true,subtree:true}); });
+      })();
+      
+      // View Toggle Functionality
+      (function(){
+        function initViewToggle(){
+          // Check if we're on browse parts page
+          var path = (location.pathname||'').toLowerCase();
+          var isBrowseParts = path.includes('/browse-parts') || path.endsWith('/browse-parts') || path === '/browse-parts/';
+          if(!isBrowseParts) return;
+          
+          // Find the parts container - look for common container patterns
+          var container = document.querySelector('main') || document.querySelector('[data-testid*="parts"]') || document.querySelector('.grid') || document.body;
+          if(!container) return;
+          
+          // Check if toggle already exists
+          if(document.getElementById('pcf-view-toggle')) return;
+          
+          // Get saved view preference
+          var savedView = localStorage.getItem('pcfind_parts_view') || 'grid';
+          
+          // Create toggle buttons
+          var toggleHtml = '<div id="pcf-view-toggle" class="pcf-view-toggle">';
+          toggleHtml += '<button class="pcf-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
+          toggleHtml += '<span>⊞</span> <span>Grid</span>';
+          toggleHtml += '</button>';
+          toggleHtml += '<button class="pcf-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
+          toggleHtml += '<span>☰</span> <span>Stack</span>';
+          toggleHtml += '</button>';
+          toggleHtml += '</div>';
+          
+          // Insert toggle before the parts container or at the top of main
+          var main = document.querySelector('main');
+          if(main){
+            var firstChild = main.firstElementChild;
+            if(firstChild && firstChild.id !== 'pcf-view-toggle'){
+              main.insertAdjacentHTML('afterbegin', toggleHtml);
+            } else if(!firstChild){
+              main.innerHTML = toggleHtml + main.innerHTML;
+            }
+          } else {
+            container.insertAdjacentHTML('beforebegin', toggleHtml);
+          }
+          
+          // Find parts container - look for grid or flex containers with cards
+          var partsContainer = null;
+          var cards = container.querySelectorAll('[data-testid^="card-part-"], [data-testid^="card-builder-part-"], .p-6');
+          if(cards.length > 0){
+            // Find the parent container of the cards
+            var firstCard = cards[0];
+            partsContainer = firstCard.parentElement;
+            
+            // Walk up the DOM to find a container that holds all or most cards
+            var maxCards = 0;
+            var bestContainer = partsContainer;
+            while(partsContainer && partsContainer !== document.body){
+              var cardCount = partsContainer.querySelectorAll('[data-testid^="card-part-"], [data-testid^="card-builder-part-"], .p-6').length;
+              if(cardCount > maxCards && cardCount >= cards.length * 0.5){
+                maxCards = cardCount;
+                bestContainer = partsContainer;
+              }
+              partsContainer = partsContainer.parentElement;
+            }
+            partsContainer = bestContainer;
+          }
+          
+          // If still no container found, use the parent of first card
+          if(!partsContainer && cards.length > 0){
+            partsContainer = cards[0].parentElement;
+          }
+          
+          // If container is body or html, look for a more specific container
+          if(partsContainer === document.body || partsContainer === document.documentElement){
+            var main = document.querySelector('main');
+            if(main) partsContainer = main;
+          }
+          
+          if(partsContainer){
+            // Add class to container
+            partsContainer.classList.add('pcf-parts-container');
+            partsContainer.classList.add(savedView + '-view');
+            
+            // Add event listeners to toggle buttons
+            var toggleBtns = document.querySelectorAll('.pcf-view-toggle-btn');
+            toggleBtns.forEach(function(btn){
+              btn.addEventListener('click', function(){
+                var view = this.getAttribute('data-view');
+                
+                // Update active state
+                toggleBtns.forEach(function(b){ b.classList.remove('active'); });
+                this.classList.add('active');
+                
+                // Update container classes
+                partsContainer.classList.remove('grid-view', 'stack-view');
+                partsContainer.classList.add(view + '-view');
+                
+                // Save preference
+                localStorage.setItem('pcfind_parts_view', view);
+              });
+            });
+          }
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', function(){
+          setTimeout(initViewToggle, 500);
+        });
+        
+        // Re-initialize on route changes
+        window.addEventListener('popstate', function(){
+          setTimeout(initViewToggle, 300);
+        });
+        
+        // Watch for DOM changes to catch dynamic content
+        var viewToggleObserver = new MutationObserver(function(mutations){
+          var hasBrowseParts = (location.pathname||'').toLowerCase().includes('/browse-parts');
+          if(hasBrowseParts && !document.getElementById('pcf-view-toggle')){
+            setTimeout(initViewToggle, 300);
+          }
+        });
+        viewToggleObserver.observe(document.body, {childList: true, subtree: true});
       })();
     </script>
     <!-- Saved Builds / Current Selection -->
