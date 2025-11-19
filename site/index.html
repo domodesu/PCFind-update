@@ -182,8 +182,9 @@
     <script type="module" src="assets/index-CaPvLiAV.js"></script>
     <link rel="stylesheet" href="assets/index-BhHjkmWg.css">
     <style>
-      html, body { height:100%; width:100%; margin:0; padding:0 }
-      #root { min-height:100vh }
+      html, body { height:100%; width:100%; margin:0; padding:0; background:#f5f5f5; color:#0a0f1a }
+      #root { min-height:100vh; background:#f5f5f5 }
+      body.light, .light body { background:#f5f5f5; color:#0a0f1a }
     </style>
   </head>
   <body>
@@ -192,41 +193,44 @@
     <style>
       /* Account components (modal/dropdown) */
       .pcf-account-btn{position:fixed;top:12px;right:12px;z-index:9999;display:none}
-      .pcf-account-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:10000}
-      .pcf-card{background:#111827;color:#e5e7eb;border:1px solid #374151;border-radius:12px;padding:16px;min-width:300px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
-      .light .pcf-card{background:#ffffff;color:#111827;border-color:#e5e7eb;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+      .pcf-account-modal{position:fixed;inset:0;background:rgba(10,15,26,.7);display:none;align-items:center;justify-content:center;z-index:10000;backdrop-filter:blur(4px)}
+      .pcf-card{background:#ffffff;color:#0a0f1a;border:1px solid rgba(0,180,255,0.2);border-radius:12px;padding:16px;min-width:300px;box-shadow:0 10px 30px rgba(0,180,255,0.1)}
+      .light .pcf-card{background:#ffffff;color:#0a0f1a;border-color:rgba(0,180,255,0.2);box-shadow:0 10px 30px rgba(0,180,255,0.1)}
       .pcf-card h3{margin:0 0 8px 0}
       .pcf-row{display:flex;gap:8px;margin-top:8px}
       .pcf-input-wrap{position:relative;display:flex;align-items:center;flex:1}
       .pcf-eye{position:absolute;right:10px;cursor:pointer;border:none;background:transparent;font-size:1.1rem;line-height:1;opacity:.8;transition:transform .12s ease, opacity .12s ease}
       .pcf-eye:hover{opacity:1;transform:scale(1.08)}
-      .pcf-input{flex:1;padding:10px;border-radius:8px;border:1px solid #374151;background:#0b1220;color:#e5e7eb}
-      .light .pcf-input{background:#ffffff;border-color:#e5e7eb;color:#111827}
-      .pcf-btn{padding:10px 14px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#e5e7eb;cursor:pointer}
-      .light .pcf-btn{background:#f3f4f6;border-color:#d1d5db;color:#111827}
-      .pcf-btn.primary{background:#2563eb;border-color:#2563eb}
+      .pcf-input{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,180,255,0.3);background:#ffffff;color:#0a0f1a}
+      .light .pcf-input{background:#ffffff;border-color:rgba(0,180,255,0.3);color:#0a0f1a}
+      .pcf-btn{padding:10px 14px;border-radius:8px;border:1px solid rgba(0,180,255,0.3);background:#ffffff;color:#00b4ff;cursor:pointer;transition:all 0.2s ease}
+      .light .pcf-btn{background:#ffffff;border-color:rgba(0,180,255,0.3);color:#00b4ff}
+      .pcf-btn:hover{background:#00b4ff;border-color:#00b4ff;color:#ffffff;box-shadow:0 4px 12px rgba(0,180,255,0.4)}
+      .pcf-btn.primary{background:#00b4ff;border-color:#00b4ff;color:#ffffff;box-shadow:0 4px 12px rgba(0,180,255,0.3)}
+      .pcf-btn.primary:hover{background:#00d9ff;border-color:#00d9ff;box-shadow:0 6px 16px rgba(0,180,255,0.5)}
       .pcf-row-between{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
       .pcf-check{display:flex;align-items:center;gap:8px;color:#9ca3af;font-size:.9rem}
-      .pcf-link{font-size:.9rem;color:#93c5fd;cursor:pointer}
-      .pcf-link:hover{text-decoration:underline}
-      .pcf-muted{color:#9ca3af}
-      .pcf-link--plain{color:#93c5fd;cursor:pointer}
+      .pcf-link{font-size:.9rem;color:#00b4ff;cursor:pointer;transition:color 0.2s ease}
+      .pcf-link:hover{text-decoration:underline;color:#00d9ff}
+      .pcf-muted{color:#6b7280}
+      .pcf-link--plain{color:#00b4ff;cursor:pointer;transition:color 0.2s ease}
+      .pcf-link--plain:hover{color:#00d9ff}
       .pcf-link--plain:hover{text-decoration:none}
       /* Toast notification */
-      .pcf-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#111827;color:#e5e7eb;border:1px solid #374151;padding:10px 14px;border-radius:10px;z-index:10002;box-shadow:0 10px 30px rgba(0,0,0,.3);display:none}
-      .light .pcf-toast{background:#ffffff;color:#111827;border-color:#e5e7eb;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+      .pcf-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#ffffff;color:#0a0f1a;border:1px solid rgba(0,180,255,0.3);padding:10px 14px;border-radius:10px;z-index:10002;box-shadow:0 10px 30px rgba(0,180,255,0.2);display:none}
+      .light .pcf-toast{background:#ffffff;color:#0a0f1a;border-color:rgba(0,180,255,0.3);box-shadow:0 10px 30px rgba(0,180,255,0.2)}
       .pcf-hidden{display:none}
-      .pcf-avatar{width:36px;height:36px;border-radius:9999px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
-      .pcf-dropdown{position:absolute;right:0;margin-top:8px;background:#111827;border:1px solid #374151;border-radius:10px;display:none;min-width:180px}
-      .light .pcf-dropdown{background:#ffffff;border-color:#e5e7eb;color:#111827}
-      .pcf-dd-item{padding:10px 12px;color:#e5e7eb;cursor:pointer}
-      .pcf-dd-item:hover{background:#1f2937}
-      .light .pcf-dd-item{color:#111827}
-      .light .pcf-dd-item:hover{background:#f3f4f6}
+      .pcf-avatar{width:36px;height:36px;border-radius:9999px;background:#00b4ff;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 2px 8px rgba(0,180,255,0.3)}
+      .pcf-dropdown{position:absolute;right:0;margin-top:8px;background:#ffffff;border:1px solid rgba(0,180,255,0.2);border-radius:10px;display:none;min-width:180px;box-shadow:0 10px 30px rgba(0,180,255,0.15)}
+      .light .pcf-dropdown{background:#ffffff;border-color:rgba(0,180,255,0.2);color:#0a0f1a}
+      .pcf-dd-item{padding:10px 12px;color:#0a0f1a;cursor:pointer;transition:all 0.2s ease}
+      .pcf-dd-item:hover{background:rgba(0,180,255,0.1);color:#00b4ff}
+      .light .pcf-dd-item{color:#0a0f1a}
+      .light .pcf-dd-item:hover{background:rgba(0,180,255,0.1);color:#00b4ff}
       /* Main app nav hover animations and filtering */
       nav a[href="/help"], nav a[href="/about"], nav a[href="/community"]{display:none !important}
-      :root{--pcf-hover-text:#ffffff;--pcf-hover-glow:rgba(37,99,235,.6)}
-      .light{--pcf-hover-text:#111827;--pcf-hover-glow:rgba(37,99,235,.35)}
+      :root{--pcf-hover-text:#00b4ff;--pcf-hover-glow:rgba(0,180,255,.6)}
+      .light{--pcf-hover-text:#00b4ff;--pcf-hover-glow:rgba(0,180,255,.5)}
       nav a[href="/"], nav a[href="/browse-parts"], nav a[href="/pc-builder"], nav a[href="/saved-builds"]{
         transition:color .15s ease, transform .15s ease, text-shadow .15s ease;
         will-change: transform;
@@ -272,7 +276,8 @@
       .pcf-forum .pcf-meta{font-size:.8rem;color:#9ca3af;margin-bottom:8px}
       .pcf-forum .pcf-body{white-space:pre-wrap;line-height:1.5}
       .pcf-forum .pcf-comment{margin-top:10px;padding-top:10px;border-top:1px dashed #374151}
-      .light .pcf-forum .pcf-comment{border-color:#e5e7eb}
+      .light .pcf-forum .pcf-comment{border-color:rgba(0,180,255,0.2)}
+      .pcf-forum .pcf-comment{border-color:rgba(0,180,255,0.2)}
       /* AI Chat page styles */
       .pcf-chat{
         display:flex !important;
@@ -283,10 +288,10 @@
         padding-top:70px;
         position:relative;
         z-index:1;
-        background:#0b1220;
+        background:#f5f5f5;
         gap:20px;
       }
-      .light .pcf-chat{background:#ffffff}
+      .light .pcf-chat{background:#f5f5f5}
       /* Chat sidebar navigation */
       .pcf-chat-sidebar{
         width:220px;
@@ -301,32 +306,33 @@
         display:block;
         padding:12px 16px;
         border-radius:10px;
-        background:#1f2937;
-        border:1px solid #374151;
-        color:#e5e7eb;
+        background:#ffffff;
+        border:1px solid rgba(0,180,255,0.2);
+        color:#0a0f1a;
         text-decoration:none;
         transition:all 0.2s ease;
         font-size:0.95rem;
         font-weight:500;
       }
       .light .pcf-chat-sidebar-link{
-        background:#f3f4f6;
-        border-color:#d1d5db;
-        color:#111827;
+        background:#ffffff;
+        border-color:rgba(0,180,255,0.2);
+        color:#0a0f1a;
       }
       .pcf-chat-sidebar-link:hover{
-        background:#2563eb;
-        border-color:#2563eb;
+        background:#00b4ff;
+        border-color:#00b4ff;
         color:#ffffff;
         transform:translateX(4px);
-        box-shadow:0 4px 12px rgba(37,99,235,0.3);
+        box-shadow:0 4px 12px rgba(0,180,255,0.4);
       }
       .light .pcf-chat-sidebar-link:hover{
-        background:#3b82f6;
-        border-color:#3b82f6;
+        background:#00b4ff;
+        border-color:#00b4ff;
+        color:#ffffff;
       }
-      #pcf-new-chat-btn{background:#10b981 !important;border-color:#10b981 !important;}
-      #pcf-new-chat-btn:hover{background:#059669 !important;border-color:#059669 !important;}
+      #pcf-new-chat-btn{background:#00b4ff !important;border-color:#00b4ff !important;color:#ffffff !important;}
+      #pcf-new-chat-btn:hover{background:#00d9ff !important;border-color:#00d9ff !important;box-shadow:0 4px 12px rgba(0,180,255,0.5) !important;}
       /* Chat main area */
       .pcf-chat-main{
         flex:1;
@@ -334,10 +340,11 @@
         flex-direction:column;
         overflow:hidden;
         border-radius:12px;
-        border:1px solid #374151;
+        border:1px solid rgba(0,180,255,0.2);
         order:2;
+        background:#ffffff;
       }
-      .light .pcf-chat-main{border-color:#e5e7eb}
+      .light .pcf-chat-main{border-color:rgba(0,180,255,0.2);background:#ffffff}
       /* Mobile chat header */
       .pcf-chat-mobile-header{
         display:none;
@@ -591,12 +598,13 @@
       .pcf-chat-msg{display:flex;gap:12px;max-width:80%;animation:slideIn 0.3s ease}
       @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
       .pcf-chat-msg.user{margin-left:auto;flex-direction:row-reverse}
-      .pcf-chat-avatar{width:36px;height:36px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
-      .pcf-chat-msg.ai .pcf-chat-avatar{background:#10b981}
-      .pcf-chat-bubble{background:#1f2937;color:#e5e7eb;padding:12px 16px;border-radius:16px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word}
-      .light .pcf-chat-bubble{background:#f3f4f6;color:#1f2937;font-weight:500}
-      .pcf-chat-msg.user .pcf-chat-bubble{background:#2563eb;color:#fff}
-      .light .pcf-chat-msg.user .pcf-chat-bubble{background:#3b82f6}
+      .pcf-chat-avatar{width:36px;height:36px;border-radius:50%;background:#00b4ff;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px rgba(0,180,255,0.3)}
+      .pcf-chat-msg.ai .pcf-chat-avatar{background:#00b4ff;box-shadow:0 2px 8px rgba(0,180,255,0.3)}
+      .pcf-chat-msg.user .pcf-chat-avatar{background:#00b4ff;box-shadow:0 2px 8px rgba(0,180,255,0.3)}
+      .pcf-chat-bubble{background:#ffffff;color:#0a0f1a;padding:12px 16px;border-radius:16px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;border:1px solid rgba(0,180,255,0.2)}
+      .light .pcf-chat-bubble{background:#ffffff;color:#0a0f1a;font-weight:500;border:1px solid rgba(0,180,255,0.2)}
+      .pcf-chat-msg.user .pcf-chat-bubble{background:#00b4ff;color:#fff;border-color:#00b4ff;box-shadow:0 4px 12px rgba(0,180,255,0.3)}
+      .light .pcf-chat-msg.user .pcf-chat-bubble{background:#00b4ff;color:#fff;border-color:#00b4ff}
       .pcf-chat-bubble-inner{
         display:flex;
         flex-direction:column;
@@ -621,15 +629,16 @@
         display:flex;
         justify-content:center;
       }
-      .pcf-chat-input-area{border-top:1px solid #374151;padding:16px 20px;background:#0b1220}
-      .light .pcf-chat-input-area{border-color:#e5e7eb;background:#ffffff}
+      .pcf-chat-input-area{border-top:1px solid rgba(0,180,255,0.2);padding:16px 20px;background:#ffffff}
+      .light .pcf-chat-input-area{border-color:rgba(0,180,255,0.2);background:#ffffff}
       .pcf-chat-input-wrap{display:flex;gap:12px;align-items:flex-end;max-width:100%}
-      .pcf-chat-input{flex:1;padding:12px 16px;border-radius:24px;border:1px solid #374151;background:#1f2937;color:#e5e7eb;resize:none;max-height:120px;min-height:48px;font-family:inherit;font-size:1rem}
-      .light .pcf-chat-input{background:#ffffff;border-color:#d1d5db;color:#1f2937}
-      .light .pcf-chat-input::placeholder{color:#6b7280}
-      .pcf-chat-send{padding:12px 24px;border-radius:24px;background:#2563eb;color:#fff;border:none;cursor:pointer;font-weight:600;transition:background 0.2s}
-      .pcf-chat-send:hover{background:#1d4ed8}
-      .pcf-chat-send:disabled{background:#4b5563;cursor:not-allowed}
+      .pcf-chat-input{flex:1;padding:12px 16px;border-radius:24px;border:1px solid rgba(0,180,255,0.3);background:#ffffff;color:#0a0f1a;resize:none;max-height:120px;min-height:48px;font-family:inherit;font-size:1rem}
+      .light .pcf-chat-input{background:#ffffff;border-color:rgba(0,180,255,0.3);color:#0a0f1a}
+      .light .pcf-chat-input::placeholder{color:#9ca3af}
+      .pcf-chat-input:focus{border-color:#00b4ff;outline:none;box-shadow:0 0 0 3px rgba(0,180,255,0.1)}
+      .pcf-chat-send{padding:12px 24px;border-radius:24px;background:#00b4ff;color:#fff;border:none;cursor:pointer;font-weight:600;transition:all 0.2s;box-shadow:0 4px 12px rgba(0,180,255,0.3)}
+      .pcf-chat-send:hover{background:#00d9ff;box-shadow:0 6px 16px rgba(0,180,255,0.5);transform:translateY(-1px)}
+      .pcf-chat-send:disabled{background:#9ca3af;cursor:not-allowed;box-shadow:none}
       .pcf-chat-suggestions{margin-top:10px;display:flex;flex-direction:column;gap:10px}
       .pcf-chat-part{border:1px solid #374151;border-radius:12px;padding:14px;background:#0f172a;box-shadow:0 8px 20px rgba(2,6,23,0.35)}
       .light .pcf-chat-part{background:#f9fafb;border-color:#e5e7eb;box-shadow:0 8px 18px rgba(15,23,42,0.1)}
@@ -1567,14 +1576,20 @@
           // Add light mode CSS and responsive grid styles
           const style = document.createElement('style');
           style.textContent = `
-            .light .light-mode-card { background: #ffffff !important; border-color: #e5e7eb !important; }
-            .light .light-mode-item { background: #f9fafb !important; border-color: #e5e7eb !important; }
-            .light .light-mode-title { color: #111827 !important; }
-            .light .light-mode-text { color: #6b7280 !important; }
-            .light .light-mode-warning { background: #fef3c7 !important; color: #92400e !important; }
-            .light .light-mode-total { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%) !important; border-color: #3b82f6 !important; }
-            .light .light-mode-total .light-mode-title { color: #1e40af !important; }
-            .light .light-mode-total .light-mode-text { color: #1e3a8a !important; }
+            .light .light-mode-card { background: #ffffff !important; border-color: rgba(0,180,255,0.2) !important; }
+            .light-mode-card { background: #ffffff !important; border-color: rgba(0,180,255,0.2) !important; }
+            .light .light-mode-item { background: #ffffff !important; border-color: rgba(0,180,255,0.2) !important; }
+            .light-mode-item { background: #ffffff !important; border-color: rgba(0,180,255,0.2) !important; }
+            .light .light-mode-title { color: #0a0f1a !important; }
+            .light-mode-title { color: #0a0f1a !important; }
+            .light .light-mode-text { color: #4b5563 !important; }
+            .light-mode-text { color: #4b5563 !important; }
+            .light .light-mode-warning { background: rgba(0,180,255,0.1) !important; border-color: rgba(0,180,255,0.3) !important; color: #00b4ff !important; }
+            .light-mode-warning { background: rgba(0,180,255,0.1) !important; border-color: rgba(0,180,255,0.3) !important; color: #00b4ff !important; }
+            .light .light-mode-total { background: linear-gradient(135deg, #00b4ff 0%, #00d9ff 100%) !important; border-color: #00b4ff !important; box-shadow: 0 4px 12px rgba(0,180,255,0.3) !important; }
+            .light-mode-total { background: linear-gradient(135deg, #00b4ff 0%, #00d9ff 100%) !important; border-color: #00b4ff !important; box-shadow: 0 4px 12px rgba(0,180,255,0.3) !important; }
+            .light .light-mode-total .light-mode-title { color: #ffffff !important; }
+            .light .light-mode-total .light-mode-text { color: rgba(255,255,255,0.9) !important; }
             
             .pcf-build-grid {
               display: grid;
