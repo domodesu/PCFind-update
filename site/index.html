@@ -433,6 +433,9 @@
           max-width:90%;
           gap:8px;
         }
+        .pcf-chat-msg.ai{
+          max-width:100%;
+        }
         .pcf-chat-avatar{
           width:28px;
           height:28px;
@@ -443,6 +446,25 @@
           border-radius:12px;
           font-size:0.9rem;
           line-height:1.5;
+        }
+        .pcf-chat-bubble-inner{
+          display:flex;
+          flex-direction:column;
+          gap:8px;
+        }
+        .pcf-chat-build-summary{
+          margin-top:8px;
+          padding:8px 10px;
+          font-size:0.85rem;
+        }
+        .pcf-chat-build-toggle{
+          margin-top:8px;
+          display:flex;
+          justify-content:center;
+        }
+        .pcf-chat-build-toggle-btn{
+          padding:6px 12px;
+          font-size:0.8rem;
         }
         .pcf-chat-suggestions{
           margin-top:8px;
@@ -575,6 +597,30 @@
       .light .pcf-chat-bubble{background:#f3f4f6;color:#1f2937;font-weight:500}
       .pcf-chat-msg.user .pcf-chat-bubble{background:#2563eb;color:#fff}
       .light .pcf-chat-msg.user .pcf-chat-bubble{background:#3b82f6}
+      .pcf-chat-bubble-inner{
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+      }
+      .pcf-chat-build-summary{
+        margin-top:8px;
+        padding:10px 12px;
+        background:rgba(15,23,42,0.5);
+        border:1px solid rgba(148,163,184,0.2);
+        border-radius:8px;
+        font-size:0.9rem;
+        color:#e5e7eb;
+      }
+      .light .pcf-chat-build-summary{
+        background:rgba(243,244,246,0.8);
+        border-color:rgba(209,213,219,0.5);
+        color:#111827;
+      }
+      .pcf-chat-build-toggle{
+        margin-top:8px;
+        display:flex;
+        justify-content:center;
+      }
       .pcf-chat-input-area{border-top:1px solid #374151;padding:16px 20px;background:#0b1220}
       .light .pcf-chat-input-area{border-color:#e5e7eb;background:#ffffff}
       .pcf-chat-input-wrap{display:flex;gap:12px;align-items:flex-end;max-width:100%}
@@ -2210,8 +2256,9 @@
             const cleanedContent = stripStructuredBlocks(msg.content || '');
             html += '<div class="pcf-chat-msg '+(isUser?'user':'ai')+'">';
             html += '<div class="pcf-chat-avatar">'+avatar+'</div>';
-            html += '<div class="pcf-chat-bubble">'+escapeHtml(cleanedContent)+'</div>';
+            
             if(!isUser && Array.isArray(msg.parts) && msg.parts.length){
+              // AI message with parts - put everything inside the bubble
               const isCompact = msg.parts.length >= 3;
               // Calculate total price
               let totalPrice = 0;
@@ -2222,12 +2269,16 @@
               });
               const totalPriceFormatted = formatPrice(totalPrice);
               
+              html += '<div class="pcf-chat-bubble">';
+              html += '<div class="pcf-chat-bubble-inner">';
+              html += '<div>'+escapeHtml(cleanedContent)+'</div>';
+              
               // Build summary
               html += '<div class="pcf-chat-build-summary">';
               html += '<strong>📦 Build Summary:</strong> ' + msg.parts.length + ' component' + (msg.parts.length > 1 ? 's' : '') + ' • Total: ' + (totalPriceFormatted || 'N/A');
               html += '</div>';
               
-              // View build button
+              // View build button at the end
               html += '<div class="pcf-chat-build-toggle">';
               html += '<button class="pcf-chat-build-toggle-btn" data-msg-index="'+msgIndex+'" data-action="view-build">';
               html += '<span>👁️</span>';
@@ -2235,7 +2286,11 @@
               html += '</button>';
               html += '</div>';
               
-              // Modal popup for build details (created separately, not inline)
+              html += '</div>'; // Close bubble-inner
+              html += '</div>'; // Close bubble
+            } else {
+              // Regular message without parts
+              html += '<div class="pcf-chat-bubble">'+escapeHtml(cleanedContent)+'</div>';
             }
             html += '</div>';
           });
