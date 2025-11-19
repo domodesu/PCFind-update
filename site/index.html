@@ -1455,14 +1455,50 @@
         align-items: center;
         margin-bottom: 20px;
         padding: 0 20px;
-        justify-content: flex-end;
+        justify-content: space-between;
         width: 100%;
         max-width: 100%;
         box-sizing: border-box;
+        flex-wrap: wrap;
+      }
+      #pcf-category-filter {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #374151;
+        background: #1f2937;
+        color: #e5e7eb;
+        font-size: 14px;
+        cursor: pointer;
+        min-width: 150px;
+        transition: all 0.2s;
+      }
+      #pcf-category-filter:hover {
+        border-color: #4b5563;
+        background: #374151;
+      }
+      #pcf-category-filter:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+      .light #pcf-category-filter {
+        background: #ffffff;
+        border-color: #e5e7eb;
+        color: #111827;
+      }
+      .light #pcf-category-filter:hover {
+        border-color: #d1d5db;
+        background: #f9fafb;
       }
       @media (max-width: 768px) {
         .pcf-view-toggle {
           justify-content: center;
+          flex-direction: column;
+          gap: 12px;
+        }
+        #pcf-category-filter {
+          width: 100%;
+          max-width: 100%;
         }
       }
       .pcf-view-toggle-btn {
@@ -1541,6 +1577,17 @@
       .pcf-parts-container.stack-view [data-testid^="card-builder-part-"] > div:not(.aspect-video):not(.bg-muted) {
         flex: 1;
         padding-left: 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      /* Ensure prices are visible in both views */
+      .pcf-parts-container.stack-view [data-testid^="card-part-"] *,
+      .pcf-parts-container.stack-view [data-testid^="card-builder-part-"] *,
+      .pcf-parts-container.grid-view [data-testid^="card-part-"] *,
+      .pcf-parts-container.grid-view [data-testid^="card-builder-part-"] * {
+        visibility: visible !important;
+        opacity: 1 !important;
       }
       
       /* Mobile adjustments */
@@ -1862,14 +1909,30 @@
           // Get saved view preference
           var savedView = localStorage.getItem('pcfind_parts_view') || 'grid';
           
-          // Create toggle buttons
+          // Create toggle buttons and filter
           var toggleHtml = '<div id="pcf-view-toggle" class="pcf-view-toggle">';
+          toggleHtml += '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;flex:1">';
+          // Filter dropdown
+          toggleHtml += '<select id="pcf-category-filter" style="padding:8px 12px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#e5e7eb;font-size:14px;cursor:pointer;min-width:150px">';
+          toggleHtml += '<option value="">All Categories</option>';
+          toggleHtml += '<option value="CPU">CPU</option>';
+          toggleHtml += '<option value="GPU">GPU</option>';
+          toggleHtml += '<option value="Motherboard">Motherboard</option>';
+          toggleHtml += '<option value="RAM">RAM</option>';
+          toggleHtml += '<option value="Storage">Storage</option>';
+          toggleHtml += '<option value="PSU">PSU</option>';
+          toggleHtml += '<option value="Case">Case</option>';
+          toggleHtml += '<option value="Cooling">Cooling</option>';
+          toggleHtml += '</select>';
+          toggleHtml += '</div>';
+          toggleHtml += '<div style="display:flex;gap:8px">';
           toggleHtml += '<button class="pcf-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
           toggleHtml += '<span>⊞</span> <span>Grid</span>';
           toggleHtml += '</button>';
           toggleHtml += '<button class="pcf-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
           toggleHtml += '<span>☰</span> <span>Stack</span>';
           toggleHtml += '</button>';
+          toggleHtml += '</div>';
           toggleHtml += '</div>';
           
           // Insert toggle before the parts container or at the top of main
@@ -1939,7 +2002,80 @@
                 
                 // Save preference
                 localStorage.setItem('pcfind_parts_view', view);
+                
+                // Force re-render to fix price display
+                setTimeout(function(){
+                  filterParts();
+                }, 50);
               });
+            });
+            
+            // Add filter functionality
+            var filterSelect = document.getElementById('pcf-category-filter');
+            if(filterSelect){
+              // Get saved filter
+              var savedFilter = localStorage.getItem('pcfind_parts_filter') || '';
+              if(savedFilter) filterSelect.value = savedFilter;
+              
+              filterSelect.addEventListener('change', function(){
+                var selectedCategory = this.value;
+                localStorage.setItem('pcfind_parts_filter', selectedCategory);
+                filterParts();
+              });
+              
+              // Initial filter
+              setTimeout(filterParts, 100);
+            }
+          }
+          
+          // Filter parts by category
+          function filterParts(){
+            var filterSelect = document.getElementById('pcf-category-filter');
+            if(!filterSelect) return;
+            
+            var selectedCategory = filterSelect.value.toLowerCase();
+            var allCards = container.querySelectorAll('[data-testid^="card-part-"], [data-testid^="card-builder-part-"]');
+            
+            allCards.forEach(function(card){
+              var cardText = (card.textContent || '').toLowerCase();
+              var categoryMatch = false;
+              
+              if(!selectedCategory){
+                categoryMatch = true;
+              } else {
+                // Check various category patterns
+                var categoryMap = {
+                  'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i'],
+                  'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'amd', 'radeon'],
+                  'motherboard': ['motherboard', 'mobo', 'mainboard', 'board'],
+                  'ram': ['ram', 'memory', 'ddr'],
+                  'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2'],
+                  'psu': ['psu', 'power supply', 'power'],
+                  'case': ['case', 'chassis', 'tower', 'cabinet'],
+                  'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid']
+                };
+                
+                var patterns = categoryMap[selectedCategory] || [selectedCategory];
+                categoryMatch = patterns.some(function(pattern){
+                  return cardText.includes(pattern);
+                });
+              }
+              
+              if(categoryMatch){
+                card.style.display = '';
+                // Ensure price is visible in both views
+                var priceElements = card.querySelectorAll('*');
+                priceElements.forEach(function(el){
+                  var text = (el.textContent || '').trim();
+                  if(text.includes('₱') || text.match(/[\d,]+/)){
+                    el.style.display = '';
+                    el.style.visibility = 'visible';
+                    el.style.opacity = '1';
+                  }
+                });
+              } else {
+                card.style.display = 'none';
+              }
             });
           }
         }
