@@ -347,36 +347,43 @@
         right:0;
         background:#0b1220;
         border-bottom:1px solid #374151;
-        padding:12px 60px 12px 16px;
+        padding:12px 12px 12px 12px;
         z-index:9998;
-        gap:8px;
+        box-shadow:0 2px 8px rgba(0,0,0,0.3);
       }
       .light .pcf-chat-mobile-header{
         background:#ffffff;
         border-color:#e5e7eb;
+        box-shadow:0 2px 8px rgba(0,0,0,0.1);
       }
       .pcf-chat-mobile-actions{
         display:flex;
         gap:8px;
         flex:1;
+        margin-right:56px;
       }
       .pcf-chat-mobile-btn{
         flex:1;
-        padding:10px 16px;
+        padding:10px 12px;
         border-radius:8px;
         border:1px solid #374151;
         background:#1f2937;
         color:#e5e7eb;
-        font-size:0.9rem;
+        font-size:0.85rem;
         font-weight:500;
         cursor:pointer;
         transition:all 0.2s ease;
         text-align:center;
+        white-space:nowrap;
+        min-width:0;
       }
       .light .pcf-chat-mobile-btn{
         background:#f3f4f6;
         border-color:#d1d5db;
         color:#111827;
+      }
+      .pcf-chat-mobile-btn:active{
+        transform:scale(0.98);
       }
       .pcf-chat-mobile-btn:hover{
         background:#2563eb;
@@ -396,17 +403,43 @@
         background:#059669;
         border-color:#059669;
       }
+      .pcf-chat-mobile-btn.new-chat:active{
+        background:#047857;
+      }
       /* Hide sidebar on mobile */
       @media (max-width: 768px){
         .pcf-chat-sidebar{display:none}
-        .pcf-chat{padding-top:70px}
+        .pcf-chat{
+          padding-top:70px;
+          padding-left:10px;
+          padding-right:10px;
+        }
         .pcf-chat-mobile-header{
           display:flex;
           align-items:center;
         }
+        .pcf-chat-main{
+          border-radius:8px;
+        }
+        .pcf-chat-messages{
+          padding:16px 12px;
+        }
+        .pcf-chat-input-area{
+          padding:12px 16px;
+        }
+        .pcf-chat-input{
+          font-size:16px;
+          padding:10px 14px;
+        }
+        .pcf-chat-send{
+          padding:10px 20px;
+          font-size:0.9rem;
+        }
         /* Ensure burger menu is visible on chat page */
         body:has(#pcf-chat) .pcf-tools{
           display:flex !important;
+          top:12px;
+          right:12px;
         }
       }
       /* Hide everything except nav when chat exists */
