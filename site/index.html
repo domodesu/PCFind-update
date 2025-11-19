@@ -1321,9 +1321,64 @@
               if(found && found.imageUrl) return found.imageUrl;
             }
           }catch(e){}
-          // Fallback to Unsplash featured search by name then category
-          var q = encodeURIComponent(name||category||'pc hardware');
-          return 'https://source.unsplash.com/featured/640x360?'+q;
+          
+          // Get base path for GitHub Pages
+          function getBasePath(){
+            var basePath = '';
+            try{
+              if(location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
+                basePath = '';
+              }else{
+                var host = location.hostname || '';
+                var hostParts = host.split('.');
+                var username = hostParts[0] || '';
+                var isUserSite = (host === username + '.github.io');
+                if(!isUserSite){
+                  var parts = (location.pathname||'/').split('/');
+                  var repo = parts[1] || '';
+                  if(repo) basePath = '/' + repo;
+                }
+              }
+            }catch(ex){}
+            return basePath;
+          }
+          
+          // Map category to stock image
+          var cat = (category||'').toLowerCase();
+          var partName = (name||'').toLowerCase();
+          var basePath = getBasePath();
+          var stockImage = '';
+          
+          if(cat.includes('cpu') || cat.includes('processor')){
+            // Check if Intel or AMD/Ryzen
+            if(partName.includes('intel') || partName.includes('core i') || partName.includes('pentium') || partName.includes('celeron')){
+              stockImage = basePath + '/assets/PCPartsStock/IntelCpuStock.jpg';
+            }else if(partName.includes('amd') || partName.includes('ryzen') || partName.includes('athlon') || partName.includes('threadripper')){
+              stockImage = basePath + '/assets/PCPartsStock/RyzenCpuStock.jpg';
+            }else{
+              // Default to Ryzen for AMD
+              stockImage = basePath + '/assets/PCPartsStock/RyzenCpuStock.jpg';
+            }
+          }else if(cat.includes('gpu') || cat.includes('graphics') || cat.includes('video card')){
+            stockImage = basePath + '/assets/PCPartsStock/GPUStock.jpg';
+          }else if(cat.includes('motherboard') || cat.includes('mobo') || cat.includes('mainboard')){
+            stockImage = basePath + '/assets/PCPartsStock/MotherBoardStock.jpg';
+          }else if(cat.includes('ram') || cat.includes('memory')){
+            stockImage = basePath + '/assets/PCPartsStock/RAMStock.jpg';
+          }else if(cat.includes('storage') || cat.includes('ssd') || cat.includes('hdd') || cat.includes('hard drive')){
+            stockImage = basePath + '/assets/PCPartsStock/STORAGEStock.jpg';
+          }else if(cat.includes('psu') || cat.includes('power supply') || cat.includes('power supply unit')){
+            stockImage = basePath + '/assets/PCPartsStock/PSUStock.jpg';
+          }else if(cat.includes('case') || cat.includes('chassis') || cat.includes('tower')){
+            stockImage = basePath + '/assets/PCPartsStock/CASEStock.jpg';
+          }else if(cat.includes('cooler') || cat.includes('cooling') || cat.includes('fan') || cat.includes('heatsink')){
+            stockImage = basePath + '/assets/PCPartsStock/CoolerStock.jpg';
+          }else{
+            // Fallback to GPU stock image
+            stockImage = basePath + '/assets/PCPartsStock/GPUStock.jpg';
+          }
+          
+          return stockImage;
         }
         function enhanceCards(root){
           var cards = root.querySelectorAll('[data-testid^="card-part-"], [data-testid^="card-builder-part-"], .p-6 .aspect-video, .p-6 .bg-muted');
