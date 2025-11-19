@@ -615,14 +615,23 @@
             return s ? JSON.parse(s) : (l ? JSON.parse(l) : null);
           } catch { return null; }
         }
+        function notifyUserChange(){
+          try{
+            const detail = { user: getUser() };
+            window.dispatchEvent(new CustomEvent('pcfind:user-change', { detail }));
+          }catch(err){
+            try{ window.dispatchEvent(new Event('pcfind:user-change')); }catch{}
+          }
+        }
         function setUser(u, remember){
           try{
             if(remember){ localStorage.setItem('pcfind_user', JSON.stringify(u)); sessionStorage.removeItem('pcfind_user'); }
             else { sessionStorage.setItem('pcfind_user', JSON.stringify(u)); localStorage.removeItem('pcfind_user'); }
           }catch{}
           sync();
+          notifyUserChange();
         }
-        function clearUser(){ try{ localStorage.removeItem('pcfind_user'); sessionStorage.removeItem('pcfind_user'); }catch{} sync(); }
+        function clearUser(){ try{ localStorage.removeItem('pcfind_user'); sessionStorage.removeItem('pcfind_user'); }catch{} sync(); notifyUserChange(); }
         function sync(){
           const u = getUser();
           const burgerAccountItem = document.getElementById('pcf-open-account');
@@ -1338,7 +1347,36 @@
     <script>
       (function(){
         const API_URL = 'https://pcfind-auth.onrender.com/chat';
+        const CHAT_STORAGE_PREFIX = 'pcfind_chat_sessions__';
+        const LEGACY_CHAT_STORAGE_KEY = 'pcfind_chat_sessions';
         let chatHistory = [];
+        let currentSessionId = null;
+        let lastChatStorageKey = null;
+        
+        function getActiveUser(){
+          try{
+            const s = sessionStorage.getItem('pcfind_user');
+            const l = localStorage.getItem('pcfind_user');
+            return s ? JSON.parse(s) : (l ? JSON.parse(l) : null);
+          }catch{
+            return null;
+          }
+        }
+        
+        function getChatStorageKey(user){
+          const info = user || getActiveUser();
+          if(!info) return null;
+          const identifier = (info.email || info.name || '').trim().toLowerCase();
+          if(!identifier) return null;
+          return CHAT_STORAGE_PREFIX + identifier.replace(/[^a-z0-9]/g, '_');
+        }
+        
+        try{
+          if(typeof localStorage !== 'undefined'){
+            localStorage.removeItem(LEGACY_CHAT_STORAGE_KEY);
+          }
+        }catch{}
+        lastChatStorageKey = getChatStorageKey();
         
         function isChat(){ 
           const path = (location.pathname||'').toLowerCase();
@@ -1423,9 +1461,10 @@
           chatHistory.forEach((msg, msgIndex) =>{
             const isUser = msg.role === 'user';
             const avatar = isUser ? (msg.name||'You').charAt(0).toUpperCase() : 'AI';
+            const cleanedContent = stripStructuredBlocks(msg.content || '');
             html += '<div class="pcf-chat-msg '+(isUser?'user':'ai')+'">';
             html += '<div class="pcf-chat-avatar">'+avatar+'</div>';
-            html += '<div class="pcf-chat-bubble">'+escapeHtml(msg.content)+'</div>';
+            html += '<div class="pcf-chat-bubble">'+escapeHtml(cleanedContent)+'</div>';
             if(!isUser && Array.isArray(msg.parts) && msg.parts.length){
               html += '<div class="pcf-chat-suggestions">';
               msg.parts.forEach((part, partIndex) => {
@@ -1521,6 +1560,10 @@
             if(msgs){ msgs.scrollTop = msgs.scrollHeight; }
           }, 100);
         }
+        function stripStructuredBlocks(text){
+          if(!text) return '';
+          return text.replace(/\[\[(PARTS|AUTO_ADD)\]\]([\s\S]*?)\[\[\/\1\]\]/gi, '').trim();
+        }
         function parseAssistantReply(raw){
           let working = raw || '';
           const partsExtraction = extractTagPayload(working, 'PARTS');
@@ -1528,7 +1571,7 @@
           const autoExtraction = extractTagPayload(working, 'AUTO_ADD');
           working = autoExtraction.text;
           return {
-            text: working.trim(),
+            text: stripStructuredBlocks(working),
             parts: partArrayFromPayload(partsExtraction.payload),
             autoAdd: partArrayFromPayload(autoExtraction.payload)
           };
@@ -1632,17 +1675,10 @@
           if(!message) return;
           
           // Get current user
-          let userName = 'You';
-          let isLoggedIn = false;
-          try{
-            const s = sessionStorage.getItem('pcfind_user');
-            const l = localStorage.getItem('pcfind_user');
-            const user = s?JSON.parse(s):(l?JSON.parse(l):null);
-            if(user && user.name){
-              userName = user.name;
-              isLoggedIn = true;
-            }
-          }catch{}
+          const activeUser = getActiveUser();
+          const storageKey = getChatStorageKey(activeUser);
+          const isLoggedIn = !!storageKey;
+          let userName = (activeUser && activeUser.name) ? activeUser.name : 'You';
           
           // Check guest message limit (2 messages max)
           if(!isLoggedIn){
@@ -1713,26 +1749,30 @@
             sendBtn.disabled = false;
             const newInput = document.getElementById('pcf-chat-input');
             if(newInput) newInput.focus();
-            // Save chat after each message
-            saveCurrentChat();
+            // Save chat after each message (only for logged-in users)
+            if(isLoggedIn){
+              saveCurrentChat();
+            }
           }
         }
         
         // Chat history management
-        let currentSessionId = null;
-        
-        function getChatSessions(){
+        function getChatSessions(storageKey){
+          const key = storageKey || getChatStorageKey();
+          if(!key) return [];
           try{
-            const sessions = localStorage.getItem('pcfind_chat_sessions');
+            const sessions = localStorage.getItem(key);
             return sessions ? JSON.parse(sessions) : [];
           }catch{
             return [];
           }
         }
         
-        function saveChatSessions(sessions){
+        function saveChatSessions(sessions, storageKey){
+          const key = storageKey || getChatStorageKey();
+          if(!key) return;
           try{
-            localStorage.setItem('pcfind_chat_sessions', JSON.stringify(sessions));
+            localStorage.setItem(key, JSON.stringify(sessions));
           }catch(e){
             console.error('Failed to save chat sessions:', e);
           }
@@ -1741,7 +1781,10 @@
         function saveCurrentChat(){
           if(chatHistory.length === 0) return;
           
-          const sessions = getChatSessions();
+          const storageKey = getChatStorageKey();
+          if(!storageKey) return;
+          
+          const sessions = getChatSessions(storageKey);
           const now = Date.now();
           
           // Get chat title from first user message
@@ -1770,7 +1813,7 @@
             if(sessions.length > 50) sessions.length = 50;
           }
           
-          saveChatSessions(sessions);
+          saveChatSessions(sessions, storageKey);
           renderHistoryPanel();
         }
         
@@ -1887,7 +1930,10 @@
           const panel = document.getElementById('pcf-chat-history-panel');
           if(!panel) return;
           
-          const sessions = getChatSessions();
+          const activeUser = getActiveUser();
+          const storageKey = getChatStorageKey(activeUser);
+          const isLoggedIn = !!storageKey;
+          const sessions = isLoggedIn ? getChatSessions(storageKey) : [];
           let html = '';
           
           html += '<div class="pcf-chat-history-header">';
@@ -1895,7 +1941,9 @@
           html += '<button class="pcf-chat-history-close" id="pcf-history-close-btn">✕</button>';
           html += '</div>';
           
-          if(sessions.length === 0){
+          if(!isLoggedIn){
+            html += '<div class="pcf-chat-history-empty">Sign in to save and revisit conversations with the AI.</div>';
+          }else if(sessions.length === 0){
             html += '<div class="pcf-chat-history-empty">No chat history yet.<br>Start a conversation to save it here!</div>';
           }else{
             sessions.forEach(session => {
@@ -1937,6 +1985,23 @@
             });
           });
         }
+        
+        function handleUserContextChange(){
+          const nextKey = getChatStorageKey();
+          if(nextKey === lastChatStorageKey) return;
+          lastChatStorageKey = nextKey;
+          currentSessionId = null;
+          chatHistory.length = 0;
+          renderChat();
+          renderHistoryPanel();
+        }
+        
+        window.addEventListener('pcfind:user-change', handleUserContextChange);
+        window.addEventListener('storage', function(e){
+          if(e && e.key === 'pcfind_user'){
+            handleUserContextChange();
+          }
+        });
         
         // Watch for route changes
         const _push=history.pushState; 
@@ -2445,6 +2510,7 @@
           try{ localStorage.removeItem('pcfind_user'); sessionStorage.removeItem('pcfind_user'); }catch{}
           // Force sync by dispatching storage event (cross-window sync listener will update UI)
           try{ window.dispatchEvent(new StorageEvent('storage', { key: 'pcfind_user' })); }catch{}
+          try{ window.dispatchEvent(new CustomEvent('pcfind:user-change', { detail: { user: null } })); }catch{ try{ window.dispatchEvent(new Event('pcfind:user-change')); }catch{} }
           // Update burger menu immediately
           var item = document.getElementById('pcf-open-account'); if(item) item.textContent = 'Sign in';
           var lo = document.getElementById('pcf-logout'); if(lo) lo.style.display = 'none';
