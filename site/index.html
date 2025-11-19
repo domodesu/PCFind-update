@@ -1344,33 +1344,18 @@
         }
         
         function renderAbout(){
-          const main = document.querySelector('main');
-          const footerEl = document.querySelector('footer');
-          
           if(!isAbout()){
             cleanupAbout();
             return;
           }
           
-          if(main){
-            Array.from(main.children).forEach(child => {
-              if(child.id !== 'pcf-about-container'){
-                if(child.dataset.originalDisplay === undefined){
-                  child.dataset.originalDisplay = child.style.display || '';
-                }
-                child.style.display = 'none';
-              }
-            });
-          }
-          
-          if(footerEl){
-            if(footerEl.dataset.originalDisplay === undefined){
-              footerEl.dataset.originalDisplay = footerEl.style.display || '';
-            }
-            footerEl.style.display = 'none';
-          }
-          
+          // Don't hide main content - preserve existing UI
           const c = ensureContainer();
+          
+          // Check if team section already exists to avoid duplicates
+          if(document.getElementById('pcf-team-section')){
+            return;
+          }
           
           // Team members data (photos and descriptions will be added later)
           const teamMembers = [
@@ -1381,74 +1366,90 @@
             { name: 'Team Member 5', role: 'Marketing Lead', photo: '', description: '' }
           ];
           
-          let html = '';
-          
-          // Header section
-          html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:40px 24px;margin-bottom:40px;text-align:center" class="light-mode-card">';
-          html += '<h1 style="color:#e5e7eb;margin:0 0 12px 0;font-size:2.5rem;font-weight:700" class="light-mode-title">About PCFind</h1>';
-          html += '<p style="color:#9ca3af;margin:0;font-size:1.1rem;max-width:700px;margin-left:auto;margin-right:auto;line-height:1.6" class="light-mode-text">Your trusted companion for building the perfect PC in the Philippines</p>';
-          html += '</div>';
+          let teamHtml = '';
           
           // Team section
-          html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:40px 24px;margin-bottom:40px" class="light-mode-card">';
-          html += '<h2 style="color:#e5e7eb;margin:0 0 32px 0;font-size:2rem;font-weight:600;text-align:center" class="light-mode-title">Our Team</h2>';
+          teamHtml += '<div id="pcf-team-section" style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:40px 24px;margin-bottom:40px" class="light-mode-card">';
+          teamHtml += '<h2 style="color:#e5e7eb;margin:0 0 32px 0;font-size:2rem;font-weight:600;text-align:center" class="light-mode-title">Our Team</h2>';
           
           // Team grid
-          html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px;max-width:1000px;margin:0 auto" class="pcf-team-grid">';
+          teamHtml += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px;max-width:1000px;margin:0 auto" class="pcf-team-grid">';
           
           teamMembers.forEach((member, index) => {
-            html += '<div style="background:#0b1220;border:1px solid #374151;border-radius:16px;padding:24px;text-align:center;transition:all 0.3s ease;position:relative;overflow:hidden" class="light-mode-item pcf-team-member" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 24px rgba(0,0,0,0.4)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
+            teamHtml += '<div style="background:#0b1220;border:1px solid #374151;border-radius:16px;padding:24px;text-align:center;transition:all 0.3s ease;position:relative;overflow:hidden" class="light-mode-item pcf-team-member" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 24px rgba(0,0,0,0.4)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
             
             // Photo placeholder
-            html += '<div style="width:150px;height:150px;border-radius:50%;background:linear-gradient(135deg,#374151 0%,#1f2937 100%);border:4px solid #4b5563;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative" class="pcf-team-photo">';
-            html += '<div style="color:#9ca3af;font-size:3rem;opacity:0.5">👤</div>';
-            html += '</div>';
+            teamHtml += '<div style="width:150px;height:150px;border-radius:50%;background:linear-gradient(135deg,#374151 0%,#1f2937 100%);border:4px solid #4b5563;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative" class="pcf-team-photo">';
+            teamHtml += '<div style="color:#9ca3af;font-size:3rem;opacity:0.5">👤</div>';
+            teamHtml += '</div>';
             
             // Name
-            html += '<h3 style="color:#e5e7eb;margin:0 0 8px 0;font-size:1.3rem;font-weight:600" class="light-mode-title">' + (member.name || 'Team Member') + '</h3>';
+            teamHtml += '<h3 style="color:#e5e7eb;margin:0 0 8px 0;font-size:1.3rem;font-weight:600" class="light-mode-title">' + (member.name || 'Team Member') + '</h3>';
             
             // Role badge
-            html += '<div style="display:inline-block;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);color:#fff;padding:6px 16px;border-radius:20px;font-size:0.85rem;font-weight:600;margin-bottom:20px;box-shadow:0 2px 8px rgba(37,99,235,0.3)">' + (member.role || 'Team Member') + '</div>';
+            teamHtml += '<div style="display:inline-block;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);color:#fff;padding:6px 16px;border-radius:20px;font-size:0.85rem;font-weight:600;margin-bottom:20px;box-shadow:0 2px 8px rgba(37,99,235,0.3)">' + (member.role || 'Team Member') + '</div>';
             
             // Description container
-            html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:20px;min-height:120px;margin-top:16px" class="light-mode-description">';
-            html += '<p style="color:#9ca3af;margin:0;font-size:0.95rem;line-height:1.6;font-style:italic" class="light-mode-text">';
-            html += member.description || 'Description coming soon...';
-            html += '</p>';
-            html += '</div>';
+            teamHtml += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:20px;min-height:120px;margin-top:16px" class="light-mode-description">';
+            teamHtml += '<p style="color:#9ca3af;margin:0;font-size:0.95rem;line-height:1.6;font-style:italic" class="light-mode-text">';
+            teamHtml += member.description || 'Description coming soon...';
+            teamHtml += '</p>';
+            teamHtml += '</div>';
             
-            html += '</div>';
+            teamHtml += '</div>';
           });
           
-          html += '</div>'; // Close team grid
-          html += '</div>'; // Close team section
+          teamHtml += '</div>'; // Close team grid
+          teamHtml += '</div>'; // Close team section
           
-          // Partner Store section
-          html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:40px 24px;margin-bottom:40px" class="light-mode-card">';
-          html += '<h2 style="color:#e5e7eb;margin:0 0 32px 0;font-size:2rem;font-weight:600;text-align:center" class="light-mode-title">Partner Stores</h2>';
-          html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;max-width:1000px;margin:0 auto" class="pcf-partner-grid">';
+          // Find partner store section - check for existing partner section or create one
+          let partnerSection = null;
+          const allH2s = c.querySelectorAll('h2');
+          for(let h2 of allH2s){
+            if(h2.textContent && h2.textContent.toLowerCase().includes('partner')){
+              partnerSection = h2;
+              break;
+            }
+          }
           
-          // Partner stores (can be customized later)
-          const partnerStores = [
-            { name: 'Lazada', logo: '' },
-            { name: 'Shopee', logo: '' },
-            { name: 'PC Express', logo: '' },
-            { name: 'EasyPC', logo: '' }
-          ];
+          // If no existing partner section, create it first
+          if(!partnerSection){
+            let partnerHtml = '';
+            partnerHtml += '<div id="pcf-partner-section" style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:40px 24px;margin-bottom:40px" class="light-mode-card">';
+            partnerHtml += '<h2 style="color:#e5e7eb;margin:0 0 32px 0;font-size:2rem;font-weight:600;text-align:center" class="light-mode-title">Partner Stores</h2>';
+            partnerHtml += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;max-width:1000px;margin:0 auto" class="pcf-partner-grid">';
+            
+            const partnerStores = [
+              { name: 'Lazada', logo: '' },
+              { name: 'Shopee', logo: '' },
+              { name: 'PC Express', logo: '' },
+              { name: 'EasyPC', logo: '' }
+            ];
+            
+            partnerStores.forEach((store) => {
+              partnerHtml += '<div style="background:#0b1220;border:1px solid #374151;border-radius:12px;padding:24px;text-align:center;transition:all 0.3s ease" class="light-mode-item pcf-partner-item" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 24px rgba(0,0,0,0.4)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
+              partnerHtml += '<div style="width:120px;height:120px;border-radius:12px;background:linear-gradient(135deg,#374151 0%,#1f2937 100%);border:2px solid #4b5563;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;overflow:hidden" class="pcf-partner-logo">';
+              partnerHtml += '<div style="color:#9ca3af;font-size:2rem;opacity:0.5">🏪</div>';
+              partnerHtml += '</div>';
+              partnerHtml += '<h3 style="color:#e5e7eb;margin:0;font-size:1.1rem;font-weight:600" class="light-mode-title">' + (store.name || 'Partner Store') + '</h3>';
+              partnerHtml += '</div>';
+            });
+            
+            partnerHtml += '</div>'; // Close partner grid
+            partnerHtml += '</div>'; // Close partner section
+            
+            // Append partner section to container
+            c.insertAdjacentHTML('beforeend', partnerHtml);
+            partnerSection = document.getElementById('pcf-partner-section');
+          }
           
-          partnerStores.forEach((store) => {
-            html += '<div style="background:#0b1220;border:1px solid #374151;border-radius:12px;padding:24px;text-align:center;transition:all 0.3s ease" class="light-mode-item pcf-partner-item" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 24px rgba(0,0,0,0.4)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
-            html += '<div style="width:120px;height:120px;border-radius:12px;background:linear-gradient(135deg,#374151 0%,#1f2937 100%);border:2px solid #4b5563;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;overflow:hidden" class="pcf-partner-logo">';
-            html += '<div style="color:#9ca3af;font-size:2rem;opacity:0.5">🏪</div>';
-            html += '</div>';
-            html += '<h3 style="color:#e5e7eb;margin:0;font-size:1.1rem;font-weight:600" class="light-mode-title">' + (store.name || 'Partner Store') + '</h3>';
-            html += '</div>';
-          });
-          
-          html += '</div>'; // Close partner grid
-          html += '</div>'; // Close partner section
-          
-          c.innerHTML = html;
+          // Insert team section before partner section
+          if(partnerSection && partnerSection.parentElement){
+            partnerSection.parentElement.insertAdjacentHTML('beforebegin', teamHtml);
+          } else {
+            // Fallback: prepend to container
+            c.insertAdjacentHTML('afterbegin', teamHtml);
+          }
           
           // Add styles
           const style = document.createElement('style');
