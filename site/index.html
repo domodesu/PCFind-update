@@ -1409,11 +1409,11 @@
           
           // Team members data
           const teamMembers = [
-            { name: 'Gabriel Austria', role: 'CEO', photo: 'assets/team/gabriel.jpg', description: '' },
-            { name: 'Sofia Quillope', role: 'General Manager', photo: 'assets/team/sofia.jpg', description: '' },
-            { name: 'Julius Bartolome', role: 'Lead Website Developer', photo: 'assets/team/julius.jpg', description: '' },
-            { name: 'Ramqui Antonio', role: 'Website Developer', photo: 'assets/team/ramqui.jpg', description: '' },
-            { name: 'Raven Borja', role: 'Marketing Manager', photo: 'assets/team/raven.jpg', description: '' }
+            { name: 'Gabriel Austria', role: 'CEO', photo: 'assets/team/gabriel.jpg', placeholder: 'https://ui-avatars.com/api/?name=Gabriel+Austria&size=200&background=374151&color=e5e7eb&bold=true', description: '' },
+            { name: 'Sofia Quillope', role: 'General Manager', photo: 'assets/team/sofia.jpg', placeholder: 'https://ui-avatars.com/api/?name=Sofia+Quillope&size=200&background=374151&color=e5e7eb&bold=true', description: '' },
+            { name: 'Julius Bartolome', role: 'Lead Website Developer', photo: 'assets/team/julius.jpg', placeholder: 'https://ui-avatars.com/api/?name=Julius+Bartolome&size=200&background=374151&color=e5e7eb&bold=true', description: '' },
+            { name: 'Ramqui Antonio', role: 'Website Developer', photo: 'assets/team/ramqui.jpg', placeholder: 'https://ui-avatars.com/api/?name=Ramqui+Antonio&size=200&background=374151&color=e5e7eb&bold=true', description: '' },
+            { name: 'Raven Borja', role: 'Marketing Manager', photo: 'assets/team/raven.jpg', placeholder: 'https://ui-avatars.com/api/?name=Raven+Borja&size=200&background=374151&color=e5e7eb&bold=true', description: '' }
           ];
           
           let teamHtml = '';
@@ -1428,12 +1428,17 @@
           teamMembers.forEach((member, index) => {
             teamHtml += '<div style="background:#0b1220;border:1px solid #374151;border-radius:12px;padding:18px;text-align:center;transition:all 0.3s ease;position:relative;overflow:hidden" class="light-mode-item pcf-team-member pcf-scroll-fade-in" data-delay="' + (index * 100) + '" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'0 6px 20px rgba(0,0,0,0.4)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
             
-            // Photo - smaller with better error handling
+            // Photo - smaller with better error handling and placeholder fallback
             teamHtml += '<div style="width:100px;height:100px;border-radius:50%;border:3px solid #4b5563;margin:0 auto 12px;overflow:hidden;position:relative;background:linear-gradient(135deg,#374151 0%,#1f2937 100%);display:flex;align-items:center;justify-content:center" class="pcf-team-photo" id="pcf-photo-' + index + '">';
+            // Try actual photo first, fallback to placeholder avatar, then emoji
+            const placeholderUrl = member.placeholder || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(member.name || 'Team Member') + '&size=200&background=374151&color=e5e7eb&bold=true';
             if(member.photo){
-              teamHtml += '<img src="' + member.photo + '" alt="' + (member.name || 'Team Member') + '" style="width:100%;height:100%;object-fit:cover;display:none" onload="this.style.display=\'block\';this.parentElement.querySelector(\'.pcf-photo-placeholder\')?.remove()" onerror="this.style.display=\'none\';const p=this.parentElement;if(!p.querySelector(\'.pcf-photo-placeholder\')){p.innerHTML=\'<div class=\\\'pcf-photo-placeholder\\\' style=\\\'color:#9ca3af;font-size:2.5rem;opacity:0.5;display:flex;align-items:center;justify-content:center;width:100%;height:100%\\\'>👤</div>\'}">';
+              teamHtml += '<img src="' + member.photo + '" alt="' + (member.name || 'Team Member') + '" style="width:100%;height:100%;object-fit:cover;display:none" onload="this.style.display=\'block\';this.parentElement.querySelector(\'.pcf-photo-placeholder\')?.remove();this.parentElement.querySelector(\'.pcf-photo-fallback\')?.remove()" onerror="this.style.display=\'none\';const p=this.parentElement;const fallback=p.querySelector(\'.pcf-photo-fallback\');if(fallback){fallback.style.display=\'block\'}else{const img=document.createElement(\'img\');img.src=\'' + placeholderUrl + '\';img.style.cssText=\'width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0\';img.className=\'pcf-photo-fallback\';img.onerror=function(){this.remove();p.querySelector(\'.pcf-photo-placeholder\').style.display=\'flex\'};p.appendChild(img)}">';
             }
-            teamHtml += '<div class="pcf-photo-placeholder" style="color:#9ca3af;font-size:2.5rem;opacity:0.5;display:flex;align-items:center;justify-content:center;width:100%;height:100%;position:absolute;top:0;left:0">👤</div>';
+            // Placeholder avatar (will show if photo fails)
+            teamHtml += '<img src="' + placeholderUrl + '" alt="' + (member.name || 'Team Member') + '" class="pcf-photo-fallback" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;display:none" onerror="this.remove();this.parentElement.querySelector(\'.pcf-photo-placeholder\').style.display=\'flex\'">';
+            // Emoji fallback (last resort)
+            teamHtml += '<div class="pcf-photo-placeholder" style="color:#9ca3af;font-size:2.5rem;opacity:0.5;display:flex;align-items:center;justify-content:center;width:100%;height:100%;position:absolute;top:0;left:0;display:none">👤</div>';
             teamHtml += '</div>';
             
             // Name - smaller
