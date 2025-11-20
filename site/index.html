@@ -2738,33 +2738,40 @@
               
               // Filter parts immediately - use window function to ensure it's accessible
               try {
-                window.filterBuilderPartsByCategory(category, true); // Force immediate execution
-                console.log('Filter function called successfully');
-                
-                // Scroll to parts section after filtering
+                // Small delay to ensure DOM is ready
                 setTimeout(function(){
-                  var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
-                  var firstVisibleCard = null;
-                  
-                  // Find first visible card
-                  for(var i = 0; i < cards.length; i++){
-                    var card = cards[i];
-                    var style = window.getComputedStyle(card);
-                    if(style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity) > 0){
-                      firstVisibleCard = card;
-                      break;
-                    }
-                  }
-                  
-                  if(firstVisibleCard){
-                    firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  if(window.filterBuilderPartsByCategory){
+                    window.filterBuilderPartsByCategory(category, true); // Force immediate execution
+                    console.log('Filter function called successfully for category:', category);
                   } else {
-                    // If no cards found, scroll to controls
-                    if(controlsContainer){
-                      controlsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
+                    console.error('filterBuilderPartsByCategory not available');
                   }
-                }, 200);
+                  
+                  // Scroll to parts section after filtering
+                  setTimeout(function(){
+                    var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+                    var firstVisibleCard = null;
+                    
+                    // Find first visible card
+                    for(var i = 0; i < cards.length; i++){
+                      var card = cards[i];
+                      var style = window.getComputedStyle(card);
+                      if(style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity) > 0){
+                        firstVisibleCard = card;
+                        break;
+                      }
+                    }
+                    
+                    if(firstVisibleCard){
+                      firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                      // If no cards found, scroll to controls
+                      if(controlsContainer){
+                        controlsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }
+                  }, 200);
+                }, 10);
               } catch(err) {
                 console.error('Error calling filter function:', err);
               }
@@ -2870,23 +2877,24 @@
               console.log('Filtering for category (existing controls):', category);
               localStorage.setItem('pcfind_builder_filter', category);
               
-              // Ensure filter function exists before calling
-              if(!window.filterBuilderPartsByCategory){
-                console.error('filterBuilderPartsByCategory not available, waiting...');
-                setTimeout(function(){
-                  if(window.filterBuilderPartsByCategory){
-                    window.filterBuilderPartsByCategory(category, true); // Force immediate
-                  } else {
-                    console.error('filterBuilderPartsByCategory still not available after delay');
-                  }
-                }, 50);
-                return;
-              }
-              
               // Filter parts immediately - use window function to ensure it's accessible
               try {
-                window.filterBuilderPartsByCategory(category, true); // Force immediate execution
-                console.log('Filter function called successfully');
+                // Small delay to ensure DOM is ready
+                setTimeout(function(){
+                  if(window.filterBuilderPartsByCategory){
+                    window.filterBuilderPartsByCategory(category, true); // Force immediate execution
+                    console.log('Filter function called successfully for category:', category);
+                  } else {
+                    console.error('filterBuilderPartsByCategory not available, waiting...');
+                    setTimeout(function(){
+                      if(window.filterBuilderPartsByCategory){
+                        window.filterBuilderPartsByCategory(category, true); // Force immediate
+                      } else {
+                        console.error('filterBuilderPartsByCategory still not available after delay');
+                      }
+                    }, 50);
+                  }
+                }, 10);
                 
                 // Scroll to parts section after filtering
                 setTimeout(function(){
@@ -3376,46 +3384,89 @@
             // Filter immediately without transitions to prevent flashing
             var visibleCount = 0;
             cards.forEach(function(card){
-              var cardText = (card.textContent || '').toLowerCase();
-              var cardTitle = '';
-              var cardDesc = '';
-              
-              // Try to get more specific text from title or heading elements
-              var titleEl = card.querySelector('h1, h2, h3, h4, h5, h6, [class*="title"], [class*="name"]');
-              if(titleEl){
-                cardTitle = (titleEl.textContent || '').toLowerCase();
-              }
-              
-              var descEl = card.querySelector('[class*="desc"], [class*="description"], p');
-              if(descEl){
-                cardDesc = (descEl.textContent || '').toLowerCase();
-              }
-              
-              // Combine all text for matching
-              var allText = cardText + ' ' + cardTitle + ' ' + cardDesc;
               var categoryMatch = false;
               
               // Show all if no category selected or 'all'
               if(!category || category === '' || category === 'all'){
                 categoryMatch = true;
               } else {
-                // Map dropdown values to search patterns - more specific matching
-                var categoryMap = {
-                  'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper', 'core i3', 'core i5', 'core i7', 'core i9'],
-                  'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'radeon', 'geforce', 'rx ', 'rx6700', 'rx6600', 'rx6800', 'rx 6700', 'rx 6600', 'rx 6800', 'rtx 30', 'rtx 40', 'gtx 16', 'gtx 10'],
-                  'motherboard': ['motherboard', 'mobo', 'mainboard', 'board', 'msi', 'asus', 'gigabyte', 'asrock', 'b550', 'b650', 'x570', 'x670', 'z690', 'z790'],
-                  'ram': ['ram', 'memory', 'ddr', 'ddr4', 'ddr5', '8gb', '16gb', '32gb', '64gb', 'corsair', 'g.skill', 'kingston', 'crucial'],
-                  'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2', 'sata', 'samsung', 'wd', 'western digital', 'crucial', 'kingston'],
-                  'psu': ['psu', 'power supply', 'power', 'watt', 'corsair', 'seasonic', 'evga', 'cooler master', '750w', '850w', '1000w'],
-                  'case': ['case', 'chassis', 'tower', 'cabinet', 'atx', 'matx', 'mini itx', 'fractal', 'nzxt', 'corsair', 'lian li'],
-                  'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid', 'thermal', 'noctua', 'be quiet', 'corsair', 'nzxt', 'arctic']
-                };
+                // First, check for data-category attribute (most reliable)
+                var cardCategory = card.getAttribute('data-category');
+                if(cardCategory){
+                  var cardCategoryLower = cardCategory.toLowerCase().trim();
+                  // Direct match
+                  if(cardCategoryLower === category){
+                    categoryMatch = true;
+                  } else {
+                    // Check if category matches any part of the card's category
+                    // e.g., "CPU" matches "cpu", "Processor" matches "cpu"
+                    var categoryMap = {
+                      'cpu': ['cpu', 'processor'],
+                      'gpu': ['gpu', 'graphics', 'video card', 'videocard'],
+                      'motherboard': ['motherboard', 'mobo', 'mainboard', 'board'],
+                      'ram': ['ram', 'memory'],
+                      'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'harddrive'],
+                      'psu': ['psu', 'power supply', 'powersupply', 'power'],
+                      'case': ['case', 'chassis', 'tower', 'cabinet'],
+                      'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid']
+                    };
+                    var categoryAliases = categoryMap[category] || [category];
+                    categoryMatch = categoryAliases.some(function(alias){
+                      return cardCategoryLower.includes(alias) || alias.includes(cardCategoryLower);
+                    });
+                  }
+                }
                 
-                // Get patterns for this category
-                var patterns = categoryMap[category] || [category];
-                categoryMatch = patterns.some(function(pattern){
-                  return allText.includes(pattern);
-                });
+                // If no data-category attribute, check card text content
+                if(!categoryMatch){
+                  var cardText = (card.textContent || '').toLowerCase();
+                  var cardTitle = '';
+                  var cardCategoryBadge = '';
+                  
+                  // Try to get category from badge or specific elements
+                  var badgeEl = card.querySelector('[class*="badge"], [class*="category"], [class*="tag"], .text-muted-foreground, [class*="text-muted"]');
+                  if(badgeEl){
+                    cardCategoryBadge = (badgeEl.textContent || '').toLowerCase().trim();
+                  }
+                  
+                  // Try to get more specific text from title or heading elements
+                  var titleEl = card.querySelector('h1, h2, h3, h4, h5, h6, [class*="title"], [class*="name"]');
+                  if(titleEl){
+                    cardTitle = (titleEl.textContent || '').toLowerCase();
+                  }
+                  
+                  // Combine all text for matching
+                  var allText = cardCategoryBadge + ' ' + cardText + ' ' + cardTitle;
+                  
+                  // Map dropdown values to search patterns - more specific matching
+                  var categoryMap = {
+                    'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper', 'core i3', 'core i5', 'core i7', 'core i9'],
+                    'gpu': ['gpu', 'graphics', 'video card', 'videocard', 'nvidia', 'rtx', 'gtx', 'radeon', 'geforce', 'rx ', 'rx6700', 'rx6600', 'rx6800', 'rx 6700', 'rx 6600', 'rx 6800', 'rtx 30', 'rtx 40', 'gtx 16', 'gtx 10'],
+                    'motherboard': ['motherboard', 'mobo', 'mainboard', 'board', 'msi', 'asus', 'gigabyte', 'asrock', 'b550', 'b650', 'x570', 'x670', 'z690', 'z790', 'h610', 'h670', 'b660', 'b760'],
+                    'ram': ['ram', 'memory', 'ddr', 'ddr4', 'ddr5', '8gb', '16gb', '32gb', '64gb', 'corsair', 'g.skill', 'kingston', 'crucial', 'vengeance', 'trident'],
+                    'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'harddrive', 'nvme', 'm.2', 'sata', 'samsung', 'wd', 'western digital', 'crucial', 'kingston', 'nv2', '980', '990'],
+                    'psu': ['psu', 'power supply', 'powersupply', 'power', 'watt', 'corsair', 'seasonic', 'evga', 'cooler master', '750w', '850w', '1000w', '650w', '550w'],
+                    'case': ['case', 'chassis', 'tower', 'cabinet', 'atx', 'matx', 'mini itx', 'fractal', 'nzxt', 'corsair', 'lian li', 'phanteks'],
+                    'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid', 'thermal', 'noctua', 'be quiet', 'corsair', 'nzxt', 'arctic', 'cpu cooler', 'cpu cooler']
+                  };
+                  
+                  // Get patterns for this category
+                  var patterns = categoryMap[category] || [category];
+                  
+                  // Check category badge first (most reliable text source)
+                  if(cardCategoryBadge){
+                    categoryMatch = patterns.some(function(pattern){
+                      return cardCategoryBadge.includes(pattern) || pattern.includes(cardCategoryBadge);
+                    });
+                  }
+                  
+                  // If badge didn't match, check all text
+                  if(!categoryMatch){
+                    categoryMatch = patterns.some(function(pattern){
+                      return allText.includes(pattern);
+                    });
+                  }
+                }
               }
               
               // Show or hide card immediately - no transitions to prevent flashing
