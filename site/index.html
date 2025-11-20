@@ -2067,18 +2067,47 @@
             return;
           }
           
-          // Check if controls already exist
-          if(document.getElementById('pcf-builder-controls')) {
-            setTimeout(rearrangeCardButtons, 100);
-            return;
-          }
-          
           // Remove old filter if exists
           var oldFilter = document.getElementById('pcf-builder-filter');
           if(oldFilter) oldFilter.remove();
           
           var main = document.querySelector('main');
           if(!main) return;
+          
+          // Check if controls already exist
+          var existingControls = document.getElementById('pcf-builder-controls');
+          if(existingControls) {
+            // Ensure filter is applied to current dropdown and listener is attached
+            var categoryFilter = document.getElementById('pcf-builder-category-filter');
+            if(categoryFilter) {
+              // Remove any existing listeners by cloning
+              var currentValue = categoryFilter.value || '';
+              var newFilter = categoryFilter.cloneNode(true);
+              categoryFilter.parentNode.replaceChild(newFilter, categoryFilter);
+              categoryFilter = newFilter;
+              
+              // Get saved filter preference and apply it
+              var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
+              if(savedFilter){
+                categoryFilter.value = savedFilter;
+                currentValue = savedFilter;
+              } else {
+                categoryFilter.value = currentValue;
+              }
+              
+              // Also attach listener directly (in addition to event delegation)
+              categoryFilter.addEventListener('change', function(){
+                var selectedCategory = this.value.toLowerCase().trim();
+                localStorage.setItem('pcfind_builder_filter', selectedCategory);
+                filterBuilderPartsByCategory(selectedCategory);
+              });
+              
+              // Apply current filter
+              filterBuilderPartsByCategory(currentValue);
+            }
+            setTimeout(rearrangeCardButtons, 100);
+            return;
+          }
           
           // Find search input field and budget input
           var searchInput = main.querySelector('input[placeholder*="Search" i], input[placeholder*="search" i], input[type="text"]');
@@ -2339,6 +2368,18 @@
             // Show or hide card
             card.style.display = categoryMatch ? '' : 'none';
           });
+        }
+        
+        // Set up event delegation for category filter (works even if element is recreated)
+        if(!window.__pcfBuilderFilterHandlerAttached) {
+          window.__pcfBuilderFilterHandlerAttached = true;
+          document.addEventListener('change', function(e){
+            if(e.target && e.target.id === 'pcf-builder-category-filter'){
+              var selectedCategory = e.target.value.toLowerCase().trim();
+              localStorage.setItem('pcfind_builder_filter', selectedCategory);
+              filterBuilderPartsByCategory(selectedCategory);
+            }
+          }, true); // Use capture phase to catch early
         }
         
         function rearrangeCardButtons(){
