@@ -1472,12 +1472,16 @@
         display: flex !important;
         gap: 12px;
         align-items: center;
-        margin: 16px 0;
-        padding: 0 20px;
+        margin: 16px 0 !important;
+        padding: 0 20px !important;
         flex-wrap: wrap;
         justify-content: space-between;
         visibility: visible !important;
         opacity: 1 !important;
+        position: relative !important;
+        clear: both !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
       }
       #pcf-builder-categories {
         display: flex !important;
@@ -2074,62 +2078,78 @@
           var main = document.querySelector('main');
           if(!main) return;
           
-          // Check if controls already exist
+          // Check if controls already exist - but only skip if they're properly set up
           var existingControls = document.getElementById('pcf-builder-controls');
-          if(existingControls) {
+          var existingFilter = existingControls ? document.getElementById('pcf-builder-category-filter') : null;
+          
+          if(existingControls && existingFilter && existingFilter.options.length > 0) {
+            // Controls exist and have options - ensure they're visible and listeners are attached
+            existingControls.style.display = 'flex';
+            existingControls.style.visibility = 'visible';
+            existingControls.style.opacity = '1';
+            
             // Ensure filter is applied to current dropdown and listener is attached
-            var categoryFilter = document.getElementById('pcf-builder-category-filter');
-            if(categoryFilter) {
-              // Get saved filter preference FIRST
-              var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
-              
-              // Remove any existing listeners by cloning
-              var currentValue = categoryFilter.value || '';
-              
-              // If we have a saved filter, use it; otherwise keep current value
-              var filterToApply = savedFilter || currentValue;
-              
-              var newFilter = categoryFilter.cloneNode(true);
-              categoryFilter.parentNode.replaceChild(newFilter, categoryFilter);
-              categoryFilter = newFilter;
-              
-              // Apply saved filter or current value
-              if(filterToApply){
-                // Find the exact option value that matches (case-insensitive)
-                var matchingOption = Array.from(categoryFilter.options).find(function(opt){
-                  return opt.value.toLowerCase() === filterToApply.toLowerCase();
-                });
-                if(matchingOption){
-                  // Use the exact option value (preserving case)
-                  categoryFilter.value = matchingOption.value;
-                  filterToApply = matchingOption.value.toLowerCase().trim();
-                } else if(savedFilter){
-                  // If saved filter doesn't exist as option, reset to empty (All Categories)
-                  categoryFilter.value = '';
-                  localStorage.setItem('pcfind_builder_filter', '');
-                  filterToApply = '';
-                } else {
-                  categoryFilter.value = '';
-                  filterToApply = '';
-                }
+            var categoryFilter = existingFilter;
+            // Get saved filter preference FIRST
+            var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
+            
+            // Remove any existing listeners by cloning
+            var currentValue = categoryFilter.value || '';
+            
+            // If we have a saved filter, use it; otherwise keep current value
+            var filterToApply = savedFilter || currentValue;
+            
+            var newFilter = categoryFilter.cloneNode(true);
+            categoryFilter.parentNode.replaceChild(newFilter, categoryFilter);
+            categoryFilter = newFilter;
+            
+            // Ensure dropdown is visible
+            categoryFilter.style.display = 'block';
+            categoryFilter.style.visibility = 'visible';
+            categoryFilter.style.opacity = '1';
+            
+            // Apply saved filter or current value
+            if(filterToApply){
+              // Find the exact option value that matches (case-insensitive)
+              var matchingOption = Array.from(categoryFilter.options).find(function(opt){
+                return opt.value.toLowerCase() === filterToApply.toLowerCase();
+              });
+              if(matchingOption){
+                // Use the exact option value (preserving case)
+                categoryFilter.value = matchingOption.value;
+                filterToApply = matchingOption.value.toLowerCase().trim();
+              } else if(savedFilter){
+                // If saved filter doesn't exist as option, reset to empty (All Categories)
+                categoryFilter.value = '';
+                localStorage.setItem('pcfind_builder_filter', '');
+                filterToApply = '';
               } else {
                 categoryFilter.value = '';
                 filterToApply = '';
               }
-              
-              // Also attach listener directly (in addition to event delegation)
-              categoryFilter.addEventListener('change', function(){
-                var selectedCategory = this.value.toLowerCase().trim();
-                localStorage.setItem('pcfind_builder_filter', selectedCategory);
-                filterBuilderPartsByCategory(selectedCategory);
-              });
-              
-              // Apply current filter - use normalized lowercase value
-              var finalFilter = categoryFilter.value ? categoryFilter.value.toLowerCase().trim() : '';
-              filterBuilderPartsByCategory(finalFilter);
+            } else {
+              categoryFilter.value = '';
+              filterToApply = '';
             }
+            
+            // Also attach listener directly (in addition to event delegation)
+            categoryFilter.addEventListener('change', function(){
+              var selectedCategory = this.value.toLowerCase().trim();
+              localStorage.setItem('pcfind_builder_filter', selectedCategory);
+              filterBuilderPartsByCategory(selectedCategory);
+            });
+            
+            // Apply current filter - use normalized lowercase value
+            var finalFilter = categoryFilter.value ? categoryFilter.value.toLowerCase().trim() : '';
+            filterBuilderPartsByCategory(finalFilter);
+            
             setTimeout(rearrangeCardButtons, 100);
             return;
+          }
+          
+          // If controls exist but aren't properly set up, remove them and recreate
+          if(existingControls) {
+            existingControls.remove();
           }
           
           // Find search input field and budget input
@@ -2234,12 +2254,19 @@
             }
           }
           
-          // Ensure controls are visible
+          // Ensure controls are visible and properly positioned
           var controls = document.getElementById('pcf-builder-controls');
           if(controls){
             controls.style.display = 'flex';
             controls.style.visibility = 'visible';
             controls.style.opacity = '1';
+            controls.style.position = 'relative';
+            controls.style.clear = 'both';
+            controls.style.width = '100%';
+            controls.style.boxSizing = 'border-box';
+            controls.style.margin = '16px 0';
+            controls.style.padding = '0 20px';
+            controls.style.zIndex = '1';
           }
           
           // Remove original tablist completely
