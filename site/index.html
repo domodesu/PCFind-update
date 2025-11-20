@@ -2083,135 +2083,71 @@
             return;
           }
           
-          // Remove old filter if exists
+          // Remove old filter/dropdown if exists
           var oldFilter = document.getElementById('pcf-builder-filter');
           if(oldFilter) oldFilter.remove();
+          var oldControls = document.getElementById('pcf-builder-controls');
+          if(oldControls) oldControls.remove();
           
           var main = document.querySelector('main');
           if(!main) return;
           
-          // Check if controls already exist - but only skip if they're properly set up
-          var existingControls = document.getElementById('pcf-builder-controls');
-          var existingFilter = existingControls ? document.getElementById('pcf-builder-category-filter') : null;
+          // Get saved filter preference
+          var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
           
-          if(existingControls && existingFilter && existingFilter.options.length > 0) {
-            // Controls exist and have options - ensure they're visible and listeners are attached
-            existingControls.style.display = 'flex';
-            existingControls.style.visibility = 'visible';
-            existingControls.style.opacity = '1';
-            
-            // Ensure filter is applied to current dropdown and listener is attached
-            var categoryFilter = existingFilter;
-            // Get saved filter preference FIRST
-            var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
-            
-            // Remove any existing listeners by cloning
-            var currentValue = categoryFilter.value || '';
-            
-            // If we have a saved filter, use it; otherwise keep current value
-            var filterToApply = savedFilter || currentValue;
-            
-            var newFilter = categoryFilter.cloneNode(true);
-            categoryFilter.parentNode.replaceChild(newFilter, categoryFilter);
-            categoryFilter = newFilter;
-            
-            // Ensure dropdown is visible
-            categoryFilter.style.display = 'block';
-            categoryFilter.style.visibility = 'visible';
-            categoryFilter.style.opacity = '1';
-            
-            // Apply saved filter or current value
-            if(filterToApply){
-              // Find the exact option value that matches (case-insensitive)
-              var matchingOption = Array.from(categoryFilter.options).find(function(opt){
-                return opt.value.toLowerCase() === filterToApply.toLowerCase();
-              });
-              if(matchingOption){
-                // Use the exact option value (preserving case)
-                categoryFilter.value = matchingOption.value;
-                filterToApply = matchingOption.value.toLowerCase().trim();
-              } else if(savedFilter){
-                // If saved filter doesn't exist as option, reset to empty (All Categories)
-                categoryFilter.value = '';
-                localStorage.setItem('pcfind_builder_filter', '');
-                filterToApply = '';
-              } else {
-                categoryFilter.value = '';
-                filterToApply = '';
-              }
-            } else {
-              categoryFilter.value = '';
-              filterToApply = '';
-            }
-            
-            // Also attach listener directly (in addition to event delegation)
-            categoryFilter.addEventListener('change', function(){
-              var selectedCategory = this.value.toLowerCase().trim();
-              localStorage.setItem('pcfind_builder_filter', selectedCategory);
-              filterBuilderPartsByCategory(selectedCategory);
-            });
-            
-            // Apply current filter - use normalized lowercase value
-            var finalFilter = categoryFilter.value ? categoryFilter.value.toLowerCase().trim() : '';
-            filterBuilderPartsByCategory(finalFilter);
-            
-            setTimeout(rearrangeCardButtons, 100);
-            return;
-          }
-          
-          // If controls exist but aren't properly set up, remove them and recreate
-          if(existingControls) {
-            existingControls.remove();
-          }
+          // Get saved view preference
+          var savedView = localStorage.getItem('pcfind_builder_view') || 'grid';
           
           // Find search input field and budget input
           var searchInput = main.querySelector('input[placeholder*="Search" i], input[placeholder*="search" i], input[type="text"]');
           var budgetInput = main.querySelector('input[placeholder*="Budget" i], input[placeholder*="budget" i], input[type="number"]');
           
-          // Get saved view preference
-          var savedView = localStorage.getItem('pcfind_builder_view') || 'grid';
-          
-          // Get saved filter preference FIRST (before creating options)
-          var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
-          
-          // Get category tabs first to extract categories
+          // Get category tabs/buttons from the page
           var tabList = main.querySelector('[role="tablist"]');
-          var categoryOptions = '<option value="">All Categories</option>';
-          var selectedCategory = savedFilter; // Use saved filter as default
+          var categoryButtons = [];
           
           if(tabList){
             var tabs = tabList.querySelectorAll('button[role="tab"], [role="tab"]');
             tabs.forEach(function(tab){
               var text = (tab.textContent || '').trim();
               var textLower = text.toLowerCase();
-              var isActive = tab.classList.contains('active') || tab.getAttribute('aria-selected') === 'true';
-              // Use saved filter if available, otherwise use active tab
-              var shouldSelect = savedFilter ? (textLower === savedFilter) : isActive;
-              if(shouldSelect && !selectedCategory) selectedCategory = textLower;
-              categoryOptions += '<option value="' + textLower + '"' + (shouldSelect ? ' selected' : '') + '>' + text + '</option>';
+              var isActive = tab.classList.contains('active') || tab.getAttribute('aria-selected') === 'true' || textLower === savedFilter;
+              categoryButtons.push({text: text, value: textLower, active: isActive});
             });
           } else {
-            // Fallback: create default categories
+            // Create default categories if no tabs exist
             var categories = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooling'];
-            categories.forEach(function(cat, index){
+            categories.forEach(function(cat){
               var catLower = cat.toLowerCase();
-              var shouldSelect = savedFilter ? (catLower === savedFilter) : (index === 0);
-              if(shouldSelect && !selectedCategory) selectedCategory = catLower;
-              categoryOptions += '<option value="' + catLower + '"' + (shouldSelect ? ' selected' : '') + '>' + cat + '</option>';
+              var isActive = savedFilter ? (catLower === savedFilter) : false;
+              categoryButtons.push({text: cat, value: catLower, active: isActive});
             });
           }
           
-          // If no saved filter and no selection made, default to empty (All Categories)
-          if(!selectedCategory) selectedCategory = '';
+          // If no saved filter and no active tab, make first one active (or "All" if exists)
+          var hasActive = categoryButtons.some(function(btn){ return btn.active; });
+          if(!hasActive && categoryButtons.length > 0){
+            // Check if there's an "All Categories" option, otherwise activate first
+            var allIndex = categoryButtons.findIndex(function(btn){ return btn.value === '' || btn.value === 'all'; });
+            if(allIndex >= 0){
+              categoryButtons[allIndex].active = true;
+            } else {
+              categoryButtons[0].active = true;
+            }
+          }
           
-          // Create categories dropdown and view toggle container
-          var controlsHtml = '<div id="pcf-builder-controls">';
-          controlsHtml += '<div id="pcf-builder-categories">';
-          controlsHtml += '<select id="pcf-builder-category-filter" class="pcf-builder-category-select">';
-          controlsHtml += categoryOptions;
-          controlsHtml += '</select>';
+          // Create organized category buttons and view toggle container
+          var controlsHtml = '<div id="pcf-builder-controls" style="display:flex;flex-direction:column;gap:16px;margin:16px 0;padding:0 20px;position:relative;clear:both;width:100%;box-sizing:border-box;z-index:1;">';
+          controlsHtml += '<div id="pcf-builder-categories" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%;">';
+          
+          // Add category buttons
+          categoryButtons.forEach(function(btn){
+            var activeClass = btn.active ? 'pcf-category-btn-active' : '';
+            controlsHtml += '<button class="pcf-category-btn ' + activeClass + '" data-category="' + btn.value + '" style="padding:10px 16px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#e5e7eb;font-size:14px;cursor:pointer;transition:all 0.2s;font-weight:500;white-space:nowrap;">' + btn.text + '</button>';
+          });
+          
           controlsHtml += '</div>';
-          controlsHtml += '<div id="pcf-builder-view-toggle">';
+          controlsHtml += '<div id="pcf-builder-view-toggle" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;">';
           controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
           controlsHtml += '<span>⊞</span> <span>Grid</span>';
           controlsHtml += '</button>';
@@ -2221,18 +2157,13 @@
           controlsHtml += '</div>';
           controlsHtml += '</div>';
           
-          // Insert controls below search input or budget input
+          // Find insertion point
           var insertAfter = null;
-          var searchContainer = null;
-          var budgetContainer = null;
-          
-          // Find the container with search input
           if(searchInput){
-            searchContainer = searchInput.closest('div') || searchInput.parentElement;
-            // Walk up to find the form or input container
+            var searchContainer = searchInput.closest('div') || searchInput.parentElement;
             while(searchContainer && searchContainer !== main && searchContainer !== document.body){
               var hasBudget = searchContainer.querySelector('input[placeholder*="Budget" i], input[placeholder*="budget" i], input[type="number"]');
-              if(hasBudget || searchContainer.tagName === 'FORM' || searchContainer.classList.contains('form') || searchContainer.querySelector('form')){
+              if(hasBudget || searchContainer.tagName === 'FORM' || searchContainer.classList.contains('form')){
                 insertAfter = searchContainer;
                 break;
               }
@@ -2243,9 +2174,8 @@
             }
           }
           
-          // If no search, check for budget
           if(!insertAfter && budgetInput){
-            budgetContainer = budgetInput.closest('div') || budgetInput.parentElement;
+            var budgetContainer = budgetInput.closest('div') || budgetInput.parentElement;
             insertAfter = budgetContainer;
           }
           
@@ -2253,7 +2183,6 @@
           if(insertAfter && insertAfter !== main && insertAfter !== document.body){
             insertAfter.insertAdjacentHTML('afterend', controlsHtml);
           } else {
-            // Fallback: insert after first child or at top
             var firstChild = main.firstElementChild;
             if(firstChild && firstChild.id !== 'pcf-builder-controls'){
               if(searchInput && searchInput.parentElement){
@@ -2266,324 +2195,121 @@
             }
           }
           
-          // Ensure controls are visible and properly positioned
+          // Ensure controls are visible
           var controls = document.getElementById('pcf-builder-controls');
           if(controls){
             controls.style.display = 'flex';
             controls.style.visibility = 'visible';
             controls.style.opacity = '1';
-            controls.style.position = 'relative';
-            controls.style.clear = 'both';
-            controls.style.width = '100%';
-            controls.style.boxSizing = 'border-box';
-            controls.style.margin = '16px 0';
-            controls.style.padding = '0 20px';
-            controls.style.zIndex = '1';
           }
           
-          // Remove original tablist completely
+          // Remove original tablist (we've replaced it with our buttons)
           if(tabList){
             tabList.remove();
           }
           
-          // Set up continuous observer to remove any recreated category tabs/buttons
-          var removeCategoryTabs = function(){
-            // Don't interfere with dropdown when it's open
-            var categoryFilter = document.getElementById('pcf-builder-category-filter');
-            if(categoryFilter && document.activeElement === categoryFilter){
-              return; // Dropdown is open, don't interfere
-            }
-            
-            var allTabs = main.querySelectorAll('[role="tablist"]:not(#pcf-builder-category-filter), [role="tab"]:not(#pcf-builder-category-filter), button[role="tab"]:not(#pcf-builder-category-filter)');
-            allTabs.forEach(function(tab){
-              if(!tab.closest('#pcf-builder-controls')){
-                tab.style.display = 'none';
-                tab.remove();
-              }
-            });
-            // Also check for category buttons (CPU, GPU, etc.)
-            var categoryNames = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling', 'processor', 'graphics', 'memory'];
-            var allButtons = main.querySelectorAll('button:not(.pcf-builder-view-toggle-btn):not(#pcf-builder-category-filter)');
-            allButtons.forEach(function(btn){
-              var btnText = (btn.textContent || '').trim().toLowerCase();
-              // Check if button text matches a category name exactly
-              if(categoryNames.some(function(cat){
-                return btnText === cat || (btnText.length <= 15 && btnText.indexOf(cat) === 0);
-              })){
-                // Check if it's not inside our controls container or a select element
-                if(!btn.closest('#pcf-builder-controls') && !btn.closest('#pcf-builder-view-toggle') && btn.tagName !== 'SELECT'){
-                  btn.style.display = 'none';
-                  btn.remove();
-                }
-              }
-            });
-            
-            // Ensure dropdown select is never removed and is always interactive
-            var dropdownSelect = document.getElementById('pcf-builder-category-filter');
-            if(dropdownSelect){
-              dropdownSelect.style.pointerEvents = 'auto';
-              dropdownSelect.style.cursor = 'pointer';
-              dropdownSelect.style.userSelect = 'none';
-              dropdownSelect.style.position = 'relative';
-              dropdownSelect.style.zIndex = '1000';
-              dropdownSelect.disabled = false;
-              
-              // Prevent any parent from blocking clicks
-              var parent = dropdownSelect.parentElement;
-              while(parent && parent !== document.body){
-                if(parent === document.getElementById('pcf-builder-controls')){
-                  parent.style.pointerEvents = 'auto';
-                  parent.style.position = 'relative';
-                  parent.style.zIndex = '1';
-                  break;
-                }
-                parent.style.pointerEvents = 'auto';
-                parent = parent.parentElement;
-              }
-              
-              // Completely stop observer when interacting with dropdown
-              dropdownSelect.addEventListener('mousedown', function(e){
-                window.__pcfDropdownInteracting = true;
-                if(window.__pcfStopTabObserver){
-                  window.__pcfStopTabObserver(); // Completely stop observer
-                }
-              }, true); // Use capture phase to run first
-              
-              dropdownSelect.addEventListener('click', function(e){
-                window.__pcfDropdownInteracting = true;
-                if(window.__pcfStopTabObserver){
-                  window.__pcfStopTabObserver(); // Completely stop observer
-                }
-                // Keep interaction flag for longer
-                setTimeout(function(){
-                  if(document.activeElement === dropdownSelect || dropdownSelect.matches(':focus')){
-                    window.__pcfDropdownInteracting = true;
-                    setTimeout(function(){
-                      window.__pcfDropdownInteracting = false;
-                      if(window.__pcfStartTabObserver){
-                        window.__pcfStartTabObserver(); // Restart observer
-                      }
-                    }, 2000); // Longer delay
-                  } else {
-                    window.__pcfDropdownInteracting = false;
-                    if(window.__pcfStartTabObserver){
-                      window.__pcfStartTabObserver(); // Restart observer
-                    }
-                  }
-                }, 200);
-              }, false);
-              
-              dropdownSelect.addEventListener('focus', function(e){
-                window.__pcfDropdownInteracting = true;
-                if(window.__pcfStopTabObserver){
-                  window.__pcfStopTabObserver(); // Stop observer
-                }
-              }, true);
-              
-              dropdownSelect.addEventListener('blur', function(e){
-                // Delay clearing interaction flag to allow dropdown to stay open
-                setTimeout(function(){
-                  window.__pcfDropdownInteracting = false;
-                  // Restart observer after delay
-                  setTimeout(function(){
-                    if(window.__pcfStartTabObserver){
-                      window.__pcfStartTabObserver(); // Restart observer
-                    }
-                  }, 500);
-                }, 1000); // Longer delay
-              }, true);
-              
-              dropdownSelect.addEventListener('change', function(e){
-                // Keep observer stopped during change
-                window.__pcfDropdownInteracting = true;
-                setTimeout(function(){
-                  window.__pcfDropdownInteracting = false;
-                  if(window.__pcfStartTabObserver){
-                    window.__pcfStartTabObserver(); // Restart observer
-                  }
-                }, 500);
-              }, true);
-              
-              // Prevent any click handlers on parent from closing dropdown
-              var controlsContainer = document.getElementById('pcf-builder-controls');
-              if(controlsContainer){
-                controlsContainer.addEventListener('click', function(e){
-                  if(e.target === dropdownSelect || dropdownSelect.contains(e.target)){
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                  }
-                }, true);
-              }
-              
-              // Also prevent document-level click handlers
-              var docClickHandler = function(e){
-                if(e.target === dropdownSelect || dropdownSelect.contains(e.target)){
-                  e.stopPropagation();
-                  e.stopImmediatePropagation();
-                }
-              };
-              document.addEventListener('click', docClickHandler, true);
-            }
-          };
-          
-          // Run immediately
-          removeCategoryTabs();
-          
-          // Set up observer to continuously remove recreated tabs (but debounce to avoid interference)
-          var tabRemovalTimeout;
-          var tabRemovalObserver = null;
-          
-          function startTabRemovalObserver(){
-            if(tabRemovalObserver) return; // Already started
-            
-            tabRemovalObserver = new MutationObserver(function(mutations){
-              // Completely skip if user is interacting with dropdown
-              if(window.__pcfDropdownInteracting){
-                clearTimeout(tabRemovalTimeout);
-                return;
-              }
-              
-              // Check if dropdown still exists
-              var dropdown = document.getElementById('pcf-builder-category-filter');
-              if(!dropdown){
-                // Dropdown was removed - reinitialize
-                setTimeout(function(){
-                  if(!window.__pcfDropdownInteracting){
-                    initPCBuilderFilter();
-                  }
-                }, 100);
-                return;
-              }
-              
-              // Don't trigger removal if the mutation is related to our dropdown
-              var shouldIgnore = false;
-              mutations.forEach(function(mutation){
-                if(mutation.type === 'childList'){
-                  mutation.addedNodes.forEach(function(node){
-                    if(node && (node.id === 'pcf-builder-category-filter' || (node.closest && node.closest('#pcf-builder-controls')))){
-                      shouldIgnore = true;
-                    }
-                    // Check if any removed nodes are our dropdown
-                    mutation.removedNodes.forEach(function(removed){
-                      if(removed && (removed.id === 'pcf-builder-category-filter' || (removed.querySelector && removed.querySelector('#pcf-builder-category-filter')))){
-                        shouldIgnore = true;
-                        // If dropdown was removed during interaction, mark it
-                        if(window.__pcfDropdownInteracting){
-                          window.__pcfDropdownRestore = true;
-                        }
-                      }
-                    });
-                  });
-                  // Also ignore if dropdown options are being rendered
-                  var target = mutation.target;
-                  if(target && (target.id === 'pcf-builder-category-filter' || (target.closest && target.closest('#pcf-builder-category-filter')))){
-                    shouldIgnore = true;
-                  }
-                }
+          // Set up category button click handlers
+          var categoryBtns = document.querySelectorAll('.pcf-category-btn');
+          categoryBtns.forEach(function(btn){
+            btn.addEventListener('click', function(){
+              // Remove active class from all buttons
+              categoryBtns.forEach(function(b){
+                b.classList.remove('pcf-category-btn-active');
+                b.style.background = '#1f2937';
+                b.style.borderColor = '#374151';
+                b.style.color = '#e5e7eb';
               });
               
-              if(!shouldIgnore){
-                clearTimeout(tabRemovalTimeout);
-                tabRemovalTimeout = setTimeout(function(){
-                  // Triple-check we're not interacting with dropdown before running
-                  if(!window.__pcfDropdownInteracting && document.getElementById('pcf-builder-category-filter')){
-                    removeCategoryTabs();
-                  }
-                }, 300); // Longer debounce
-              }
+              // Add active class to clicked button
+              this.classList.add('pcf-category-btn-active');
+              this.style.background = '#2563eb';
+              this.style.borderColor = '#2563eb';
+              this.style.color = '#ffffff';
+              
+              // Get category and filter
+              var category = this.getAttribute('data-category') || '';
+              localStorage.setItem('pcfind_builder_filter', category);
+              filterBuilderPartsByCategory(category);
             });
-            tabRemovalObserver.observe(main, {childList: true, subtree: true});
+            
+            // Apply active styles
+            if(btn.classList.contains('pcf-category-btn-active')){
+              btn.style.background = '#2563eb';
+              btn.style.borderColor = '#2563eb';
+              btn.style.color = '#ffffff';
+            }
+          });
+          
+          // Apply initial filter
+          var activeBtn = document.querySelector('.pcf-category-btn-active');
+          if(activeBtn){
+            var initialCategory = activeBtn.getAttribute('data-category') || '';
+            filterBuilderPartsByCategory(initialCategory);
           }
           
-          // Start observer
-          startTabRemovalObserver();
+          // Remove any old dropdown if exists
+          var dropdownSelect = document.getElementById('pcf-builder-category-filter');
+          if(dropdownSelect){
+            dropdownSelect.remove();
+          }
           
-          // Function to stop observer temporarily
-          window.__pcfStopTabObserver = function(){
-            if(tabRemovalObserver){
-              tabRemovalObserver.disconnect();
-              tabRemovalObserver = null;
-            }
-          };
-          
-          // Function to restart observer
-          window.__pcfStartTabObserver = function(){
-            if(!tabRemovalObserver){
-              startTabRemovalObserver();
-            }
-          };
-          
-          // Add change handler to category dropdown
-          var categoryFilter = document.getElementById('pcf-builder-category-filter');
-          if(categoryFilter){
-            // Ensure dropdown is fully functional and won't be removed
-            categoryFilter.style.display = 'block';
-            categoryFilter.style.visibility = 'visible';
-            categoryFilter.style.opacity = '1';
-            categoryFilter.style.pointerEvents = 'auto';
-            categoryFilter.style.position = 'relative';
-            categoryFilter.style.zIndex = '1000';
-            categoryFilter.disabled = false;
-            categoryFilter.setAttribute('tabindex', '0');
-            categoryFilter.setAttribute('data-pcf-protected', 'true'); // Mark as protected
+          // Check if controls already exist with buttons
+          var existingControls = document.getElementById('pcf-builder-controls');
+          if(existingControls && existingControls.querySelector('.pcf-category-btn')) {
+            // Controls exist with buttons - ensure they're visible and listeners are attached
+            existingControls.style.display = 'flex';
+            existingControls.style.visibility = 'visible';
+            existingControls.style.opacity = '1';
             
-            // Prevent dropdown from being removed - add a marker
-            Object.defineProperty(categoryFilter, 'pcfProtected', {
-              value: true,
-              writable: false,
-              configurable: false
-            });
-            
-            // Wrap in try-catch to prevent errors from closing dropdown
-            var originalAddEventListener = categoryFilter.addEventListener;
-            categoryFilter.addEventListener = function(type, handler, options){
-              if(type === 'change'){
-                return originalAddEventListener.call(this, type, function(e){
-                  try {
-                    handler.call(this, e);
-                  } catch(err){
-                    console.error('Error in dropdown change handler:', err);
-                    // Don't let errors close the dropdown
-                  }
-                }, options);
-              }
-              return originalAddEventListener.call(this, type, handler, options);
-            };
-            
-            // Ensure the value matches the saved filter or selected category
-            var filterToApply = '';
-            if(savedFilter){
-              // Find the exact option value that matches the saved filter (case-insensitive)
-              var matchingOption = Array.from(categoryFilter.options).find(function(opt){
-                return opt.value.toLowerCase() === savedFilter.toLowerCase();
+            // Reattach button listeners if needed
+            var categoryBtns = existingControls.querySelectorAll('.pcf-category-btn');
+            categoryBtns.forEach(function(btn){
+              // Remove old listeners by cloning
+              var newBtn = btn.cloneNode(true);
+              btn.parentNode.replaceChild(newBtn, btn);
+              
+              // Reattach click handler
+              newBtn.addEventListener('click', function(){
+                var allBtns = existingControls.querySelectorAll('.pcf-category-btn');
+                allBtns.forEach(function(b){
+                  b.classList.remove('pcf-category-btn-active');
+                  b.style.background = '#1f2937';
+                  b.style.borderColor = '#374151';
+                  b.style.color = '#e5e7eb';
+                });
+                
+                this.classList.add('pcf-category-btn-active');
+                this.style.background = '#2563eb';
+                this.style.borderColor = '#2563eb';
+                this.style.color = '#ffffff';
+                
+                var category = this.getAttribute('data-category') || '';
+                localStorage.setItem('pcfind_builder_filter', category);
+                filterBuilderPartsByCategory(category);
               });
-              if(matchingOption){
-                // Use the exact option value (preserving case)
-                categoryFilter.value = matchingOption.value;
-                filterToApply = matchingOption.value.toLowerCase().trim();
-              } else {
-                // Saved filter doesn't exist, reset to empty
-                categoryFilter.value = '';
-                localStorage.setItem('pcfind_builder_filter', '');
-                filterToApply = '';
+              
+              // Apply active styles if needed
+              if(newBtn.classList.contains('pcf-category-btn-active')){
+                newBtn.style.background = '#2563eb';
+                newBtn.style.borderColor = '#2563eb';
+                newBtn.style.color = '#ffffff';
               }
-            } else if(selectedCategory){
-              categoryFilter.value = selectedCategory;
-              filterToApply = selectedCategory.toLowerCase().trim();
-            } else {
-              // Default to empty (All Categories)
-              categoryFilter.value = '';
-              filterToApply = '';
-            }
-            
-            categoryFilter.addEventListener('change', function(){
-              var selectedCategory = this.value.toLowerCase().trim();
-              localStorage.setItem('pcfind_builder_filter', selectedCategory);
-              filterBuilderPartsByCategory(selectedCategory);
             });
             
-            // Initial filter - apply the determined filter
-            filterBuilderPartsByCategory(filterToApply);
+            // Apply initial filter
+            var activeBtn = existingControls.querySelector('.pcf-category-btn-active');
+            if(activeBtn){
+              var initialCategory = activeBtn.getAttribute('data-category') || '';
+              filterBuilderPartsByCategory(initialCategory);
+            }
+            
+            setTimeout(rearrangeCardButtons, 100);
+            return;
+          }
+          
+          // If controls exist but don't have buttons, remove them
+          if(existingControls) {
+            existingControls.remove();
           }
           
           // Add view toggle functionality
@@ -2687,17 +2413,6 @@
           });
         }
         
-        // Set up event delegation for category filter (works even if element is recreated)
-        if(!window.__pcfBuilderFilterHandlerAttached) {
-          window.__pcfBuilderFilterHandlerAttached = true;
-          document.addEventListener('change', function(e){
-            if(e.target && e.target.id === 'pcf-builder-category-filter'){
-              var selectedCategory = e.target.value.toLowerCase().trim();
-              localStorage.setItem('pcfind_builder_filter', selectedCategory);
-              filterBuilderPartsByCategory(selectedCategory);
-            }
-          }, true); // Use capture phase to catch early
-        }
         
         function rearrangeCardButtons(){
           var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
