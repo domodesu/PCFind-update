@@ -1448,9 +1448,35 @@
         background: #f9fafb;
       }
       
-      /* Hide category tabs on PC Builder */
+      /* Show category tabs as buttons below search on PC Builder */
       body[data-page="pc-builder"] [role="tablist"] {
-        display: none !important;
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 16px 0;
+        padding: 0 20px;
+      }
+      
+      /* PC Builder categories and view toggle container */
+      #pcf-builder-controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin: 16px 0;
+        padding: 0 20px;
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+      #pcf-builder-categories {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        flex: 1;
+      }
+      #pcf-builder-view-toggle {
+        display: flex;
+        gap: 8px;
+        align-items: center;
       }
       
       /* Move Add to Build button to bottom of cards */
@@ -1480,16 +1506,19 @@
       
       /* Mobile adjustments */
       @media (max-width: 768px) {
-        #pcf-builder-filter {
+        #pcf-builder-controls {
           padding: 0 12px;
           flex-direction: column;
           gap: 12px;
         }
-        #pcf-builder-filter > div:first-child {
+        #pcf-builder-categories {
           width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
         }
-        #pcf-builder-filter select {
-          width: 100%;
+        #pcf-builder-categories::-webkit-scrollbar {
+          height: 4px;
         }
         #pcf-builder-view-toggle {
           width: 100%;
@@ -2008,70 +2037,124 @@
           var path = (location.pathname||'').toLowerCase();
           var isPCBuilder = path.includes('/pc-builder') || path.endsWith('/pc-builder') || path === '/pc-builder/';
           if(!isPCBuilder) {
-            var filter = document.getElementById('pcf-builder-filter');
-            if(filter) filter.remove();
+            var controls = document.getElementById('pcf-builder-controls');
+            if(controls) controls.remove();
+            var oldFilter = document.getElementById('pcf-builder-filter');
+            if(oldFilter) oldFilter.remove();
             return;
           }
           
-          // Check if filter already exists
-          if(document.getElementById('pcf-builder-filter')) {
+          // Check if controls already exist
+          if(document.getElementById('pcf-builder-controls')) {
             setTimeout(rearrangeCardButtons, 100);
             return;
           }
           
+          // Remove old filter if exists
+          var oldFilter = document.getElementById('pcf-builder-filter');
+          if(oldFilter) oldFilter.remove();
+          
           var main = document.querySelector('main');
           if(!main) return;
+          
+          // Find search input field and budget input
+          var searchInput = main.querySelector('input[placeholder*="Search" i], input[placeholder*="search" i], input[type="text"]');
+          var budgetInput = main.querySelector('input[placeholder*="Budget" i], input[placeholder*="budget" i], input[type="number"]');
           
           // Get saved view preference
           var savedView = localStorage.getItem('pcfind_builder_view') || 'grid';
           
-          // Create filter dropdown and view toggle
-          var filterHtml = '<div id="pcf-builder-filter">';
-          filterHtml += '<div>';
-          filterHtml += '<select id="pcf-builder-category-filter">';
-          filterHtml += '<option value="">All Categories</option>';
-          filterHtml += '<option value="CPU">CPU</option>';
-          filterHtml += '<option value="GPU">GPU</option>';
-          filterHtml += '<option value="Motherboard">Motherboard</option>';
-          filterHtml += '<option value="RAM">RAM</option>';
-          filterHtml += '<option value="Storage">Storage</option>';
-          filterHtml += '<option value="PSU">PSU</option>';
-          filterHtml += '<option value="Case">Case</option>';
-          filterHtml += '<option value="Cooling">Cooling</option>';
-          filterHtml += '</select>';
-          filterHtml += '</div>';
-          filterHtml += '<div id="pcf-builder-view-toggle">';
-          filterHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
-          filterHtml += '<span>⊞</span> <span>Grid</span>';
-          filterHtml += '</button>';
-          filterHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
-          filterHtml += '<span>☰</span> <span>Stack</span>';
-          filterHtml += '</button>';
-          filterHtml += '</div>';
-          filterHtml += '</div>';
-          
-          // Insert filter at the top of main
-          var firstChild = main.firstElementChild;
-          if(firstChild && firstChild.id !== 'pcf-builder-filter'){
-            main.insertAdjacentHTML('afterbegin', filterHtml);
-          } else if(!firstChild){
-            main.innerHTML = filterHtml + main.innerHTML;
-          }
-          
-          // Get saved filter preference
-          var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
-          var filterSelect = document.getElementById('pcf-builder-category-filter');
-          if(filterSelect && savedFilter){
-            filterSelect.value = savedFilter;
-          }
-          
-          // Add filter functionality
-          if(filterSelect){
-            filterSelect.addEventListener('change', function(){
-              var selectedCategory = this.value.toLowerCase();
-              localStorage.setItem('pcfind_builder_filter', selectedCategory);
-              filterBuilderParts();
+          // Get category tabs first
+          var tabList = main.querySelector('[role="tablist"]');
+          var categoryButtons = '';
+          if(tabList){
+            var tabs = tabList.querySelectorAll('button[role="tab"], [role="tab"]');
+            tabs.forEach(function(tab){
+              var text = (tab.textContent || '').trim();
+              var isActive = tab.classList.contains('active') || tab.getAttribute('aria-selected') === 'true';
+              categoryButtons += '<button class="pcf-builder-category-btn' + (isActive ? ' active' : '') + '" data-category="' + text.toLowerCase() + '">' + text + '</button>';
             });
+          } else {
+            // Fallback: create default categories
+            var categories = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooling'];
+            categories.forEach(function(cat, index){
+              categoryButtons += '<button class="pcf-builder-category-btn' + (index === 0 ? ' active' : '') + '" data-category="' + cat.toLowerCase() + '">' + cat + '</button>';
+            });
+          }
+          
+          // Create categories and view toggle container
+          var controlsHtml = '<div id="pcf-builder-controls">';
+          controlsHtml += '<div id="pcf-builder-categories">';
+          controlsHtml += categoryButtons;
+          controlsHtml += '</div>';
+          controlsHtml += '<div id="pcf-builder-view-toggle">';
+          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
+          controlsHtml += '<span>⊞</span> <span>Grid</span>';
+          controlsHtml += '</button>';
+          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
+          controlsHtml += '<span>☰</span> <span>Stack</span>';
+          controlsHtml += '</button>';
+          controlsHtml += '</div>';
+          controlsHtml += '</div>';
+          
+          // Insert controls below search input or budget input
+          var insertAfter = null;
+          if(searchInput){
+            var searchParent = searchInput.closest('div') || searchInput.parentElement;
+            if(searchParent){
+              insertAfter = searchParent;
+            }
+          } else if(budgetInput){
+            var budgetParent = budgetInput.closest('div') || budgetInput.parentElement;
+            if(budgetParent){
+              insertAfter = budgetParent;
+            }
+          }
+          
+          if(insertAfter){
+            insertAfter.insertAdjacentHTML('afterend', controlsHtml);
+          } else {
+            // Fallback: insert at top of main
+            var firstChild = main.firstElementChild;
+            if(firstChild && firstChild.id !== 'pcf-builder-controls'){
+              main.insertAdjacentHTML('afterbegin', controlsHtml);
+            } else if(!firstChild){
+              main.innerHTML = controlsHtml + main.innerHTML;
+            }
+          }
+          
+          // Hide original tablist
+          if(tabList){
+            tabList.style.display = 'none';
+          }
+          
+          // Add click handlers to category buttons
+          var categoryBtns = document.getElementById('pcf-builder-categories');
+          if(categoryBtns){
+            var buttons = categoryBtns.querySelectorAll('.pcf-builder-category-btn, button');
+            buttons.forEach(function(btn){
+              btn.addEventListener('click', function(){
+                // Remove active from all
+                buttons.forEach(function(b){ 
+                  b.classList.remove('active');
+                });
+                // Add active to clicked
+                this.classList.add('active');
+                
+                // Filter parts based on category
+                var category = this.getAttribute('data-category') || (this.textContent || '').trim().toLowerCase();
+                filterBuilderPartsByCategory(category);
+              });
+            });
+            
+            // Activate first category by default if none active
+            var activeBtn = categoryBtns.querySelector('.active');
+            if(!activeBtn && buttons.length > 0){
+              buttons[0].click();
+            } else if(activeBtn){
+              var category = activeBtn.getAttribute('data-category') || (activeBtn.textContent || '').trim().toLowerCase();
+              filterBuilderPartsByCategory(category);
+            }
           }
           
           // Add view toggle functionality
@@ -2120,9 +2203,8 @@
             });
           }
           
-          // Initial filter and button arrangement
+          // Initial button arrangement
           setTimeout(function(){
-            filterBuilderParts();
             rearrangeCardButtons();
           }, 300);
           
@@ -2132,25 +2214,20 @@
             var cardObserver = new MutationObserver(function(){
               setTimeout(function(){
                 rearrangeCardButtons();
-                filterBuilderParts();
               }, 100);
             });
             cardObserver.observe(main, {childList: true, subtree: true});
           }
         }
         
-        function filterBuilderParts(){
-          var filterSelect = document.getElementById('pcf-builder-category-filter');
-          if(!filterSelect) return;
-          
-          var selectedCategory = filterSelect.value.toLowerCase();
+        function filterBuilderPartsByCategory(category){
           var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
           
           cards.forEach(function(card){
             var cardText = (card.textContent || '').toLowerCase();
             var categoryMatch = false;
             
-            if(!selectedCategory){
+            if(!category || category === 'all'){
               categoryMatch = true;
             } else {
               var categoryMap = {
@@ -2164,7 +2241,7 @@
                 'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid']
               };
               
-              var patterns = categoryMap[selectedCategory] || [selectedCategory];
+              var patterns = categoryMap[category] || [category];
               categoryMatch = patterns.some(function(pattern){
                 return cardText.includes(pattern);
               });
