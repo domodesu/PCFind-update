@@ -2702,6 +2702,11 @@
               var btn = e.target.closest('.pcf-category-btn');
               if(!btn) return;
               
+              // Don't prevent default on navigation links
+              if(e.target.tagName === 'A' && e.target.closest('nav')){
+                return; // Let navigation links work normally
+              }
+              
               e.preventDefault();
               e.stopPropagation();
               e.stopImmediatePropagation();
@@ -2797,11 +2802,14 @@
               }
             });
             
-            // Apply initial filter
+            // Apply initial filter only if not already filtered
             var activeBtn = existingControls.querySelector('.pcf-category-btn-active');
-            if(activeBtn){
+            if(activeBtn && !_pcfFilteringInProgress){
               var initialCategory = activeBtn.getAttribute('data-category') || '';
-              filterBuilderPartsByCategory(initialCategory);
+              // Delay initial filter to prevent immediate calls
+              setTimeout(function(){
+                filterBuilderPartsByCategory(initialCategory);
+              }, 100);
             }
             
             setTimeout(function(){
