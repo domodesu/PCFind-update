@@ -2080,19 +2080,41 @@
             // Ensure filter is applied to current dropdown and listener is attached
             var categoryFilter = document.getElementById('pcf-builder-category-filter');
             if(categoryFilter) {
+              // Get saved filter preference FIRST
+              var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
+              
               // Remove any existing listeners by cloning
               var currentValue = categoryFilter.value || '';
+              
+              // If we have a saved filter, use it; otherwise keep current value
+              var filterToApply = savedFilter || currentValue;
+              
               var newFilter = categoryFilter.cloneNode(true);
               categoryFilter.parentNode.replaceChild(newFilter, categoryFilter);
               categoryFilter = newFilter;
               
-              // Get saved filter preference and apply it
-              var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
-              if(savedFilter){
-                categoryFilter.value = savedFilter;
-                currentValue = savedFilter;
+              // Apply saved filter or current value
+              if(filterToApply){
+                // Find the exact option value that matches (case-insensitive)
+                var matchingOption = Array.from(categoryFilter.options).find(function(opt){
+                  return opt.value.toLowerCase() === filterToApply.toLowerCase();
+                });
+                if(matchingOption){
+                  // Use the exact option value (preserving case)
+                  categoryFilter.value = matchingOption.value;
+                  filterToApply = matchingOption.value.toLowerCase().trim();
+                } else if(savedFilter){
+                  // If saved filter doesn't exist as option, reset to empty (All Categories)
+                  categoryFilter.value = '';
+                  localStorage.setItem('pcfind_builder_filter', '');
+                  filterToApply = '';
+                } else {
+                  categoryFilter.value = '';
+                  filterToApply = '';
+                }
               } else {
-                categoryFilter.value = currentValue;
+                categoryFilter.value = '';
+                filterToApply = '';
               }
               
               // Also attach listener directly (in addition to event delegation)
@@ -2102,8 +2124,9 @@
                 filterBuilderPartsByCategory(selectedCategory);
               });
               
-              // Apply current filter
-              filterBuilderPartsByCategory(currentValue);
+              // Apply current filter - use normalized lowercase value
+              var finalFilter = categoryFilter.value ? categoryFilter.value.toLowerCase().trim() : '';
+              filterBuilderPartsByCategory(finalFilter);
             }
             setTimeout(rearrangeCardButtons, 100);
             return;
@@ -2116,27 +2139,38 @@
           // Get saved view preference
           var savedView = localStorage.getItem('pcfind_builder_view') || 'grid';
           
+          // Get saved filter preference FIRST (before creating options)
+          var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
+          
           // Get category tabs first to extract categories
           var tabList = main.querySelector('[role="tablist"]');
           var categoryOptions = '<option value="">All Categories</option>';
-          var selectedCategory = '';
+          var selectedCategory = savedFilter; // Use saved filter as default
           
           if(tabList){
             var tabs = tabList.querySelectorAll('button[role="tab"], [role="tab"]');
             tabs.forEach(function(tab){
               var text = (tab.textContent || '').trim();
+              var textLower = text.toLowerCase();
               var isActive = tab.classList.contains('active') || tab.getAttribute('aria-selected') === 'true';
-              if(isActive) selectedCategory = text.toLowerCase();
-              categoryOptions += '<option value="' + text.toLowerCase() + '"' + (isActive ? ' selected' : '') + '>' + text + '</option>';
+              // Use saved filter if available, otherwise use active tab
+              var shouldSelect = savedFilter ? (textLower === savedFilter) : isActive;
+              if(shouldSelect && !selectedCategory) selectedCategory = textLower;
+              categoryOptions += '<option value="' + textLower + '"' + (shouldSelect ? ' selected' : '') + '>' + text + '</option>';
             });
           } else {
             // Fallback: create default categories
             var categories = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooling'];
             categories.forEach(function(cat, index){
-              if(index === 0) selectedCategory = cat.toLowerCase();
-              categoryOptions += '<option value="' + cat.toLowerCase() + '"' + (index === 0 ? ' selected' : '') + '>' + cat + '</option>';
+              var catLower = cat.toLowerCase();
+              var shouldSelect = savedFilter ? (catLower === savedFilter) : (index === 0);
+              if(shouldSelect && !selectedCategory) selectedCategory = catLower;
+              categoryOptions += '<option value="' + catLower + '"' + (shouldSelect ? ' selected' : '') + '>' + cat + '</option>';
             });
           }
+          
+          // If no saved filter and no selection made, default to empty (All Categories)
+          if(!selectedCategory) selectedCategory = '';
           
           // Create categories dropdown and view toggle container
           var controlsHtml = '<div id="pcf-builder-controls">';
@@ -2252,11 +2286,30 @@
           // Add change handler to category dropdown
           var categoryFilter = document.getElementById('pcf-builder-category-filter');
           if(categoryFilter){
-            // Get saved filter preference
-            var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
+            // Ensure the value matches the saved filter or selected category
+            var filterToApply = '';
             if(savedFilter){
-              categoryFilter.value = savedFilter;
-              selectedCategory = savedFilter;
+              // Find the exact option value that matches the saved filter (case-insensitive)
+              var matchingOption = Array.from(categoryFilter.options).find(function(opt){
+                return opt.value.toLowerCase() === savedFilter.toLowerCase();
+              });
+              if(matchingOption){
+                // Use the exact option value (preserving case)
+                categoryFilter.value = matchingOption.value;
+                filterToApply = matchingOption.value.toLowerCase().trim();
+              } else {
+                // Saved filter doesn't exist, reset to empty
+                categoryFilter.value = '';
+                localStorage.setItem('pcfind_builder_filter', '');
+                filterToApply = '';
+              }
+            } else if(selectedCategory){
+              categoryFilter.value = selectedCategory;
+              filterToApply = selectedCategory.toLowerCase().trim();
+            } else {
+              // Default to empty (All Categories)
+              categoryFilter.value = '';
+              filterToApply = '';
             }
             
             categoryFilter.addEventListener('change', function(){
@@ -2265,8 +2318,8 @@
               filterBuilderPartsByCategory(selectedCategory);
             });
             
-            // Initial filter - show all if empty, or filter by selected
-            filterBuilderPartsByCategory(selectedCategory || '');
+            // Initial filter - apply the determined filter
+            filterBuilderPartsByCategory(filterToApply);
           }
           
           // Add view toggle functionality
