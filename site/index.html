@@ -2395,40 +2395,87 @@
           
           // Set up observer to continuously remove recreated tabs (but debounce to avoid interference)
           var tabRemovalTimeout;
-          var tabRemovalObserver = new MutationObserver(function(mutations){
-            // Don't run if user is interacting with dropdown
-            if(window.__pcfDropdownInteracting){
-              return;
-            }
+          var tabRemovalObserver = null;
+          
+          function startTabRemovalObserver(){
+            if(tabRemovalObserver) return; // Already started
             
-            // Don't trigger removal if the mutation is related to our dropdown
-            var shouldIgnore = false;
-            mutations.forEach(function(mutation){
-              if(mutation.type === 'childList'){
-                mutation.addedNodes.forEach(function(node){
-                  if(node && (node.id === 'pcf-builder-category-filter' || (node.closest && node.closest('#pcf-builder-controls')))){
+            tabRemovalObserver = new MutationObserver(function(mutations){
+              // Completely skip if user is interacting with dropdown
+              if(window.__pcfDropdownInteracting){
+                clearTimeout(tabRemovalTimeout);
+                return;
+              }
+              
+              // Check if dropdown still exists
+              var dropdown = document.getElementById('pcf-builder-category-filter');
+              if(!dropdown){
+                // Dropdown was removed - reinitialize
+                setTimeout(function(){
+                  if(!window.__pcfDropdownInteracting){
+                    initPCBuilderFilter();
+                  }
+                }, 100);
+                return;
+              }
+              
+              // Don't trigger removal if the mutation is related to our dropdown
+              var shouldIgnore = false;
+              mutations.forEach(function(mutation){
+                if(mutation.type === 'childList'){
+                  mutation.addedNodes.forEach(function(node){
+                    if(node && (node.id === 'pcf-builder-category-filter' || (node.closest && node.closest('#pcf-builder-controls')))){
+                      shouldIgnore = true;
+                    }
+                    // Check if any removed nodes are our dropdown
+                    mutation.removedNodes.forEach(function(removed){
+                      if(removed && (removed.id === 'pcf-builder-category-filter' || (removed.querySelector && removed.querySelector('#pcf-builder-category-filter')))){
+                        shouldIgnore = true;
+                        // If dropdown was removed during interaction, mark it
+                        if(window.__pcfDropdownInteracting){
+                          window.__pcfDropdownRestore = true;
+                        }
+                      }
+                    });
+                  });
+                  // Also ignore if dropdown options are being rendered
+                  var target = mutation.target;
+                  if(target && (target.id === 'pcf-builder-category-filter' || (target.closest && target.closest('#pcf-builder-category-filter')))){
                     shouldIgnore = true;
                   }
-                });
-                // Also ignore if dropdown options are being rendered
-                mutation.target = mutation.target || {};
-                if(mutation.target.id === 'pcf-builder-category-filter' || (mutation.target.closest && mutation.target.closest('#pcf-builder-category-filter'))){
-                  shouldIgnore = true;
                 }
+              });
+              
+              if(!shouldIgnore){
+                clearTimeout(tabRemovalTimeout);
+                tabRemovalTimeout = setTimeout(function(){
+                  // Triple-check we're not interacting with dropdown before running
+                  if(!window.__pcfDropdownInteracting && document.getElementById('pcf-builder-category-filter')){
+                    removeCategoryTabs();
+                  }
+                }, 300); // Longer debounce
               }
             });
-            
-            if(!shouldIgnore){
-              clearTimeout(tabRemovalTimeout);
-              tabRemovalTimeout = setTimeout(function(){
-                // Double-check we're not interacting with dropdown before running
-                if(!window.__pcfDropdownInteracting){
-                  removeCategoryTabs();
-                }
-              }, 200); // Debounce to avoid interfering with dropdown
+            tabRemovalObserver.observe(main, {childList: true, subtree: true});
+          }
+          
+          // Start observer
+          startTabRemovalObserver();
+          
+          // Function to stop observer temporarily
+          window.__pcfStopTabObserver = function(){
+            if(tabRemovalObserver){
+              tabRemovalObserver.disconnect();
+              tabRemovalObserver = null;
             }
-          });
-          tabRemovalObserver.observe(main, {childList: true, subtree: true});
+          };
+          
+          // Function to restart observer
+          window.__pcfStartTabObserver = function(){
+            if(!tabRemovalObserver){
+              startTabRemovalObserver();
+            }
+          };
           
           // Add change handler to category dropdown
           var categoryFilter = document.getElementById('pcf-builder-category-filter');
