@@ -1288,7 +1288,7 @@
           const emailValidation = validateEmail(emailInput);
           if(!emailValidation.valid){
             suErr.textContent = emailValidation.error;
-            suErr.style.display='block';
+            suErr.style.display='block'; 
             return;
           }
           
@@ -1640,6 +1640,11 @@
         font-weight: 500 !important;
         white-space: nowrap !important;
         margin: 0 !important;
+        pointer-events: auto !important;
+        z-index: 10 !important;
+        position: relative !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
       }
       
       .pcf-category-btn:hover {
@@ -2681,14 +2686,22 @@
               e.stopPropagation();
               e.stopImmediatePropagation();
               
-              // Prevent multiple rapid clicks - use a more reliable method
+              // Prevent multiple rapid clicks - reduced to 50ms for immediate response
               var now = Date.now();
-              if(btn._pcfLastClick && (now - btn._pcfLastClick) < 300){
-                return; // Ignore clicks within 300ms
+              if(btn._pcfLastClick && (now - btn._pcfLastClick) < 50){
+                return; // Ignore clicks within 50ms
               }
               btn._pcfLastClick = now;
               
               console.log('Category button clicked - processing:', btn.textContent);
+              
+              // Clear any filtering flags to allow immediate filtering
+              if(window._pcfFilteringInProgress !== undefined){
+                window._pcfFilteringInProgress = false;
+              }
+              if(window._pcfLastFilterCategory !== undefined){
+                window._pcfLastFilterCategory = null;
+              }
               
               // Remove active class from all buttons
               var allBtns = controlsContainer.querySelectorAll('.pcf-category-btn');
@@ -2699,7 +2712,7 @@
                 b.style.color = '#e5e7eb';
               });
               
-              // Add active class to clicked button
+              // Add active class to clicked button IMMEDIATELY
               btn.classList.add('pcf-category-btn-active');
               btn.style.background = '#2563eb';
               btn.style.borderColor = '#2563eb';
@@ -2715,17 +2728,17 @@
                 console.error('filterBuilderPartsByCategory not available, waiting...');
                 setTimeout(function(){
                   if(window.filterBuilderPartsByCategory){
-                    window.filterBuilderPartsByCategory(category);
+                    window.filterBuilderPartsByCategory(category, true); // Force immediate
                   } else {
                     console.error('filterBuilderPartsByCategory still not available after delay');
                   }
-                }, 100);
+                }, 50);
                 return;
               }
               
               // Filter parts immediately - use window function to ensure it's accessible
               try {
-                window.filterBuilderPartsByCategory(category);
+                window.filterBuilderPartsByCategory(category, true); // Force immediate execution
                 console.log('Filter function called successfully');
                 
                 // Scroll to parts section after filtering
@@ -2823,12 +2836,20 @@
               e.stopPropagation();
               e.stopImmediatePropagation();
               
-              // Prevent multiple rapid clicks - use timestamp method
+              // Prevent multiple rapid clicks - reduced to 50ms for immediate response
               var now = Date.now();
-              if(btn._pcfLastCategoryClick && (now - btn._pcfLastCategoryClick) < 300){
-                return; // Ignore clicks within 300ms
+              if(btn._pcfLastCategoryClick && (now - btn._pcfLastCategoryClick) < 50){
+                return; // Ignore clicks within 50ms
               }
               btn._pcfLastCategoryClick = now;
+              
+              // Clear any filtering flags to allow immediate filtering
+              if(window._pcfFilteringInProgress !== undefined){
+                window._pcfFilteringInProgress = false;
+              }
+              if(window._pcfLastFilterCategory !== undefined){
+                window._pcfLastFilterCategory = null;
+              }
               
               // Remove active class from all buttons
               var allBtns = existingControls.querySelectorAll('.pcf-category-btn');
@@ -2839,7 +2860,7 @@
                 b.style.color = '#e5e7eb';
               });
               
-              // Add active class to clicked button
+              // Add active class to clicked button IMMEDIATELY
               btn.classList.add('pcf-category-btn-active');
               btn.style.background = '#2563eb';
               btn.style.borderColor = '#2563eb';
@@ -2854,17 +2875,17 @@
                 console.error('filterBuilderPartsByCategory not available, waiting...');
                 setTimeout(function(){
                   if(window.filterBuilderPartsByCategory){
-                    window.filterBuilderPartsByCategory(category);
+                    window.filterBuilderPartsByCategory(category, true); // Force immediate
                   } else {
                     console.error('filterBuilderPartsByCategory still not available after delay');
                   }
-                }, 100);
+                }, 50);
                 return;
               }
               
               // Filter parts immediately - use window function to ensure it's accessible
               try {
-                window.filterBuilderPartsByCategory(category);
+                window.filterBuilderPartsByCategory(category, true); // Force immediate execution
                 console.log('Filter function called successfully');
                 
                 // Scroll to parts section after filtering
@@ -3277,7 +3298,7 @@
           });
         };
         
-        function filterBuilderPartsByCategory(category){
+        function filterBuilderPartsByCategory(category, immediate){
           // Make function globally accessible immediately
           window.filterBuilderPartsByCategory = filterBuilderPartsByCategory;
           
@@ -3290,123 +3311,146 @@
             _pcfFilterTimeout = null;
           }
           
-          // Prevent duplicate calls with same category
+          // If immediate flag is set, skip debouncing and execute right away
+          if(immediate){
+            // Clear flags to allow immediate execution
+            _pcfFilteringInProgress = false;
+            _pcfLastFilterCategory = null;
+            executeFilter(category);
+            return;
+          }
+          
+          // Prevent duplicate calls with same category (only if not immediate)
           if(_pcfFilteringInProgress && _pcfLastFilterCategory === category){
             return;
           }
           
-          // Debounce the actual filtering
+          // Debounce the actual filtering (only if not immediate)
           _pcfFilterTimeout = setTimeout(function(){
+            executeFilter(category);
+          }, 10); // Reduced debounce to 10ms for faster response
+          
+          // Internal function to execute the filter
+          function executeFilter(category){
             // Set flag to prevent multiple calls
             _pcfFilteringInProgress = true;
             _pcfLastFilterCategory = category;
             
-            // Try to find cards with multiple selectors and retry if not found
-            function findCards(retryCount){
-              retryCount = retryCount || 0;
-              var maxRetries = 10; // Try for up to 5 seconds (500ms * 10)
-              
-              var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
-              
-              // If no cards found, try alternative selectors
-              if(cards.length === 0){
-                cards = document.querySelectorAll('[data-testid*="card-builder"], [data-testid*="card-part"], [data-testid*="builder-part"], [data-testid*="part-"]');
-              }
-              
-              // If still no cards, try more generic selectors
-              if(cards.length === 0){
-                cards = document.querySelectorAll('[data-testid*="card"], [data-testid*="part"]');
-              }
-              
-              // If still no cards and we haven't exceeded retries, wait and try again
-              if(cards.length === 0 && retryCount < maxRetries){
-                setTimeout(function(){
-                  findCards(retryCount + 1);
-                }, 500);
-                return;
-              }
-              
-              // If no cards found after retries, silently return (parts may not be loaded yet)
-              if(cards.length === 0){
-                return;
-              }
-              
-              // Filter cards now that we found them
-              filterCardsNow(cards, category);
+            // Try to find cards with multiple selectors
+            var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+            
+            // If no cards found, try alternative selectors
+            if(cards.length === 0){
+              cards = document.querySelectorAll('[data-testid*="card-builder"], [data-testid*="card-part"], [data-testid*="builder-part"], [data-testid*="part-"]');
             }
             
-            // Internal function to actually filter the cards
-            function filterCardsNow(cards, category){
-              // Only log if category changed or first call
-              if(!window._pcfLastLoggedCategory || window._pcfLastLoggedCategory !== category){
-                console.log('filterBuilderPartsByCategory called with category:', category, 'Found cards:', cards.length);
-                window._pcfLastLoggedCategory = category;
+            // If still no cards, try more generic selectors
+            if(cards.length === 0){
+              cards = document.querySelectorAll('[data-testid*="card"], [data-testid*="part"]');
+            }
+            
+            // If still no cards, try finding by class or structure
+            if(cards.length === 0){
+              var main = document.querySelector('main');
+              if(main){
+                // Look for any card-like elements in main
+                cards = main.querySelectorAll('div[class*="card"], article, section[class*="part"]');
               }
-              
-              // Filter immediately without transitions to prevent flashing
-              cards.forEach(function(card){
-                var cardText = (card.textContent || '').toLowerCase();
-                var categoryMatch = false;
-                
-                // Show all if no category selected or 'all'
-                if(!category || category === '' || category === 'all'){
-                  categoryMatch = true;
-                } else {
-                  // Map dropdown values to search patterns
-                  var categoryMap = {
-                    'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper'],
-                    'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'amd', 'radeon', 'geforce', 'rx ', 'rx6700', 'rx6600', 'rx6800'],
-                    'motherboard': ['motherboard', 'mobo', 'mainboard', 'board', 'msi', 'asus', 'gigabyte', 'asrock'],
-                    'ram': ['ram', 'memory', 'ddr', 'ddr4', 'ddr5'],
-                    'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2', 'sata'],
-                    'psu': ['psu', 'power supply', 'power', 'watt', 'corsair', 'seasonic'],
-                    'case': ['case', 'chassis', 'tower', 'cabinet', 'atx', 'matx'],
-                    'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid', 'thermal']
-                  };
-                  
-                  // Get patterns for this category
-                  var patterns = categoryMap[category] || [category];
-                  categoryMatch = patterns.some(function(pattern){
-                    return cardText.includes(pattern);
-                  });
-                }
-                
-                // Show or hide card immediately - no transitions to prevent flashing
-                if(categoryMatch){
-                  // Show card immediately
-                  card.style.display = '';
-                  card.style.opacity = '1';
-                  card.style.visibility = 'visible';
-                  card.style.pointerEvents = '';
-                  card.removeAttribute('hidden');
-                } else {
-                  // Hide card immediately
-                  card.style.display = 'none';
-                  card.style.opacity = '0';
-                  card.style.visibility = 'hidden';
-                  card.style.pointerEvents = 'none';
-                }
-              });
-              
-              // Only log completion if category changed
-              if(!window._pcfLastLoggedComplete || window._pcfLastLoggedComplete !== category){
-                console.log('Filtering complete. Category:', category, 'Cards processed:', cards.length);
-                window._pcfLastLoggedComplete = category;
-              }
-              
-              // Clear flag after filtering completes
+            }
+            
+            // If no cards found, silently return (parts may not be loaded yet)
+            if(cards.length === 0){
+              // Try again after a short delay if cards might still be loading
               setTimeout(function(){
-                _pcfFilteringInProgress = false;
-                // Reset category tracking after delay to allow new calls
-                setTimeout(function(){
-                  _pcfLastFilterCategory = null;
-                }, 50);
-              }, 100);
+                executeFilter(category);
+              }, 200);
+              return;
             }
             
-            // Start looking for cards
-            findCards(0);
-          }, 50); // Debounce delay of 50ms
+            // Only log if category changed or first call
+            if(!window._pcfLastLoggedCategory || window._pcfLastLoggedCategory !== category){
+              console.log('filterBuilderPartsByCategory called with category:', category, 'Found cards:', cards.length);
+              window._pcfLastLoggedCategory = category;
+            }
+            
+            // Filter immediately without transitions to prevent flashing
+            var visibleCount = 0;
+            cards.forEach(function(card){
+              var cardText = (card.textContent || '').toLowerCase();
+              var cardTitle = '';
+              var cardDesc = '';
+              
+              // Try to get more specific text from title or heading elements
+              var titleEl = card.querySelector('h1, h2, h3, h4, h5, h6, [class*="title"], [class*="name"]');
+              if(titleEl){
+                cardTitle = (titleEl.textContent || '').toLowerCase();
+              }
+              
+              var descEl = card.querySelector('[class*="desc"], [class*="description"], p');
+              if(descEl){
+                cardDesc = (descEl.textContent || '').toLowerCase();
+              }
+              
+              // Combine all text for matching
+              var allText = cardText + ' ' + cardTitle + ' ' + cardDesc;
+              var categoryMatch = false;
+              
+              // Show all if no category selected or 'all'
+              if(!category || category === '' || category === 'all'){
+                categoryMatch = true;
+              } else {
+                // Map dropdown values to search patterns - more specific matching
+                var categoryMap = {
+                  'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper', 'core i3', 'core i5', 'core i7', 'core i9'],
+                  'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'radeon', 'geforce', 'rx ', 'rx6700', 'rx6600', 'rx6800', 'rx 6700', 'rx 6600', 'rx 6800', 'rtx 30', 'rtx 40', 'gtx 16', 'gtx 10'],
+                  'motherboard': ['motherboard', 'mobo', 'mainboard', 'board', 'msi', 'asus', 'gigabyte', 'asrock', 'b550', 'b650', 'x570', 'x670', 'z690', 'z790'],
+                  'ram': ['ram', 'memory', 'ddr', 'ddr4', 'ddr5', '8gb', '16gb', '32gb', '64gb', 'corsair', 'g.skill', 'kingston', 'crucial'],
+                  'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2', 'sata', 'samsung', 'wd', 'western digital', 'crucial', 'kingston'],
+                  'psu': ['psu', 'power supply', 'power', 'watt', 'corsair', 'seasonic', 'evga', 'cooler master', '750w', '850w', '1000w'],
+                  'case': ['case', 'chassis', 'tower', 'cabinet', 'atx', 'matx', 'mini itx', 'fractal', 'nzxt', 'corsair', 'lian li'],
+                  'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid', 'thermal', 'noctua', 'be quiet', 'corsair', 'nzxt', 'arctic']
+                };
+                
+                // Get patterns for this category
+                var patterns = categoryMap[category] || [category];
+                categoryMatch = patterns.some(function(pattern){
+                  return allText.includes(pattern);
+                });
+              }
+              
+              // Show or hide card immediately - no transitions to prevent flashing
+              if(categoryMatch){
+                // Show card immediately
+                card.style.display = '';
+                card.style.opacity = '1';
+                card.style.visibility = 'visible';
+                card.style.pointerEvents = '';
+                card.removeAttribute('hidden');
+                visibleCount++;
+              } else {
+                // Hide card immediately
+                card.style.display = 'none';
+                card.style.opacity = '0';
+                card.style.visibility = 'hidden';
+                card.style.pointerEvents = 'none';
+              }
+            });
+            
+            // Only log completion if category changed
+            if(!window._pcfLastLoggedComplete || window._pcfLastLoggedComplete !== category){
+              console.log('Filtering complete. Category:', category, 'Visible cards:', visibleCount, 'Total cards:', cards.length);
+              window._pcfLastLoggedComplete = category;
+            }
+            
+            // Clear flag after filtering completes
+            setTimeout(function(){
+              _pcfFilteringInProgress = false;
+              // Reset category tracking after delay to allow new calls
+              setTimeout(function(){
+                _pcfLastFilterCategory = null;
+              }, 50);
+            }, 50);
+          }
         }
         
         // Initialize on load
@@ -3779,7 +3823,7 @@
             const user = getUser();
             if(user && user.name){
               // User is logged in - use localStorage
-              const stored = localStorage.getItem('pcfind_current_build');
+            const stored = localStorage.getItem('pcfind_current_build');
               if(stored){
                 return JSON.parse(stored);
               }
@@ -3879,7 +3923,7 @@
           
           // Show saved builds list if user is logged in and has saved builds
           if(user && savedBuilds && savedBuilds.length > 0){
-            html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:24px;margin-bottom:20px" class="light-mode-card">';
+          html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:24px;margin-bottom:20px" class="light-mode-card">';
             html += '<h1 style="color:#e5e7eb;margin:0 0 8px 0;font-size:2rem" class="light-mode-title">💾 Saved Builds</h1>';
             html += '<p style="color:#9ca3af;margin:0 0 20px 0" class="light-mode-text">Your saved PC builds</p>';
             
@@ -4108,8 +4152,8 @@
             // Save the list
             if(saveSavedBuildsList(savedBuilds)){
               // Also save current build
-              localStorage.setItem('pcfind_current_build', JSON.stringify(build));
-              if(window.showToast) window.showToast('✅ Build saved successfully!');
+            localStorage.setItem('pcfind_current_build', JSON.stringify(build));
+            if(window.showToast) window.showToast('✅ Build saved successfully!');
               // Refresh the saved builds page if we're on it
               if(isSavedBuilds()){
                 setTimeout(() => renderSavedBuilds(), 100);
