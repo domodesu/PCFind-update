@@ -1476,6 +1476,50 @@
         overflow: hidden !important;
       }
       
+      /* Category button styling */
+      .pcf-category-btn {
+        padding: 10px 16px !important;
+        border-radius: 8px !important;
+        border: 1px solid #374151 !important;
+        background: #1f2937 !important;
+        color: #e5e7eb !important;
+        font-size: 14px !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        font-weight: 500 !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+      }
+      
+      .pcf-category-btn:hover {
+        background: #374151 !important;
+        border-color: #4b5563 !important;
+        color: #e5e7eb !important;
+      }
+      
+      .pcf-category-btn-active {
+        background: #2563eb !important;
+        border-color: #2563eb !important;
+        color: #ffffff !important;
+      }
+      
+      .light .pcf-category-btn {
+        background: #ffffff !important;
+        border-color: #e5e7eb !important;
+        color: #111827 !important;
+      }
+      
+      .light .pcf-category-btn:hover {
+        background: #f3f4f6 !important;
+        border-color: #d1d5db !important;
+      }
+      
+      .light .pcf-category-btn-active {
+        background: #2563eb !important;
+        border-color: #2563eb !important;
+        color: #ffffff !important;
+      }
+      
       /* PC Builder categories and view toggle container */
       #pcf-builder-controls {
         display: flex !important;
@@ -2143,7 +2187,7 @@
           // Add category buttons
           categoryButtons.forEach(function(btn){
             var activeClass = btn.active ? 'pcf-category-btn-active' : '';
-            controlsHtml += '<button class="pcf-category-btn ' + activeClass + '" data-category="' + btn.value + '" style="padding:10px 16px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#e5e7eb;font-size:14px;cursor:pointer;transition:all 0.2s;font-weight:500;white-space:nowrap;">' + btn.text + '</button>';
+            controlsHtml += '<button class="pcf-category-btn ' + activeClass + '" data-category="' + btn.value + '">' + btn.text + '</button>';
           });
           
           controlsHtml += '</div>';
