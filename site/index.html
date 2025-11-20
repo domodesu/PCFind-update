@@ -2970,12 +2970,29 @@
           }, 1000);
         }
         
+        // Debounce flag to prevent multiple simultaneous calls
+        var _pcfFilteringInProgress = false;
+        var _pcfLastFilterCategory = null;
+        
         function filterBuilderPartsByCategory(category){
           // Make function globally accessible immediately
           window.filterBuilderPartsByCategory = filterBuilderPartsByCategory;
           
+          // Prevent duplicate calls with same category
+          if(_pcfFilteringInProgress && _pcfLastFilterCategory === category){
+            return;
+          }
+          
+          // Set flag to prevent multiple calls
+          _pcfFilteringInProgress = true;
+          _pcfLastFilterCategory = category;
+          
           var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
-          console.log('filterBuilderPartsByCategory called with category:', category, 'Found cards:', cards.length);
+          // Only log if category changed or first call
+          if(!window._pcfLastLoggedCategory || window._pcfLastLoggedCategory !== category){
+            console.log('filterBuilderPartsByCategory called with category:', category, 'Found cards:', cards.length);
+            window._pcfLastLoggedCategory = category;
+          }
           
           // Normalize category - handle empty string, 'all', and normalize case
           category = (category || '').toLowerCase().trim();
@@ -3032,7 +3049,16 @@
             }
           });
           
-          console.log('Filtering complete. Category:', category, 'Cards processed:', cards.length);
+          // Only log completion if category changed
+          if(!window._pcfLastLoggedComplete || window._pcfLastLoggedComplete !== category){
+            console.log('Filtering complete. Category:', category, 'Cards processed:', cards.length);
+            window._pcfLastLoggedComplete = category;
+          }
+          
+          // Clear flag after a short delay
+          setTimeout(function(){
+            _pcfFilteringInProgress = false;
+          }, 100);
         }
         
         
