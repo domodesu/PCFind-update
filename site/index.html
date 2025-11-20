@@ -2408,12 +2408,10 @@
           var oldControls = document.getElementById('pcf-builder-controls');
           if(oldControls) oldControls.remove();
           
-          // Remove any orphaned view toggle sections (bottom sections)
-          var orphanedViewToggle = document.querySelectorAll('#pcf-builder-view-toggle:not(#pcf-builder-controls #pcf-builder-view-toggle)');
-          orphanedViewToggle.forEach(function(el){
-            if(el && !el.closest('#pcf-builder-controls')){
-              el.remove();
-            }
+          // Remove any view toggle sections
+          var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle, .pcf-builder-view-toggle-mobile, .pcf-builder-view-toggle-btn');
+          allViewToggles.forEach(function(el){
+            el.remove();
           });
           
           // Also remove any pcf-view-toggle (browse parts) if it exists on PC builder page
@@ -2439,78 +2437,10 @@
           var searchInput = main.querySelector('input[placeholder*="Search" i], input[placeholder*="search" i], input[type="text"]');
           var budgetInput = main.querySelector('input[placeholder*="Budget" i], input[placeholder*="budget" i], input[type="number"]');
           
-          // Create controls container with only view toggle (category buttons removed for reset)
-          var controlsHtml = '<div id="pcf-builder-controls" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:flex-end;margin:16px 0;padding:0 20px;position:relative;clear:both;width:100%;box-sizing:border-box;z-index:1;">';
-          // Desktop view toggle (hidden on mobile) - place it SECOND (order: 2)
-          controlsHtml += '<div id="pcf-builder-view-toggle" style="display:flex;gap:8px;align-items:center;flex-shrink:0;order:2;">';
-          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
-          controlsHtml += '<span>⊞</span> <span>Grid</span>';
-          controlsHtml += '</button>';
-          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
-          controlsHtml += '<span>☰</span> <span>Stack</span>';
-          controlsHtml += '</button>';
-          controlsHtml += '</div>';
-          // Mobile view toggle (hidden on desktop) - order: 2 for mobile
-          controlsHtml += '<div class="pcf-builder-view-toggle-mobile" style="display:none;flex-direction:row;width:100%;justify-content:center;gap:8px;order:2;">';
-          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
-          controlsHtml += '<span>⊞</span> <span>Grid</span>';
-          controlsHtml += '</button>';
-          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
-          controlsHtml += '<span>☰</span> <span>Stack</span>';
-          controlsHtml += '</button>';
-          controlsHtml += '</div>';
-          controlsHtml += '</div>';
+          // Controls container removed - ready for new implementation
+          // No controls will be created for now
           
-          // Find insertion point
-          var insertAfter = null;
-          if(searchInput){
-            var searchContainer = searchInput.closest('div') || searchInput.parentElement;
-            while(searchContainer && searchContainer !== main && searchContainer !== document.body){
-              var hasBudget = searchContainer.querySelector('input[placeholder*="Budget" i], input[placeholder*="budget" i], input[type="number"]');
-              if(hasBudget || searchContainer.tagName === 'FORM' || searchContainer.classList.contains('form')){
-                insertAfter = searchContainer;
-                break;
-              }
-              searchContainer = searchContainer.parentElement;
-            }
-            if(!insertAfter && searchInput.parentElement){
-              insertAfter = searchInput.parentElement;
-            }
-          }
-          
-          if(!insertAfter && budgetInput){
-            var budgetContainer = budgetInput.closest('div') || budgetInput.parentElement;
-            insertAfter = budgetContainer;
-          }
-          
-          // Insert the controls
-          if(insertAfter && insertAfter !== main && insertAfter !== document.body){
-            insertAfter.insertAdjacentHTML('afterend', controlsHtml);
-          } else {
-            var firstChild = main.firstElementChild;
-            if(firstChild && firstChild.id !== 'pcf-builder-controls'){
-              if(searchInput && searchInput.parentElement){
-                searchInput.parentElement.insertAdjacentHTML('afterend', controlsHtml);
-              } else {
-                main.insertAdjacentHTML('afterbegin', controlsHtml);
-              }
-            } else if(!firstChild){
-              main.innerHTML = controlsHtml + main.innerHTML;
-            }
-          }
-          
-          // Ensure controls are visible
-          var controls = document.getElementById('pcf-builder-controls');
-          if(controls){
-            controls.style.display = 'flex';
-            controls.style.flexDirection = 'row';
-            controls.style.flexWrap = 'wrap';
-            controls.style.justifyContent = 'space-between';
-            controls.style.alignItems = 'center';
-            controls.style.gap = '8px';
-            controls.style.visibility = 'visible';
-            controls.style.opacity = '1';
-          }
+          // Controls insertion removed - no controls to insert
           
           // Immediate cleanup: Remove any duplicate bottom sections that might exist
           var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle');
@@ -2671,14 +2601,29 @@
             existingControls.style.opacity = '1';
           }
           
-          // Remove any duplicate/old view toggle sections that might be separate
-          var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle');
-          var controlsContainer = document.getElementById('pcf-builder-controls');
+          // Remove all view toggle buttons and handlers
+          var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle, .pcf-builder-view-toggle-mobile');
           allViewToggles.forEach(function(toggle){
-            if(!toggle.closest('#pcf-builder-controls') || (controlsContainer && !controlsContainer.contains(toggle))){
-              toggle.remove();
-            }
+            toggle.remove();
           });
+          
+          // Remove view toggle buttons
+          var allViewToggleBtns = document.querySelectorAll('.pcf-builder-view-toggle-btn');
+          allViewToggleBtns.forEach(function(btn){
+            btn.remove();
+          });
+          
+          // Remove view toggle event handlers
+          var controlsContainer = document.getElementById('pcf-builder-controls');
+          if(controlsContainer && controlsContainer._pcfViewToggleHandler){
+            controlsContainer.removeEventListener('click', controlsContainer._pcfViewToggleHandler, {capture: true, passive: false});
+            controlsContainer._pcfViewToggleHandler = null;
+          }
+          
+          // Remove controls container entirely
+          if(controlsContainer){
+            controlsContainer.remove();
+          }
           
           // Also remove any pcf-view-toggle (browse parts) if it exists on PC builder page
           var browsePartsViewToggle = document.getElementById('pcf-view-toggle');
@@ -2690,107 +2635,30 @@
             }
           }
           
-          // Add view toggle functionality - use event delegation for reliability
+          // Set up parts container with default grid view (no toggle functionality)
           var container = document.querySelector('main');
           var partsContainer = null;
           
-          // Find parts container
-          var cards = container.querySelectorAll('[data-testid^="card-builder-part-"]');
-          if(cards.length > 0){
-            partsContainer = cards[0].parentElement;
-            while(partsContainer && partsContainer !== document.body){
-              var cardCount = partsContainer.querySelectorAll('[data-testid^="card-builder-part-"]').length;
-              if(cardCount >= cards.length * 0.5){
-                break;
-              }
-              partsContainer = partsContainer.parentElement;
-            }
-            if(!partsContainer || partsContainer === document.body){
+          if(container){
+            // Find parts container
+            var cards = container.querySelectorAll('[data-testid^="card-builder-part-"]');
+            if(cards.length > 0){
               partsContainer = cards[0].parentElement;
-            }
-          }
-          
-          if(partsContainer){
-            partsContainer.classList.add('pcf-builder-parts-container');
-            partsContainer.classList.add(savedView + '-view');
-            
-            // Use event delegation on controls container for view toggle buttons
-            var controlsContainer = document.getElementById('pcf-builder-controls');
-            if(controlsContainer){
-              // Remove old handler if exists
-              if(controlsContainer._pcfViewToggleHandler){
-                controlsContainer.removeEventListener('click', controlsContainer._pcfViewToggleHandler, {capture: true, passive: false});
+              while(partsContainer && partsContainer !== document.body){
+                var cardCount = partsContainer.querySelectorAll('[data-testid^="card-builder-part-"]').length;
+                if(cardCount >= cards.length * 0.5){
+                  break;
+                }
+                partsContainer = partsContainer.parentElement;
               }
-              
-              // Create handler for view toggle buttons
-              controlsContainer._pcfViewToggleHandler = function(e){
-                var btn = e.target.closest('.pcf-builder-view-toggle-btn');
-                if(!btn) return;
-                
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-                
-                var view = btn.getAttribute('data-view');
-                if(!view) return;
-                
-                // Prevent rapid clicks
-                var now = Date.now();
-                if(btn._pcfLastViewClick && (now - btn._pcfLastViewClick) < 300){
-                  return;
-                }
-                btn._pcfLastViewClick = now;
-                
-                console.log('View toggle clicked:', view);
-                
-                // Update active state for all toggle buttons (both desktop and mobile)
-                var allToggleBtns = document.querySelectorAll('.pcf-builder-view-toggle-btn');
-                allToggleBtns.forEach(function(b){ 
-                  b.classList.remove('active');
-                  b.style.background = '#1f2937';
-                  b.style.borderColor = '#374151';
-                  b.style.color = '#9ca3af';
-                });
-                
-                // Activate clicked button
-                btn.classList.add('active');
-                btn.style.background = '#2563eb';
-                btn.style.borderColor = '#2563eb';
-                btn.style.color = '#fff';
-                
-                // Also activate corresponding button in other toggle (desktop/mobile)
-                var otherToggleBtns = document.querySelectorAll('.pcf-builder-view-toggle-btn[data-view="' + view + '"]');
-                otherToggleBtns.forEach(function(b){
-                  if(b !== btn){
-                    b.classList.add('active');
-                    b.style.background = '#2563eb';
-                    b.style.borderColor = '#2563eb';
-                    b.style.color = '#fff';
-                  }
-                });
-                
-                // Update container classes
-                if(partsContainer){
-                partsContainer.classList.remove('grid-view', 'stack-view');
-                partsContainer.classList.add(view + '-view');
-                  console.log('Container view updated to:', view);
-                }
-                
-                // Save preference
-                localStorage.setItem('pcfind_builder_view', view);
-                
-                // Force re-render
-                setTimeout(function(){
-                  if(window.rearrangeCardButtons){
-                    window.rearrangeCardButtons();
-                  }
-                }, 50);
-              };
-              
-              // Attach handler with capture phase
-              controlsContainer.addEventListener('click', controlsContainer._pcfViewToggleHandler, {capture: true, passive: false});
-              // Mark as attached
-              controlsContainer._pcfViewToggleAttached = true;
+              if(!partsContainer || partsContainer === document.body){
+                partsContainer = cards[0].parentElement;
+              }
+            }
+            
+            if(partsContainer){
+              partsContainer.classList.add('pcf-builder-parts-container');
+              partsContainer.classList.add('grid-view'); // Default to grid view
             }
           }
           
@@ -2814,28 +2682,27 @@
             cardObserver.observe(main, {childList: true, subtree: true});
           }
           
-          // Cleanup: Remove any orphaned bottom view toggle sections
+          // Cleanup: Remove any orphaned controls (all removed for reset)
           setTimeout(function(){
-            var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle');
+            // Remove any remaining controls containers
             var controlsContainer = document.getElementById('pcf-builder-controls');
-            allViewToggles.forEach(function(toggle){
-              if(!toggle.closest('#pcf-builder-controls') || (controlsContainer && !controlsContainer.contains(toggle))){
-                console.log('Removing orphaned view toggle:', toggle);
-                toggle.remove();
-              }
-            });
+            if(controlsContainer){
+              controlsContainer.remove();
+            }
           }, 500);
           
           // Also remove any duplicate sections that might be created later
           var cleanupObserver = new MutationObserver(function(){
-            // Remove orphaned view toggles
-            var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle');
+            // Remove any controls containers that might appear
             var controlsContainer = document.getElementById('pcf-builder-controls');
+            if(controlsContainer){
+              controlsContainer.remove();
+            }
+            
+            // Remove any view toggle buttons
+            var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle, .pcf-builder-view-toggle-mobile, .pcf-builder-view-toggle-btn');
             allViewToggles.forEach(function(toggle){
-              if(!toggle.closest('#pcf-builder-controls') || (controlsContainer && !controlsContainer.contains(toggle))){
-                console.log('Removing orphaned view toggle detected:', toggle);
-                toggle.remove();
-              }
+              toggle.remove();
             });
             
             // Remove duplicate tablists and category buttons (bottom selection)
