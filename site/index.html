@@ -6007,7 +6007,14 @@
         });
         var burgerLogout = document.getElementById('pcf-logout'); if(burgerLogout) burgerLogout.addEventListener('click', function(){
           closeDrawer();
-          try{ localStorage.removeItem('pcfind_user'); sessionStorage.removeItem('pcfind_user'); }catch{}
+          try{ 
+            localStorage.removeItem('pcfind_user'); 
+            sessionStorage.removeItem('pcfind_user');
+            // Clear build when user logs out
+            const emptyBuild = {items:[], name: 'My Build', lastModified: Date.now()};
+            sessionStorage.setItem('pcfind_current_build', JSON.stringify(emptyBuild));
+            localStorage.removeItem('pcfind_current_build');
+          }catch{}
           // Force sync by dispatching storage event (cross-window sync listener will update UI)
           try{ window.dispatchEvent(new StorageEvent('storage', { key: 'pcfind_user' })); }catch{}
           try{ window.dispatchEvent(new CustomEvent('pcfind:user-change', { detail: { user: null } })); }catch{ try{ window.dispatchEvent(new Event('pcfind:user-change')); }catch{} }
