@@ -245,6 +245,17 @@
         display: inline-block !important;
         visibility: visible !important;
         opacity: 1 !important;
+        pointer-events: auto !important;
+        z-index: 10 !important;
+        position: relative !important;
+      }
+      
+      /* Ensure navigation links are always clickable */
+      header nav a,
+      nav a {
+        pointer-events: auto !important;
+        z-index: 10 !important;
+        position: relative !important;
       }
       @media (max-width: 900px){
         nav a[href="/"], nav a[href="/browse-parts"], nav a[href="/pc-builder"], nav a[href="/saved-builds"]{display:none !important}
@@ -3069,6 +3080,7 @@
         // Debounce flag to prevent multiple simultaneous calls
         var _pcfFilteringInProgress = false;
         var _pcfLastFilterCategory = null;
+        var _pcfFilterTimeout = null;
         
         // Make rearrangeCardButtons globally accessible
         window.rearrangeCardButtons = function rearrangeCardButtons(){
@@ -3147,31 +3159,33 @@
           // Normalize category first
           category = (category || '').toLowerCase().trim();
           
+          // Clear any pending filter calls
+          if(_pcfFilterTimeout){
+            clearTimeout(_pcfFilterTimeout);
+            _pcfFilterTimeout = null;
+          }
+          
           // Prevent duplicate calls with same category
           if(_pcfFilteringInProgress && _pcfLastFilterCategory === category){
             return;
           }
           
-          // Set flag to prevent multiple calls
-          _pcfFilteringInProgress = true;
-          _pcfLastFilterCategory = category;
+          // Debounce the actual filtering
+          _pcfFilterTimeout = setTimeout(function(){
+            // Set flag to prevent multiple calls
+            _pcfFilteringInProgress = true;
+            _pcfLastFilterCategory = category;
+            
+            var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+            // Remove console logs to prevent spam - only log errors
+            if(cards.length === 0){
+              console.warn('No cards found with selector [data-testid^="card-builder-part-"]');
+              // Try alternative selectors
+              cards = document.querySelectorAll('[data-testid*="card"], [data-testid*="part"], .p-6');
+            }
           
-          var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
-          // Only log if category changed or first call
-          if(!window._pcfLastLoggedCategory || window._pcfLastLoggedCategory !== category){
-            console.log('filterBuilderPartsByCategory called with category:', category, 'Found cards:', cards.length);
-            window._pcfLastLoggedCategory = category;
-          }
-          
-          if(cards.length === 0){
-            console.warn('No cards found with selector [data-testid^="card-builder-part-"]');
-            // Try alternative selectors
-            cards = document.querySelectorAll('[data-testid*="card"], [data-testid*="part"], .p-6');
-            console.log('Trying alternative selectors, found:', cards.length);
-          }
-          
-          // Filter immediately without transitions to prevent flashing
-          cards.forEach(function(card){
+              // Filter immediately without transitions to prevent flashing
+            cards.forEach(function(card){
             var cardText = (card.textContent || '').toLowerCase();
             var categoryMatch = false;
             
@@ -3213,22 +3227,17 @@
               card.style.visibility = 'hidden';
               card.style.pointerEvents = 'none';
             }
-          });
-          
-          // Only log completion if category changed
-          if(!window._pcfLastLoggedComplete || window._pcfLastLoggedComplete !== category){
-            console.log('Filtering complete. Category:', category, 'Cards processed:', cards.length);
-            window._pcfLastLoggedComplete = category;
-          }
-          
-          // Clear flag after filtering completes
-          setTimeout(function(){
-            _pcfFilteringInProgress = false;
-            // Reset category tracking after delay to allow new calls
+            });
+            
+            // Clear flag after filtering completes
             setTimeout(function(){
-              _pcfLastFilterCategory = null;
-            }, 50);
-          }, 100);
+              _pcfFilteringInProgress = false;
+              // Reset category tracking after delay to allow new calls
+              setTimeout(function(){
+                _pcfLastFilterCategory = null;
+              }, 50);
+            }, 100);
+          }, 50); // Debounce delay of 50ms
         }
         
         // Initialize on load
