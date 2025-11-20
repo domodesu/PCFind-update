@@ -2430,7 +2430,10 @@
           // Set up category button click handlers
           var categoryBtns = document.querySelectorAll('.pcf-category-btn');
           categoryBtns.forEach(function(btn){
-            btn.addEventListener('click', function(){
+            btn.addEventListener('click', function(e){
+              e.preventDefault();
+              e.stopPropagation();
+              
               // Remove active class from all buttons
               categoryBtns.forEach(function(b){
                 b.classList.remove('pcf-category-btn-active');
@@ -2449,10 +2452,22 @@
               var category = this.getAttribute('data-category') || '';
               localStorage.setItem('pcfind_builder_filter', category);
               
-              // Use requestAnimationFrame to prevent flashing
-              requestAnimationFrame(function(){
-                filterBuilderPartsByCategory(category);
-              });
+              // Filter parts by category
+              filterBuilderPartsByCategory(category);
+              
+              // Scroll to parts section after filtering
+              setTimeout(function(){
+                var firstVisibleCard = document.querySelector('[data-testid^="card-builder-part-"]:not([style*="display: none"]), [data-testid^="card-builder-part-"]:not([style*="opacity: 0"])');
+                if(firstVisibleCard){
+                  firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                  // If no cards found, scroll to controls
+                  var controls = document.getElementById('pcf-builder-controls');
+                  if(controls){
+                    controls.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }
+              }, 300);
             });
             
             // Apply active styles
@@ -2495,7 +2510,10 @@
               btn.parentNode.replaceChild(newBtn, btn);
               
               // Reattach click handler
-              newBtn.addEventListener('click', function(){
+              newBtn.addEventListener('click', function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                
                 var allBtns = existingControls.querySelectorAll('.pcf-category-btn');
                 allBtns.forEach(function(b){
                   b.classList.remove('pcf-category-btn-active');
@@ -2511,7 +2529,23 @@
                 
                 var category = this.getAttribute('data-category') || '';
                 localStorage.setItem('pcfind_builder_filter', category);
+                
+                // Filter parts by category
                 filterBuilderPartsByCategory(category);
+                
+                // Scroll to parts section after filtering
+                setTimeout(function(){
+                  var firstVisibleCard = document.querySelector('[data-testid^="card-builder-part-"]:not([style*="display: none"]), [data-testid^="card-builder-part-"]:not([style*="opacity: 0"])');
+                  if(firstVisibleCard){
+                    firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  } else {
+                    // If no cards found, scroll to controls
+                    var controls = document.getElementById('pcf-builder-controls');
+                    if(controls){
+                      controls.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }
+                }, 300);
               });
               
               // Apply active styles if needed
