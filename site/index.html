@@ -1448,13 +1448,12 @@
         background: #f9fafb;
       }
       
-      /* Show category tabs as buttons below search on PC Builder */
+      /* Hide and remove old category tabs on PC Builder */
       body[data-page="pc-builder"] [role="tablist"] {
-        display: flex !important;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin: 16px 0;
-        padding: 0 20px;
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
       }
       
       /* PC Builder categories and view toggle container */
@@ -1519,12 +1518,9 @@
         }
         #pcf-builder-categories {
           width: 100%;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: thin;
         }
-        #pcf-builder-categories::-webkit-scrollbar {
-          height: 4px;
+        .pcf-builder-category-select {
+          width: 100%;
         }
         #pcf-builder-view-toggle {
           width: 100%;
@@ -2070,28 +2066,34 @@
           // Get saved view preference
           var savedView = localStorage.getItem('pcfind_builder_view') || 'grid';
           
-          // Get category tabs first
+          // Get category tabs first to extract categories
           var tabList = main.querySelector('[role="tablist"]');
-          var categoryButtons = '';
+          var categoryOptions = '<option value="">All Categories</option>';
+          var selectedCategory = '';
+          
           if(tabList){
             var tabs = tabList.querySelectorAll('button[role="tab"], [role="tab"]');
             tabs.forEach(function(tab){
               var text = (tab.textContent || '').trim();
               var isActive = tab.classList.contains('active') || tab.getAttribute('aria-selected') === 'true';
-              categoryButtons += '<button class="pcf-builder-category-btn' + (isActive ? ' active' : '') + '" data-category="' + text.toLowerCase() + '">' + text + '</button>';
+              if(isActive) selectedCategory = text.toLowerCase();
+              categoryOptions += '<option value="' + text.toLowerCase() + '"' + (isActive ? ' selected' : '') + '>' + text + '</option>';
             });
           } else {
             // Fallback: create default categories
             var categories = ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooling'];
             categories.forEach(function(cat, index){
-              categoryButtons += '<button class="pcf-builder-category-btn' + (index === 0 ? ' active' : '') + '" data-category="' + cat.toLowerCase() + '">' + cat + '</button>';
+              if(index === 0) selectedCategory = cat.toLowerCase();
+              categoryOptions += '<option value="' + cat.toLowerCase() + '"' + (index === 0 ? ' selected' : '') + '>' + cat + '</option>';
             });
           }
           
-          // Create categories and view toggle container
+          // Create categories dropdown and view toggle container
           var controlsHtml = '<div id="pcf-builder-controls">';
           controlsHtml += '<div id="pcf-builder-categories">';
-          controlsHtml += categoryButtons;
+          controlsHtml += '<select id="pcf-builder-category-filter" class="pcf-builder-category-select">';
+          controlsHtml += categoryOptions;
+          controlsHtml += '</select>';
           controlsHtml += '</div>';
           controlsHtml += '<div id="pcf-builder-view-toggle">';
           controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
@@ -2156,37 +2158,30 @@
             controls.style.opacity = '1';
           }
           
-          // Hide original tablist
+          // Remove original tablist completely
           if(tabList){
-            tabList.style.display = 'none';
+            tabList.remove();
           }
           
-          // Add click handlers to category buttons
-          var categoryBtns = document.getElementById('pcf-builder-categories');
-          if(categoryBtns){
-            var buttons = categoryBtns.querySelectorAll('.pcf-builder-category-btn, button');
-            buttons.forEach(function(btn){
-              btn.addEventListener('click', function(){
-                // Remove active from all
-                buttons.forEach(function(b){ 
-                  b.classList.remove('active');
-                });
-                // Add active to clicked
-                this.classList.add('active');
-                
-                // Filter parts based on category
-                var category = this.getAttribute('data-category') || (this.textContent || '').trim().toLowerCase();
-                filterBuilderPartsByCategory(category);
-              });
+          // Add change handler to category dropdown
+          var categoryFilter = document.getElementById('pcf-builder-category-filter');
+          if(categoryFilter){
+            // Get saved filter preference
+            var savedFilter = localStorage.getItem('pcfind_builder_filter') || '';
+            if(savedFilter){
+              categoryFilter.value = savedFilter;
+              selectedCategory = savedFilter;
+            }
+            
+            categoryFilter.addEventListener('change', function(){
+              var selectedCategory = this.value.toLowerCase();
+              localStorage.setItem('pcfind_builder_filter', selectedCategory);
+              filterBuilderPartsByCategory(selectedCategory);
             });
             
-            // Activate first category by default if none active
-            var activeBtn = categoryBtns.querySelector('.active');
-            if(!activeBtn && buttons.length > 0){
-              buttons[0].click();
-            } else if(activeBtn){
-              var category = activeBtn.getAttribute('data-category') || (activeBtn.textContent || '').trim().toLowerCase();
-              filterBuilderPartsByCategory(category);
+            // Initial filter
+            if(selectedCategory){
+              filterBuilderPartsByCategory(selectedCategory);
             }
           }
           
