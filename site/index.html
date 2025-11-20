@@ -1094,6 +1094,13 @@
                 const item = document.getElementById('pcf-open-account'); if(item) item.textContent = data.user.username;
                 const lo = document.getElementById('pcf-logout'); if(lo) lo.style.display = 'block';
               }, 100);
+              // Redirect to home page after successful login
+              setTimeout(()=>{
+                const path = (location.pathname||'').toLowerCase();
+                if(path !== '/' && !path.endsWith('/index.html') && !path.endsWith('/index')){
+                  window.location.href = '/';
+                }
+              }, 500);
             }else{
               errorEl.textContent=data.error||'Login failed. Please check your credentials.'; errorEl.style.display='block';
             }
@@ -1180,11 +1187,81 @@
             suErr.style.display='block'; 
             return; 
           }
-          if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput)){
-            suErr.textContent='Please enter a valid email address.'; 
-            suErr.style.display='block'; 
+          
+          // Enhanced email validation - check for common mistakes and invalid domains
+          function validateEmail(email) {
+            // Basic format check
+            if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+              return { valid: false, error: 'Please enter a valid email address.' };
+            }
+            
+            // Check for common mistakes
+            const commonMistakes = [
+              /@gmail\.co$/,           // Missing 'm' in .com
+              /@gmial\.com$/,          // Typo: gmial instead of gmail
+              /@gmail\.con$/,          // Typo: .con instead of .com
+              /@gmail\.cpm$/,          // Typo: .cpm instead of .com
+              /@gmail\.com\.com$/,     // Double .com
+              /@yahoo\.co$/,           // Missing 'o' in .com
+              /@yahoo\.con$/,          // Typo: .con instead of .com
+              /@hotmail\.co$/,         // Missing 'm' in .com
+              /@hotmail\.con$/,        // Typo: .con instead of .com
+              /@outlook\.co$/,         // Missing 'k' in .com
+              /@outlook\.con$/,        // Typo: .con instead of .com
+              /\.com\.com$/,           // Double .com
+              /\.com\.net$/,           // Mixed extensions
+              /\.net\.com$/,           // Mixed extensions
+              /\.org\.com$/,           // Mixed extensions
+              /@.*\.\./,               // Double dots
+              /@\./,                   // Dot right after @
+              /\.\./,                  // Double dots in domain
+              /^\./,                   // Starts with dot
+              /@$/,                    // Ends with @
+              /\.$/,                   // Ends with dot
+            ];
+            
+            for(let pattern of commonMistakes){
+              if(pattern.test(email)){
+                return { valid: false, error: 'Please check your email address for typos (e.g., .com.com, .con, gmial, etc.)' };
+              }
+            }
+            
+            // Check for invalid domain structure (like .com.com, .net.net, etc.)
+            const domainMatch = email.match(/@(.+)$/);
+            if(domainMatch){
+              const domain = domainMatch[1];
+              const parts = domain.split('.');
+              
+              // Check for repeated TLDs (e.g., .com.com, .net.net)
+              if(parts.length >= 2){
+                const lastTwo = parts.slice(-2);
+                if(lastTwo[0] === lastTwo[1]){
+                  return { valid: false, error: 'Invalid email domain. Please check for typos like .com.com' };
+                }
+              }
+              
+              // Check for invalid TLD patterns
+              const invalidTLDs = ['com.com', 'net.net', 'org.org', 'edu.edu', 'gov.gov'];
+              if(invalidTLDs.some(tld => domain.endsWith('.' + tld) || domain === tld)){
+                return { valid: false, error: 'Invalid email domain. Please check for typos.' };
+              }
+              
+              // Check for consecutive dots or dots at start/end of domain
+              if(domain.includes('..') || domain.startsWith('.') || domain.endsWith('.')){
+                return { valid: false, error: 'Invalid email domain format.' };
+              }
+            }
+            
+            return { valid: true };
+          }
+          
+          const emailValidation = validateEmail(emailInput);
+          if(!emailValidation.valid){
+            suErr.textContent = emailValidation.error;
+            suErr.style.display='block';
             return;
           }
+          
           contact = emailInput;
           
           suSendOtp.disabled=true; suSendOtp.textContent='Sending (may take 30s)...';
