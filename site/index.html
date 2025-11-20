@@ -2195,15 +2195,13 @@
             }
             
             categoryFilter.addEventListener('change', function(){
-              var selectedCategory = this.value.toLowerCase();
+              var selectedCategory = this.value.toLowerCase().trim();
               localStorage.setItem('pcfind_builder_filter', selectedCategory);
               filterBuilderPartsByCategory(selectedCategory);
             });
             
-            // Initial filter
-            if(selectedCategory){
-              filterBuilderPartsByCategory(selectedCategory);
-            }
+            // Initial filter - show all if empty, or filter by selected
+            filterBuilderPartsByCategory(selectedCategory || '');
           }
           
           // Add view toggle functionality
@@ -2272,30 +2270,37 @@
         function filterBuilderPartsByCategory(category){
           var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
           
+          // Normalize category - handle empty string, 'all', and normalize case
+          category = (category || '').toLowerCase().trim();
+          
           cards.forEach(function(card){
             var cardText = (card.textContent || '').toLowerCase();
             var categoryMatch = false;
             
-            if(!category || category === 'all'){
+            // Show all if no category selected or 'all'
+            if(!category || category === '' || category === 'all'){
               categoryMatch = true;
             } else {
+              // Map dropdown values to search patterns
               var categoryMap = {
-                'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i'],
-                'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'amd', 'radeon'],
-                'motherboard': ['motherboard', 'mobo', 'mainboard', 'board'],
-                'ram': ['ram', 'memory', 'ddr'],
-                'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2'],
-                'psu': ['psu', 'power supply', 'power'],
-                'case': ['case', 'chassis', 'tower', 'cabinet'],
-                'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid']
+                'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper'],
+                'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'amd', 'radeon', 'geforce', 'rx '],
+                'motherboard': ['motherboard', 'mobo', 'mainboard', 'board', 'msi', 'asus', 'gigabyte', 'asrock'],
+                'ram': ['ram', 'memory', 'ddr', 'ddr4', 'ddr5'],
+                'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2', 'sata'],
+                'psu': ['psu', 'power supply', 'power', 'watt', 'corsair', 'seasonic'],
+                'case': ['case', 'chassis', 'tower', 'cabinet', 'atx', 'matx'],
+                'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid', 'thermal']
               };
               
+              // Get patterns for this category
               var patterns = categoryMap[category] || [category];
               categoryMatch = patterns.some(function(pattern){
                 return cardText.includes(pattern);
               });
             }
             
+            // Show or hide card
             card.style.display = categoryMatch ? '' : 'none';
           });
         }
