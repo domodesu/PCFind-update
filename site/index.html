@@ -1592,7 +1592,7 @@
           flex-direction: row !important;
           width: 100% !important;
           gap: 8px !important;
-          order: 1 !important;
+          order: 2 !important;
           visibility: visible !important;
           opacity: 1 !important;
         }
@@ -1614,15 +1614,21 @@
           visibility: visible !important;
           opacity: 1 !important;
         }
+        /* Show theme toggle on desktop */
+        #pcf-theme, .pcf-tools #pcf-theme, button#pcf-theme {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
       }
       
-      #pcf-builder-controls #pcf-builder-view-toggle {
-        order: 1 !important;
-      }
       #pcf-builder-controls #pcf-builder-categories {
-        order: 2 !important;
+        order: 1 !important;
         flex: 1 !important;
         min-width: 0 !important;
+      }
+      #pcf-builder-controls #pcf-builder-view-toggle {
+        order: 2 !important;
       }
       
       /* Hide any view toggle sections outside of controls */
@@ -2335,19 +2341,10 @@
           }
           
           // Create organized category buttons and view toggle in one row
-          // Order: view toggle first, then category buttons (swapped back to original order)
+          // Order: Category buttons FIRST (order: 1), then Grid/Stack SECOND (order: 2) - SWAPPED as requested
           var controlsHtml = '<div id="pcf-builder-controls" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:16px 0;padding:0 20px;position:relative;clear:both;width:100%;box-sizing:border-box;z-index:1;">';
-          // Desktop view toggle (hidden on mobile) - place it first
-          controlsHtml += '<div id="pcf-builder-view-toggle" style="display:flex;gap:8px;align-items:center;flex-shrink:0;order:1;">';
-          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
-          controlsHtml += '<span>⊞</span> <span>Grid</span>';
-          controlsHtml += '</button>';
-          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
-          controlsHtml += '<span>☰</span> <span>Stack</span>';
-          controlsHtml += '</button>';
-          controlsHtml += '</div>';
-          // Category buttons - place them after toggle
-          controlsHtml += '<div id="pcf-builder-categories" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1;min-width:0;order:2;">';
+          // Category buttons - place them FIRST (order: 1)
+          controlsHtml += '<div id="pcf-builder-categories" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1;min-width:0;order:1;">';
           
           // Add category buttons
           categoryButtons.forEach(function(btn){
@@ -2356,7 +2353,7 @@
           });
           
           controlsHtml += '</div>';
-          // Mobile view toggle (hidden on desktop)
+          // Mobile view toggle (hidden on desktop) - order: 1 for mobile
           controlsHtml += '<div class="pcf-builder-view-toggle-mobile" style="display:none;flex-direction:row;width:100%;justify-content:center;gap:8px;order:1;">';
           controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
           controlsHtml += '<span>⊞</span> <span>Grid</span>';
@@ -2543,13 +2540,12 @@
               e.stopPropagation();
               e.stopImmediatePropagation();
               
-              // Prevent multiple rapid clicks
-              if(btn._pcfClicking) {
-                console.log('Click ignored - already processing');
-                return;
+              // Prevent multiple rapid clicks - use a more reliable method
+              var now = Date.now();
+              if(btn._pcfLastClick && (now - btn._pcfLastClick) < 300){
+                return; // Ignore clicks within 300ms
               }
-              btn._pcfClicking = true;
-              setTimeout(function(){ btn._pcfClicking = false; }, 500);
+              btn._pcfLastClick = now;
               
               console.log('Category button clicked - processing:', btn.textContent);
               
@@ -2786,8 +2782,7 @@
             }
           }
           
-          // Add view toggle functionality
-          var toggleBtns = document.querySelectorAll('.pcf-builder-view-toggle-btn');
+          // Add view toggle functionality - use event delegation for reliability
           var container = document.querySelector('main');
           var partsContainer = null;
           
@@ -2811,13 +2806,40 @@
             partsContainer.classList.add('pcf-builder-parts-container');
             partsContainer.classList.add(savedView + '-view');
             
-            toggleBtns.forEach(function(btn){
-              btn.addEventListener('click', function(){
-                var view = this.getAttribute('data-view');
+            // Use event delegation on controls container for view toggle buttons
+            var controlsContainer = document.getElementById('pcf-builder-controls');
+            if(controlsContainer){
+              // Remove old handler if exists
+              if(controlsContainer._pcfViewToggleHandler){
+                controlsContainer.removeEventListener('click', controlsContainer._pcfViewToggleHandler, {capture: true, passive: false});
+              }
+              
+              // Create handler for view toggle buttons
+              controlsContainer._pcfViewToggleHandler = function(e){
+                var btn = e.target.closest('.pcf-builder-view-toggle-btn');
+                if(!btn) return;
                 
-                // Update active state
-                toggleBtns.forEach(function(b){ b.classList.remove('active'); });
-                this.classList.add('active');
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                
+                var view = btn.getAttribute('data-view');
+                if(!view) return;
+                
+                // Update active state for all toggle buttons
+                var allToggleBtns = controlsContainer.querySelectorAll('.pcf-builder-view-toggle-btn');
+                allToggleBtns.forEach(function(b){ 
+                  b.classList.remove('active');
+                  b.style.background = '#1f2937';
+                  b.style.borderColor = '#374151';
+                  b.style.color = '#9ca3af';
+                });
+                
+                // Activate clicked button
+                btn.classList.add('active');
+                btn.style.background = '#2563eb';
+                btn.style.borderColor = '#2563eb';
+                btn.style.color = '#fff';
                 
                 // Update container classes
                 partsContainer.classList.remove('grid-view', 'stack-view');
@@ -2828,8 +2850,11 @@
                 
                 // Rearrange buttons after view change
                 setTimeout(rearrangeCardButtons, 50);
-              });
-            });
+              };
+              
+              // Attach handler with capture phase
+              controlsContainer.addEventListener('click', controlsContainer._pcfViewToggleHandler, {capture: true, passive: false});
+            }
           }
           
           // Initial button arrangement
@@ -2978,14 +3003,17 @@
           // Make function globally accessible immediately
           window.filterBuilderPartsByCategory = filterBuilderPartsByCategory;
           
-          // Prevent duplicate calls with same category
-          if(_pcfFilteringInProgress && _pcfLastFilterCategory === category){
-            return;
-          }
-          
-          // Set flag to prevent multiple calls
-          _pcfFilteringInProgress = true;
-          _pcfLastFilterCategory = category;
+              // Normalize category first
+              category = (category || '').toLowerCase().trim();
+              
+              // Prevent duplicate calls with same category
+              if(_pcfFilteringInProgress && _pcfLastFilterCategory === category){
+                return;
+              }
+              
+              // Set flag to prevent multiple calls
+              _pcfFilteringInProgress = true;
+              _pcfLastFilterCategory = category;
           
           var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
           // Only log if category changed or first call
@@ -2993,9 +3021,6 @@
             console.log('filterBuilderPartsByCategory called with category:', category, 'Found cards:', cards.length);
             window._pcfLastLoggedCategory = category;
           }
-          
-          // Normalize category - handle empty string, 'all', and normalize case
-          category = (category || '').toLowerCase().trim();
           
           if(cards.length === 0){
             console.warn('No cards found with selector [data-testid^="card-builder-part-"]');
