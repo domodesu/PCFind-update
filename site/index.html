@@ -2326,6 +2326,8 @@
               dropdownSelect.style.userSelect = 'none';
               dropdownSelect.style.position = 'relative';
               dropdownSelect.style.zIndex = '1000';
+              dropdownSelect.disabled = false;
+              
               // Prevent any parent from blocking clicks
               var parent = dropdownSelect.parentElement;
               while(parent && parent !== document.body){
@@ -2338,36 +2340,53 @@
                 parent.style.pointerEvents = 'auto';
                 parent = parent.parentElement;
               }
-              // Ensure the dropdown opens on click - prevent interference but allow default behavior
+              
+              // Mark interaction when dropdown is clicked/opened
               dropdownSelect.addEventListener('mousedown', function(e){
-                // Only stop propagation to parent handlers, but allow default dropdown behavior
-                var target = e.target;
-                if(target && target.tagName === 'SELECT'){
-                  // Don't stop propagation - allow the select to open normally
-                  // But mark that we're interacting with dropdown to pause observer
-                  window.__pcfDropdownInteracting = true;
-                  setTimeout(function(){
+                window.__pcfDropdownInteracting = true;
+                // Allow default behavior - don't prevent anything
+                e.stopImmediatePropagation = function(){}; // Override to do nothing
+              }, true); // Use capture phase to run first
+              
+              dropdownSelect.addEventListener('click', function(e){
+                window.__pcfDropdownInteracting = true;
+                // Don't prevent default - allow dropdown to open
+                // Extend interaction time to prevent observer from interfering
+                setTimeout(function(){
+                  if(document.activeElement === dropdownSelect || dropdownSelect.matches(':focus')){
+                    window.__pcfDropdownInteracting = true;
+                    setTimeout(function(){
+                      window.__pcfDropdownInteracting = false;
+                    }, 1000);
+                  } else {
                     window.__pcfDropdownInteracting = false;
-                  }, 300);
-                }
-              }, false); // Use bubble phase, not capture
+                  }
+                }, 100);
+              }, false);
               
               dropdownSelect.addEventListener('focus', function(e){
                 window.__pcfDropdownInteracting = true;
-                var self = this;
+              });
+              
+              dropdownSelect.addEventListener('blur', function(e){
+                // Delay clearing interaction flag to allow dropdown to stay open
                 setTimeout(function(){
-                  // Check if dropdown is still focused
-                  if(document.activeElement !== self){
+                  // Only clear if dropdown is truly not focused and not open
+                  if(document.activeElement !== dropdownSelect){
                     window.__pcfDropdownInteracting = false;
                   }
                 }, 500);
               });
               
-              dropdownSelect.addEventListener('blur', function(e){
-                setTimeout(function(){
-                  window.__pcfDropdownInteracting = false;
-                }, 200);
-              });
+              // Prevent any click handlers on parent from closing dropdown
+              var controlsContainer = document.getElementById('pcf-builder-controls');
+              if(controlsContainer){
+                controlsContainer.addEventListener('click', function(e){
+                  if(e.target === dropdownSelect || dropdownSelect.contains(e.target)){
+                    e.stopPropagation();
+                  }
+                }, true);
+              }
             }
           };
           
@@ -2414,7 +2433,7 @@
           // Add change handler to category dropdown
           var categoryFilter = document.getElementById('pcf-builder-category-filter');
           if(categoryFilter){
-            // Ensure dropdown is fully functional
+            // Ensure dropdown is fully functional and won't be removed
             categoryFilter.style.display = 'block';
             categoryFilter.style.visibility = 'visible';
             categoryFilter.style.opacity = '1';
@@ -2423,6 +2442,30 @@
             categoryFilter.style.zIndex = '1000';
             categoryFilter.disabled = false;
             categoryFilter.setAttribute('tabindex', '0');
+            categoryFilter.setAttribute('data-pcf-protected', 'true'); // Mark as protected
+            
+            // Prevent dropdown from being removed - add a marker
+            Object.defineProperty(categoryFilter, 'pcfProtected', {
+              value: true,
+              writable: false,
+              configurable: false
+            });
+            
+            // Wrap in try-catch to prevent errors from closing dropdown
+            var originalAddEventListener = categoryFilter.addEventListener;
+            categoryFilter.addEventListener = function(type, handler, options){
+              if(type === 'change'){
+                return originalAddEventListener.call(this, type, function(e){
+                  try {
+                    handler.call(this, e);
+                  } catch(err){
+                    console.error('Error in dropdown change handler:', err);
+                    // Don't let errors close the dropdown
+                  }
+                }, options);
+              }
+              return originalAddEventListener.call(this, type, handler, options);
+            };
             
             // Ensure the value matches the saved filter or selected category
             var filterToApply = '';
