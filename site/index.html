@@ -2788,7 +2788,11 @@
               filterBuilderPartsByCategory(initialCategory);
             }
             
-            setTimeout(rearrangeCardButtons, 100);
+            setTimeout(function(){
+              if(window.rearrangeCardButtons){
+                window.rearrangeCardButtons();
+              }
+            }, 100);
             return;
           }
           
@@ -2922,7 +2926,9 @@
           
           // Initial button arrangement
           setTimeout(function(){
-            rearrangeCardButtons();
+            if(window.rearrangeCardButtons){
+              window.rearrangeCardButtons();
+            }
           }, 300);
           
           // Watch for new cards
@@ -2930,7 +2936,9 @@
           if(main){
             var cardObserver = new MutationObserver(function(){
               setTimeout(function(){
-                rearrangeCardButtons();
+                if(window.rearrangeCardButtons){
+                  window.rearrangeCardButtons();
+                }
               }, 100);
             });
             cardObserver.observe(main, {childList: true, subtree: true});
