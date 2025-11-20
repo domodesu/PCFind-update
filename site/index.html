@@ -2388,11 +2388,17 @@
         function initPCBuilderFilter(){
           var path = (location.pathname||'').toLowerCase();
           var isPCBuilder = path.includes('/pc-builder') || path.endsWith('/pc-builder') || path === '/pc-builder/';
-          if(!isPCBuilder) {
+          var isSavedBuilds = path.includes('/saved-builds') || path.endsWith('/saved-builds') || path === '/saved-builds/';
+          
+          // Remove controls if not on PC Builder page (including saved-builds)
+          if(!isPCBuilder || isSavedBuilds) {
             var controls = document.getElementById('pcf-builder-controls');
             if(controls) controls.remove();
             var oldFilter = document.getElementById('pcf-builder-filter');
             if(oldFilter) oldFilter.remove();
+            // Also remove any view toggles from PC Builder
+            var builderViewToggle = document.getElementById('pcf-builder-view-toggle');
+            if(builderViewToggle) builderViewToggle.remove();
             return;
           }
           
@@ -3564,11 +3570,17 @@
           var path = (location.pathname||'').toLowerCase();
           var isBrowseParts = path.includes('/browse-parts') || path.endsWith('/browse-parts') || path === '/browse-parts/';
           var isPCBuilder = path.includes('/pc-builder') || path.endsWith('/pc-builder') || path === '/pc-builder/';
+          var isSavedBuilds = path.includes('/saved-builds') || path.endsWith('/saved-builds') || path === '/saved-builds/';
           
-          // Remove Browse Parts toggle if on PC Builder page
-          if(isPCBuilder){
+          // Remove Browse Parts toggle if on PC Builder or Saved Builds page
+          if(isPCBuilder || isSavedBuilds){
             var browseToggle = document.getElementById('pcf-view-toggle');
             if(browseToggle) browseToggle.remove();
+            // Also remove category filter dropdowns
+            var categoryFilter = document.getElementById('pcf-category-filter');
+            if(categoryFilter) categoryFilter.remove();
+            var categoryFilterMobile = document.getElementById('pcf-category-filter-mobile');
+            if(categoryFilterMobile) categoryFilterMobile.remove();
             return;
           }
           
@@ -3805,7 +3817,21 @@
         
         // Watch for DOM changes to catch dynamic content
         var viewToggleObserver = new MutationObserver(function(mutations){
-          var hasBrowseParts = (location.pathname||'').toLowerCase().includes('/browse-parts');
+          var path = (location.pathname||'').toLowerCase();
+          var hasBrowseParts = path.includes('/browse-parts');
+          var isSavedBuilds = path.includes('/saved-builds') || path.endsWith('/saved-builds') || path === '/saved-builds/';
+          
+          // Remove controls if on saved-builds page
+          if(isSavedBuilds){
+            var browseToggle = document.getElementById('pcf-view-toggle');
+            if(browseToggle) browseToggle.remove();
+            var categoryFilter = document.getElementById('pcf-category-filter');
+            if(categoryFilter) categoryFilter.remove();
+            var categoryFilterMobile = document.getElementById('pcf-category-filter-mobile');
+            if(categoryFilterMobile) categoryFilterMobile.remove();
+            return;
+          }
+          
           if(hasBrowseParts && !document.getElementById('pcf-view-toggle')){
             setTimeout(initViewToggle, 300);
           }
