@@ -3951,7 +3951,24 @@
         
         // Save build permanently
         function saveBuildPermanently(){
-          if(!window.isUserLoggedIn || !window.isUserLoggedIn()){
+          // Check if user is logged in using the getUser function
+          let user = null;
+          try{
+            // Try to use the getUser function from the auth section
+            if(typeof getUser === 'function'){
+              user = getUser();
+            } else {
+              // Fallback check
+              const s = sessionStorage.getItem('pcfind_user');
+              const l = localStorage.getItem('pcfind_user');
+              user = s ? JSON.parse(s) : (l ? JSON.parse(l) : null);
+            }
+          }catch(e){
+            console.error('Error checking user:', e);
+          }
+          
+          // If no user found, show sign in required
+          if(!user || !user.name){
             if(window.showSignInRequired) window.showSignInRequired('Sign in to save your build permanently!');
             return;
           }
