@@ -1337,6 +1337,86 @@
         margin-bottom: 20px;
         padding: 0 20px;
         flex-wrap: wrap;
+        justify-content: space-between;
+      }
+      #pcf-builder-filter > div:first-child {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex: 1;
+      }
+      #pcf-builder-view-toggle {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .pcf-builder-view-toggle-btn {
+        background: #1f2937;
+        border: 1px solid #374151;
+        color: #9ca3af;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .pcf-builder-view-toggle-btn:hover {
+        background: #374151;
+        color: #e5e7eb;
+        border-color: #4b5563;
+      }
+      .pcf-builder-view-toggle-btn.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #fff;
+      }
+      .light .pcf-builder-view-toggle-btn {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+        color: #6b7280;
+      }
+      .light .pcf-builder-view-toggle-btn:hover {
+        background: #e5e7eb;
+        color: #111827;
+      }
+      .light .pcf-builder-view-toggle-btn.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #fff;
+      }
+      
+      /* PC Builder grid and stack views */
+      body[data-page="pc-builder"] .pcf-builder-parts-container.grid-view {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+      }
+      body[data-page="pc-builder"] .pcf-builder-parts-container.stack-view {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      body[data-page="pc-builder"] .pcf-builder-parts-container.stack-view [data-testid^="card-builder-part-"] {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        max-width: 100%;
+      }
+      body[data-page="pc-builder"] .pcf-builder-parts-container.stack-view [data-testid^="card-builder-part-"] .aspect-video,
+      body[data-page="pc-builder"] .pcf-builder-parts-container.stack-view [data-testid^="card-builder-part-"] .bg-muted {
+        width: 200px;
+        min-width: 200px;
+        height: 150px;
+        flex-shrink: 0;
+      }
+      body[data-page="pc-builder"] .pcf-builder-parts-container.stack-view [data-testid^="card-builder-part-"] > div:not(.aspect-video):not(.bg-muted) {
+        flex: 1;
+        padding-left: 16px;
+        display: flex;
+        flex-direction: column;
       }
       #pcf-builder-filter select {
         padding: 10px 14px;
@@ -1403,9 +1483,30 @@
         #pcf-builder-filter {
           padding: 0 12px;
           flex-direction: column;
+          gap: 12px;
+        }
+        #pcf-builder-filter > div:first-child {
+          width: 100%;
         }
         #pcf-builder-filter select {
           width: 100%;
+        }
+        #pcf-builder-view-toggle {
+          width: 100%;
+          justify-content: center;
+        }
+        .pcf-builder-view-toggle-btn {
+          flex: 1;
+        }
+        body[data-page="pc-builder"] .pcf-builder-parts-container.grid-view {
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          gap: 12px;
+        }
+        body[data-page="pc-builder"] .pcf-builder-parts-container.stack-view [data-testid^="card-builder-part-"] .aspect-video,
+        body[data-page="pc-builder"] .pcf-builder-parts-container.stack-view [data-testid^="card-builder-part-"] .bg-muted {
+          width: 120px;
+          min-width: 120px;
+          height: 90px;
         }
       }
       
@@ -1921,8 +2022,12 @@
           var main = document.querySelector('main');
           if(!main) return;
           
-          // Create filter dropdown
+          // Get saved view preference
+          var savedView = localStorage.getItem('pcfind_builder_view') || 'grid';
+          
+          // Create filter dropdown and view toggle
           var filterHtml = '<div id="pcf-builder-filter">';
+          filterHtml += '<div>';
           filterHtml += '<select id="pcf-builder-category-filter">';
           filterHtml += '<option value="">All Categories</option>';
           filterHtml += '<option value="CPU">CPU</option>';
@@ -1934,6 +2039,15 @@
           filterHtml += '<option value="Case">Case</option>';
           filterHtml += '<option value="Cooling">Cooling</option>';
           filterHtml += '</select>';
+          filterHtml += '</div>';
+          filterHtml += '<div id="pcf-builder-view-toggle">';
+          filterHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
+          filterHtml += '<span>⊞</span> <span>Grid</span>';
+          filterHtml += '</button>';
+          filterHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
+          filterHtml += '<span>☰</span> <span>Stack</span>';
+          filterHtml += '</button>';
+          filterHtml += '</div>';
           filterHtml += '</div>';
           
           // Insert filter at the top of main
@@ -1958,13 +2072,59 @@
               localStorage.setItem('pcfind_builder_filter', selectedCategory);
               filterBuilderParts();
             });
-            
-            // Initial filter
-            setTimeout(function(){
-              filterBuilderParts();
-              rearrangeCardButtons();
-            }, 300);
           }
+          
+          // Add view toggle functionality
+          var toggleBtns = document.querySelectorAll('.pcf-builder-view-toggle-btn');
+          var container = document.querySelector('main');
+          var partsContainer = null;
+          
+          // Find parts container
+          var cards = container.querySelectorAll('[data-testid^="card-builder-part-"]');
+          if(cards.length > 0){
+            partsContainer = cards[0].parentElement;
+            while(partsContainer && partsContainer !== document.body){
+              var cardCount = partsContainer.querySelectorAll('[data-testid^="card-builder-part-"]').length;
+              if(cardCount >= cards.length * 0.5){
+                break;
+              }
+              partsContainer = partsContainer.parentElement;
+            }
+            if(!partsContainer || partsContainer === document.body){
+              partsContainer = cards[0].parentElement;
+            }
+          }
+          
+          if(partsContainer){
+            partsContainer.classList.add('pcf-builder-parts-container');
+            partsContainer.classList.add(savedView + '-view');
+            
+            toggleBtns.forEach(function(btn){
+              btn.addEventListener('click', function(){
+                var view = this.getAttribute('data-view');
+                
+                // Update active state
+                toggleBtns.forEach(function(b){ b.classList.remove('active'); });
+                this.classList.add('active');
+                
+                // Update container classes
+                partsContainer.classList.remove('grid-view', 'stack-view');
+                partsContainer.classList.add(view + '-view');
+                
+                // Save preference
+                localStorage.setItem('pcfind_builder_view', view);
+                
+                // Rearrange buttons after view change
+                setTimeout(rearrangeCardButtons, 50);
+              });
+            });
+          }
+          
+          // Initial filter and button arrangement
+          setTimeout(function(){
+            filterBuilderParts();
+            rearrangeCardButtons();
+          }, 300);
           
           // Watch for new cards
           var main = document.querySelector('main');
@@ -2016,14 +2176,21 @@
         
         function rearrangeCardButtons(){
           var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+          var container = document.querySelector('.pcf-builder-parts-container');
+          var isStackView = container && container.classList.contains('stack-view');
           
           cards.forEach(function(card){
-            // Ensure card uses flexbox column
+            // Ensure card uses flexbox column (for grid view) or row (for stack view)
             if(getComputedStyle(card).display !== 'flex'){
               card.style.display = 'flex';
             }
-            card.style.flexDirection = 'column';
-            card.style.height = '100%';
+            
+            if(isStackView){
+              card.style.flexDirection = 'row';
+            } else {
+              card.style.flexDirection = 'column';
+              card.style.height = '100%';
+            }
             
             // Find Add to Build button or link
             var buttons = card.querySelectorAll('button, a');
