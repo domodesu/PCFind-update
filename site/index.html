@@ -1459,24 +1459,30 @@
       
       /* PC Builder categories and view toggle container */
       #pcf-builder-controls {
-        display: flex;
+        display: flex !important;
         gap: 12px;
         align-items: center;
         margin: 16px 0;
         padding: 0 20px;
         flex-wrap: wrap;
         justify-content: space-between;
+        visibility: visible !important;
+        opacity: 1 !important;
       }
       #pcf-builder-categories {
-        display: flex;
+        display: flex !important;
         gap: 8px;
         flex-wrap: wrap;
         flex: 1;
+        visibility: visible !important;
+        opacity: 1 !important;
       }
       #pcf-builder-view-toggle {
-        display: flex;
+        display: flex !important;
         gap: 8px;
         align-items: center;
+        visibility: visible !important;
+        opacity: 1 !important;
       }
       
       /* Move Add to Build button to bottom of cards */
@@ -2099,28 +2105,55 @@
           
           // Insert controls below search input or budget input
           var insertAfter = null;
+          var searchContainer = null;
+          var budgetContainer = null;
+          
+          // Find the container with search input
           if(searchInput){
-            var searchParent = searchInput.closest('div') || searchInput.parentElement;
-            if(searchParent){
-              insertAfter = searchParent;
+            searchContainer = searchInput.closest('div') || searchInput.parentElement;
+            // Walk up to find the form or input container
+            while(searchContainer && searchContainer !== main && searchContainer !== document.body){
+              var hasBudget = searchContainer.querySelector('input[placeholder*="Budget" i], input[placeholder*="budget" i], input[type="number"]');
+              if(hasBudget || searchContainer.tagName === 'FORM' || searchContainer.classList.contains('form') || searchContainer.querySelector('form')){
+                insertAfter = searchContainer;
+                break;
+              }
+              searchContainer = searchContainer.parentElement;
             }
-          } else if(budgetInput){
-            var budgetParent = budgetInput.closest('div') || budgetInput.parentElement;
-            if(budgetParent){
-              insertAfter = budgetParent;
+            if(!insertAfter && searchInput.parentElement){
+              insertAfter = searchInput.parentElement;
             }
           }
           
-          if(insertAfter){
+          // If no search, check for budget
+          if(!insertAfter && budgetInput){
+            budgetContainer = budgetInput.closest('div') || budgetInput.parentElement;
+            insertAfter = budgetContainer;
+          }
+          
+          // Insert the controls
+          if(insertAfter && insertAfter !== main && insertAfter !== document.body){
             insertAfter.insertAdjacentHTML('afterend', controlsHtml);
           } else {
-            // Fallback: insert at top of main
+            // Fallback: insert after first child or at top
             var firstChild = main.firstElementChild;
             if(firstChild && firstChild.id !== 'pcf-builder-controls'){
-              main.insertAdjacentHTML('afterbegin', controlsHtml);
+              if(searchInput && searchInput.parentElement){
+                searchInput.parentElement.insertAdjacentHTML('afterend', controlsHtml);
+              } else {
+                main.insertAdjacentHTML('afterbegin', controlsHtml);
+              }
             } else if(!firstChild){
               main.innerHTML = controlsHtml + main.innerHTML;
             }
+          }
+          
+          // Ensure controls are visible
+          var controls = document.getElementById('pcf-builder-controls');
+          if(controls){
+            controls.style.display = 'flex';
+            controls.style.visibility = 'visible';
+            controls.style.opacity = '1';
           }
           
           // Hide original tablist
