@@ -2427,15 +2427,23 @@
             });
           }
           
-          // Set up category button click handlers
-          var categoryBtns = document.querySelectorAll('.pcf-category-btn');
-          categoryBtns.forEach(function(btn){
-            btn.addEventListener('click', function(e){
+          // Use event delegation for category buttons - ensures they always work
+          var controlsContainer = document.getElementById('pcf-builder-controls');
+          if(controlsContainer){
+            // Remove any existing click handler on the container
+            controlsContainer.removeEventListener('click', handleCategoryClick);
+            
+            // Add event delegation handler
+            function handleCategoryClick(e){
+              var btn = e.target.closest('.pcf-category-btn');
+              if(!btn) return;
+              
               e.preventDefault();
               e.stopPropagation();
               
               // Remove active class from all buttons
-              categoryBtns.forEach(function(b){
+              var allBtns = controlsContainer.querySelectorAll('.pcf-category-btn');
+              allBtns.forEach(function(b){
                 b.classList.remove('pcf-category-btn-active');
                 b.style.background = '#1f2937';
                 b.style.borderColor = '#374151';
@@ -2443,25 +2451,23 @@
               });
               
               // Add active class to clicked button
-              this.classList.add('pcf-category-btn-active');
-              this.style.background = '#2563eb';
-              this.style.borderColor = '#2563eb';
-              this.style.color = '#ffffff';
+              btn.classList.add('pcf-category-btn-active');
+              btn.style.background = '#2563eb';
+              btn.style.borderColor = '#2563eb';
+              btn.style.color = '#ffffff';
               
               // Get category and filter
-              var category = this.getAttribute('data-category') || '';
+              var category = btn.getAttribute('data-category') || '';
               console.log('Category button clicked:', category);
               localStorage.setItem('pcfind_builder_filter', category);
               
               // Filter parts by category - ensure function exists
               if(typeof filterBuilderPartsByCategory === 'function'){
                 filterBuilderPartsByCategory(category);
+              } else if(typeof window.filterBuilderPartsByCategory === 'function'){
+                window.filterBuilderPartsByCategory(category);
               } else {
                 console.error('filterBuilderPartsByCategory function not found!');
-                // Try to find and call it from window scope
-                if(window.filterBuilderPartsByCategory){
-                  window.filterBuilderPartsByCategory(category);
-                }
               }
               
               // Scroll to parts section after filtering
@@ -2483,15 +2489,19 @@
                   firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
                   // If no cards found, scroll to controls
-                  var controls = document.getElementById('pcf-builder-controls');
-                  if(controls){
-                    controls.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  if(controlsContainer){
+                    controlsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }
                 }
               }, 400);
-            });
+            }
             
-            // Apply active styles
+            controlsContainer.addEventListener('click', handleCategoryClick);
+          }
+          
+          // Apply active styles to existing buttons
+          var categoryBtns = document.querySelectorAll('.pcf-category-btn');
+          categoryBtns.forEach(function(btn){
             if(btn.classList.contains('pcf-category-btn-active')){
               btn.style.background = '#2563eb';
               btn.style.borderColor = '#2563eb';
@@ -2523,78 +2533,79 @@
             existingControls.style.visibility = 'visible';
             existingControls.style.opacity = '1';
             
-            // Reattach button listeners if needed
-            var categoryBtns = existingControls.querySelectorAll('.pcf-category-btn');
-            categoryBtns.forEach(function(btn){
-              // Remove old listeners by cloning
-              var newBtn = btn.cloneNode(true);
-              btn.parentNode.replaceChild(newBtn, btn);
+            // Use event delegation for category buttons - ensures they always work
+            existingControls.removeEventListener('click', handleCategoryClickExisting);
+            
+            function handleCategoryClickExisting(e){
+              var btn = e.target.closest('.pcf-category-btn');
+              if(!btn) return;
               
-              // Reattach click handler
-              newBtn.addEventListener('click', function(e){
-                e.preventDefault();
-                e.stopPropagation();
+              e.preventDefault();
+              e.stopPropagation();
+              
+              // Remove active class from all buttons
+              var allBtns = existingControls.querySelectorAll('.pcf-category-btn');
+              allBtns.forEach(function(b){
+                b.classList.remove('pcf-category-btn-active');
+                b.style.background = '#1f2937';
+                b.style.borderColor = '#374151';
+                b.style.color = '#e5e7eb';
+              });
+              
+              // Add active class to clicked button
+              btn.classList.add('pcf-category-btn-active');
+              btn.style.background = '#2563eb';
+              btn.style.borderColor = '#2563eb';
+              btn.style.color = '#ffffff';
+              
+              var category = btn.getAttribute('data-category') || '';
+              console.log('Category button clicked (existing controls):', category);
+              localStorage.setItem('pcfind_builder_filter', category);
+              
+              // Filter parts by category - ensure function exists
+              if(typeof filterBuilderPartsByCategory === 'function'){
+                filterBuilderPartsByCategory(category);
+              } else if(typeof window.filterBuilderPartsByCategory === 'function'){
+                window.filterBuilderPartsByCategory(category);
+              } else {
+                console.error('filterBuilderPartsByCategory function not found!');
+              }
+              
+              // Scroll to parts section after filtering
+              setTimeout(function(){
+                var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+                var firstVisibleCard = null;
                 
-                var allBtns = existingControls.querySelectorAll('.pcf-category-btn');
-                allBtns.forEach(function(b){
-                  b.classList.remove('pcf-category-btn-active');
-                  b.style.background = '#1f2937';
-                  b.style.borderColor = '#374151';
-                  b.style.color = '#e5e7eb';
-                });
-                
-                this.classList.add('pcf-category-btn-active');
-                this.style.background = '#2563eb';
-                this.style.borderColor = '#2563eb';
-                this.style.color = '#ffffff';
-                
-                var category = this.getAttribute('data-category') || '';
-                console.log('Category button clicked (existing controls):', category);
-                localStorage.setItem('pcfind_builder_filter', category);
-                
-                // Filter parts by category - ensure function exists
-                if(typeof filterBuilderPartsByCategory === 'function'){
-                  filterBuilderPartsByCategory(category);
-                } else {
-                  console.error('filterBuilderPartsByCategory function not found!');
-                  // Try to find and call it from window scope
-                  if(window.filterBuilderPartsByCategory){
-                    window.filterBuilderPartsByCategory(category);
+                // Find first visible card
+                for(var i = 0; i < cards.length; i++){
+                  var card = cards[i];
+                  var style = window.getComputedStyle(card);
+                  if(style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0'){
+                    firstVisibleCard = card;
+                    break;
                   }
                 }
                 
-                // Scroll to parts section after filtering
-                setTimeout(function(){
-                  var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
-                  var firstVisibleCard = null;
-                  
-                  // Find first visible card
-                  for(var i = 0; i < cards.length; i++){
-                    var card = cards[i];
-                    var style = window.getComputedStyle(card);
-                    if(style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0'){
-                      firstVisibleCard = card;
-                      break;
-                    }
+                if(firstVisibleCard){
+                  firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                  // If no cards found, scroll to controls
+                  if(existingControls){
+                    existingControls.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }
-                  
-                  if(firstVisibleCard){
-                    firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  } else {
-                    // If no cards found, scroll to controls
-                    var controls = document.getElementById('pcf-builder-controls');
-                    if(controls){
-                      controls.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                  }
-                }, 400);
-              });
-              
-              // Apply active styles if needed
-              if(newBtn.classList.contains('pcf-category-btn-active')){
-                newBtn.style.background = '#2563eb';
-                newBtn.style.borderColor = '#2563eb';
-                newBtn.style.color = '#ffffff';
+                }
+              }, 400);
+            }
+            
+            existingControls.addEventListener('click', handleCategoryClickExisting);
+            
+            // Apply active styles to existing buttons
+            var existingCategoryBtns = existingControls.querySelectorAll('.pcf-category-btn');
+            existingCategoryBtns.forEach(function(btn){
+              if(btn.classList.contains('pcf-category-btn-active')){
+                btn.style.background = '#2563eb';
+                btn.style.borderColor = '#2563eb';
+                btn.style.color = '#ffffff';
               }
             });
             
@@ -2870,12 +2881,17 @@
               
               // Show or hide card with smooth transition - prevent flashing
               if(categoryMatch){
-                // Show card - set display first, then fade in
-                card.style.display = '';
-                card.style.opacity = '1';
-                card.style.visibility = 'visible';
-                card.style.pointerEvents = '';
-                card.removeAttribute('hidden');
+                // Show card - immediately set display, then fade in
+                if(card.style.display === 'none'){
+                  card.style.display = '';
+                }
+                // Use requestAnimationFrame for smooth transition
+                requestAnimationFrame(function(){
+                  card.style.opacity = '1';
+                  card.style.visibility = 'visible';
+                  card.style.pointerEvents = '';
+                  card.removeAttribute('hidden');
+                });
               } else {
                 // Hide card - fade out first, then remove from layout
                 card.style.opacity = '0';
@@ -2886,7 +2902,7 @@
                   if(card.style.opacity === '0' && card.style.visibility === 'hidden'){
                     card.style.display = 'none';
                   }
-                }, 250);
+                }, 300);
               }
             });
           });
