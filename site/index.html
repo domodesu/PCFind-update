@@ -1580,8 +1580,11 @@
       }
       /* Hide PC Builder toggle on mobile */
       @media (max-width: 768px) {
+        /* Hide desktop toggle on mobile */
         #pcf-builder-controls #pcf-builder-view-toggle {
           display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
         }
         /* Show mobile toggle for PC Builder on mobile */
         #pcf-builder-controls .pcf-builder-view-toggle-mobile {
@@ -1589,13 +1592,27 @@
           flex-direction: row !important;
           width: 100% !important;
           gap: 8px !important;
-          order: 2 !important;
+          order: 1 !important;
+          visibility: visible !important;
+          opacity: 1 !important;
         }
       }
       @media (min-width: 769px) {
-        /* Hide mobile toggle on desktop */
-        #pcf-builder-controls .pcf-builder-view-toggle-mobile {
+        /* Hide mobile toggle on desktop - ensure it's completely hidden */
+        #pcf-builder-controls .pcf-builder-view-toggle-mobile,
+        .pcf-builder-view-toggle-mobile {
           display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          height: 0 !important;
+          width: 0 !important;
+          overflow: hidden !important;
+        }
+        /* Show desktop toggle on desktop */
+        #pcf-builder-controls #pcf-builder-view-toggle {
+          display: flex !important;
+          visibility: visible !important;
+          opacity: 1 !important;
         }
       }
       
@@ -3088,13 +3105,36 @@
         });
         
         // Initialize on route changes
-        window.addEventListener('popstate', function(){
-          setTimeout(initPCBuilderFilter, 400);
-        });
+        function handleRouteChange(){
+          // Delay to allow SPA to update DOM
+          setTimeout(function(){
+            initPCBuilderFilter();
+            // Also re-attach event listeners after a short delay
+            setTimeout(function(){
+              var controls = document.getElementById('pcf-builder-controls');
+              if(controls && !controls._pcfListenersAttached){
+                var path = (location.pathname||'').toLowerCase();
+                var isPCBuilder = path.includes('/pc-builder') || path.endsWith('/pc-builder') || path === '/pc-builder/';
+                if(isPCBuilder){
+                  // Re-initialize handlers
+                  initPCBuilderFilter();
+                }
+              }
+            }, 200);
+          }, 100);
+        }
+        
+        window.addEventListener('popstate', handleRouteChange);
+        // Also listen for custom route change events
+        window.addEventListener('pcf-route-change', handleRouteChange);
         
         // Watch for route changes
         var routeObserver = new MutationObserver(function(){
-          setTimeout(initPCBuilderFilter, 300);
+          var path = (location.pathname||'').toLowerCase();
+          var isPCBuilder = path.includes('/pc-builder') || path.endsWith('/pc-builder') || path === '/pc-builder/';
+          if(isPCBuilder){
+            setTimeout(initPCBuilderFilter, 300);
+          }
         });
         routeObserver.observe(document.body, {childList: true, subtree: true});
       })();
