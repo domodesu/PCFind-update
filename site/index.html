@@ -2635,52 +2635,33 @@
             }
           }
           
-          // Set up parts container with default grid view (no toggle functionality)
+          // Remove all part cards from PC Builder page - starting fresh
           var container = document.querySelector('main');
-          var partsContainer = null;
-          
           if(container){
-            // Find parts container
+            // Find and remove all builder part cards
             var cards = container.querySelectorAll('[data-testid^="card-builder-part-"]');
-            if(cards.length > 0){
-              partsContainer = cards[0].parentElement;
-              while(partsContainer && partsContainer !== document.body){
-                var cardCount = partsContainer.querySelectorAll('[data-testid^="card-builder-part-"]').length;
-                if(cardCount >= cards.length * 0.5){
-                  break;
-                }
-                partsContainer = partsContainer.parentElement;
-              }
-              if(!partsContainer || partsContainer === document.body){
-                partsContainer = cards[0].parentElement;
-              }
+            cards.forEach(function(card){
+              card.remove();
+            });
+            
+            // Remove parts container classes
+            var partsContainer = container.querySelector('.pcf-builder-parts-container');
+            if(partsContainer){
+              partsContainer.classList.remove('pcf-builder-parts-container', 'grid-view', 'stack-view');
             }
             
-            if(partsContainer){
-              partsContainer.classList.add('pcf-builder-parts-container');
-              partsContainer.classList.add('grid-view'); // Default to grid view
-            }
-          }
-          
-          // Initial button arrangement
-          setTimeout(function(){
-            if(window.rearrangeCardButtons){
-              window.rearrangeCardButtons();
-            }
-          }, 300);
-          
-          // Watch for new cards
-          var main = document.querySelector('main');
-          if(main){
-            var cardObserver = new MutationObserver(function(){
-              setTimeout(function(){
-                if(window.rearrangeCardButtons){
-                  window.rearrangeCardButtons();
-                }
-              }, 100);
+            // Also remove any parts containers
+            var allPartsContainers = container.querySelectorAll('.pcf-builder-parts-container');
+            allPartsContainers.forEach(function(container){
+              container.classList.remove('pcf-builder-parts-container', 'grid-view', 'stack-view');
             });
-            cardObserver.observe(main, {childList: true, subtree: true});
           }
+          
+          // Remove all builder part cards from anywhere in the document
+          var allBuilderCards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+          allBuilderCards.forEach(function(card){
+            card.remove();
+          });
           
           // Cleanup: Remove any orphaned controls (all removed for reset)
           setTimeout(function(){
@@ -2703,6 +2684,18 @@
             var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle, .pcf-builder-view-toggle-mobile, .pcf-builder-view-toggle-btn');
             allViewToggles.forEach(function(toggle){
               toggle.remove();
+            });
+            
+            // Remove any builder part cards that might appear
+            var allBuilderCards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+            allBuilderCards.forEach(function(card){
+              card.remove();
+            });
+            
+            // Remove parts container classes
+            var allPartsContainers = document.querySelectorAll('.pcf-builder-parts-container');
+            allPartsContainers.forEach(function(container){
+              container.classList.remove('pcf-builder-parts-container', 'grid-view', 'stack-view');
             });
             
             // Remove duplicate tablists and category buttons (bottom selection)
