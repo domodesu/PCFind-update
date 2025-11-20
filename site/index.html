@@ -2000,12 +2000,10 @@
             card.style.overflow = 'hidden';
           });
           
-          // Fix category tabs - only on PC Builder
+          // Remove old category tabs if they exist
           var tabList = main ? main.querySelector('[role="tablist"]') : null;
           if(tabList){
-            tabList.style.overflowX = 'auto';
-            tabList.style.maxWidth = '100%';
-            tabList.style.boxSizing = 'border-box';
+            tabList.remove();
           }
           
           // Prevent horizontal scroll only on PC Builder
