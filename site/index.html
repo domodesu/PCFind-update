@@ -2450,14 +2450,35 @@
               
               // Get category and filter
               var category = this.getAttribute('data-category') || '';
+              console.log('Category button clicked:', category);
               localStorage.setItem('pcfind_builder_filter', category);
               
-              // Filter parts by category
-              filterBuilderPartsByCategory(category);
+              // Filter parts by category - ensure function exists
+              if(typeof filterBuilderPartsByCategory === 'function'){
+                filterBuilderPartsByCategory(category);
+              } else {
+                console.error('filterBuilderPartsByCategory function not found!');
+                // Try to find and call it from window scope
+                if(window.filterBuilderPartsByCategory){
+                  window.filterBuilderPartsByCategory(category);
+                }
+              }
               
               // Scroll to parts section after filtering
               setTimeout(function(){
-                var firstVisibleCard = document.querySelector('[data-testid^="card-builder-part-"]:not([style*="display: none"]), [data-testid^="card-builder-part-"]:not([style*="opacity: 0"])');
+                var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+                var firstVisibleCard = null;
+                
+                // Find first visible card
+                for(var i = 0; i < cards.length; i++){
+                  var card = cards[i];
+                  var style = window.getComputedStyle(card);
+                  if(style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0'){
+                    firstVisibleCard = card;
+                    break;
+                  }
+                }
+                
                 if(firstVisibleCard){
                   firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
@@ -2467,7 +2488,7 @@
                     controls.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }
                 }
-              }, 300);
+              }, 400);
             });
             
             // Apply active styles
@@ -2528,14 +2549,35 @@
                 this.style.color = '#ffffff';
                 
                 var category = this.getAttribute('data-category') || '';
+                console.log('Category button clicked (existing controls):', category);
                 localStorage.setItem('pcfind_builder_filter', category);
                 
-                // Filter parts by category
-                filterBuilderPartsByCategory(category);
+                // Filter parts by category - ensure function exists
+                if(typeof filterBuilderPartsByCategory === 'function'){
+                  filterBuilderPartsByCategory(category);
+                } else {
+                  console.error('filterBuilderPartsByCategory function not found!');
+                  // Try to find and call it from window scope
+                  if(window.filterBuilderPartsByCategory){
+                    window.filterBuilderPartsByCategory(category);
+                  }
+                }
                 
                 // Scroll to parts section after filtering
                 setTimeout(function(){
-                  var firstVisibleCard = document.querySelector('[data-testid^="card-builder-part-"]:not([style*="display: none"]), [data-testid^="card-builder-part-"]:not([style*="opacity: 0"])');
+                  var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+                  var firstVisibleCard = null;
+                  
+                  // Find first visible card
+                  for(var i = 0; i < cards.length; i++){
+                    var card = cards[i];
+                    var style = window.getComputedStyle(card);
+                    if(style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0'){
+                      firstVisibleCard = card;
+                      break;
+                    }
+                  }
+                  
                   if(firstVisibleCard){
                     firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   } else {
@@ -2545,7 +2587,7 @@
                       controls.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
                   }
-                }, 300);
+                }, 400);
               });
               
               // Apply active styles if needed
@@ -2777,9 +2819,20 @@
         
         function filterBuilderPartsByCategory(category){
           var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+          console.log('filterBuilderPartsByCategory called with category:', category, 'Found cards:', cards.length);
           
           // Normalize category - handle empty string, 'all', and normalize case
           category = (category || '').toLowerCase().trim();
+          
+          if(cards.length === 0){
+            console.warn('No cards found with selector [data-testid^="card-builder-part-"]');
+            // Try alternative selectors
+            cards = document.querySelectorAll('[data-testid*="card"], [data-testid*="part"], .p-6');
+            console.log('Trying alternative selectors, found:', cards.length);
+          }
+          
+          // Make function globally accessible
+          window.filterBuilderPartsByCategory = filterBuilderPartsByCategory;
           
           // Use requestAnimationFrame to batch DOM updates and prevent flashing
           requestAnimationFrame(function(){
@@ -2819,28 +2872,30 @@
               if(categoryMatch){
                 // Show card - set display first, then fade in
                 card.style.display = '';
-                requestAnimationFrame(function(){
-                  card.style.opacity = '1';
-                  card.style.visibility = 'visible';
-                  card.style.pointerEvents = '';
-                });
+                card.style.opacity = '1';
+                card.style.visibility = 'visible';
+                card.style.pointerEvents = '';
+                card.removeAttribute('hidden');
               } else {
                 // Hide card - fade out first, then remove from layout
                 card.style.opacity = '0';
                 card.style.visibility = 'hidden';
                 card.style.pointerEvents = 'none';
                 // Remove from layout after fade completes
-                requestAnimationFrame(function(){
-                  setTimeout(function(){
-                    if(card.style.opacity === '0' && card.style.visibility === 'hidden'){
-                      card.style.display = 'none';
-                    }
-                  }, 220);
-                });
+                setTimeout(function(){
+                  if(card.style.opacity === '0' && card.style.visibility === 'hidden'){
+                    card.style.display = 'none';
+                  }
+                }, 250);
               }
             });
           });
+          
+          console.log('Filtering complete. Category:', category, 'Cards processed:', cards.length);
         }
+        
+        // Make function globally accessible
+        window.filterBuilderPartsByCategory = filterBuilderPartsByCategory;
         
         
         function rearrangeCardButtons(){
