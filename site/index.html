@@ -2556,33 +2556,51 @@
               console.log('Filtering for category:', category);
               localStorage.setItem('pcfind_builder_filter', category);
               
-              // Filter parts immediately - use window function to ensure it's accessible
-              var filterFn = window.filterBuilderPartsByCategory;
-              if(typeof filterFn === 'function'){
-                try {
-                  filterFn(category);
-                  console.log('Filter function called successfully');
-                } catch(err) {
-                  console.error('Error calling filter function:', err);
-                }
-              } else {
-                console.error('filterBuilderPartsByCategory function not found in window!');
+              // Ensure filter function exists before calling
+              if(!window.filterBuilderPartsByCategory){
+                console.error('filterBuilderPartsByCategory not available, waiting...');
+                setTimeout(function(){
+                  if(window.filterBuilderPartsByCategory){
+                    window.filterBuilderPartsByCategory(category);
+                  } else {
+                    console.error('filterBuilderPartsByCategory still not available after delay');
+                  }
+                }, 100);
+                return;
               }
               
-              // Scroll to parts section after filtering
-              setTimeout(function(){
-                var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]:not([style*="display: none"])');
-                var firstVisibleCard = cards.length > 0 ? cards[0] : null;
+              // Filter parts immediately - use window function to ensure it's accessible
+              try {
+                window.filterBuilderPartsByCategory(category);
+                console.log('Filter function called successfully');
                 
-                if(firstVisibleCard){
-                  firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
-                  // If no cards found, scroll to controls
-                  if(controlsContainer){
-                    controlsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Scroll to parts section after filtering
+                setTimeout(function(){
+                  var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+                  var firstVisibleCard = null;
+                  
+                  // Find first visible card
+                  for(var i = 0; i < cards.length; i++){
+                    var card = cards[i];
+                    var style = window.getComputedStyle(card);
+                    if(style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity) > 0){
+                      firstVisibleCard = card;
+                      break;
+                    }
                   }
-                }
-              }, 100);
+                  
+                  if(firstVisibleCard){
+                    firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  } else {
+                    // If no cards found, scroll to controls
+                    if(controlsContainer){
+                      controlsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }
+                }, 200);
+              } catch(err) {
+                console.error('Error calling filter function:', err);
+              }
             };
             
             // Remove any existing listeners first - match exactly
