@@ -2411,7 +2411,7 @@
           // Remove any view toggle sections
           var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle, .pcf-builder-view-toggle-mobile, .pcf-builder-view-toggle-btn');
           allViewToggles.forEach(function(el){
-            el.remove();
+              el.remove();
           });
           
           // Also remove any pcf-view-toggle (browse parts) if it exists on PC builder page
@@ -2437,10 +2437,286 @@
           var searchInput = main.querySelector('input[placeholder*="Search" i], input[placeholder*="search" i], input[type="text"]');
           var budgetInput = main.querySelector('input[placeholder*="Budget" i], input[placeholder*="budget" i], input[type="number"]');
           
-          // Controls container removed - ready for new implementation
-          // No controls will be created for now
+          // NEW IMPLEMENTATION: Category selection buttons with parts display
+          // Define categories
+          var categories = [
+            { name: 'CPU', value: 'cpu' },
+            { name: 'GPU', value: 'gpu' },
+            { name: 'Motherboard', value: 'motherboard' },
+            { name: 'RAM', value: 'ram' },
+            { name: 'Storage', value: 'storage' },
+            { name: 'PSU', value: 'psu' },
+            { name: 'Case', value: 'case' },
+            { name: 'Cooling', value: 'cooling' }
+          ];
           
-          // Controls insertion removed - no controls to insert
+          // Get saved category preference
+          var savedCategory = savedFilter || 'cpu';
+          var activeCategory = savedCategory.toLowerCase();
+          
+          // Create controls container with category buttons
+          var controlsHtml = '<div id="pcf-builder-controls" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:flex-start;margin:16px 0;padding:0 20px;position:relative;clear:both;width:100%;box-sizing:border-box;z-index:1;">';
+          controlsHtml += '<div id="pcf-builder-categories" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1;min-width:0;">';
+          
+          // Add category buttons
+          categories.forEach(function(cat){
+            var isActive = activeCategory === cat.value;
+            var activeClass = isActive ? 'pcf-category-btn-active' : '';
+            controlsHtml += '<button class="pcf-category-btn ' + activeClass + '" data-category="' + cat.value + '" style="padding:8px 16px;border-radius:8px;border:1px solid ' + (isActive ? '#2563eb' : '#374151') + ';background:' + (isActive ? '#2563eb' : '#1f2937') + ';color:' + (isActive ? '#ffffff' : '#e5e7eb') + ';cursor:pointer;font-size:14px;font-weight:500;transition:all 0.2s;">' + cat.name + '</button>';
+          });
+          
+          controlsHtml += '</div>';
+          controlsHtml += '</div>';
+          
+          // Find insertion point
+          var insertAfter = null;
+          if(searchInput){
+            var searchContainer = searchInput.closest('div') || searchInput.parentElement;
+            while(searchContainer && searchContainer !== main && searchContainer !== document.body){
+              var hasBudget = searchContainer.querySelector('input[placeholder*="Budget" i], input[placeholder*="budget" i], input[type="number"]');
+              if(hasBudget || searchContainer.tagName === 'FORM' || searchContainer.classList.contains('form')){
+                insertAfter = searchContainer;
+                break;
+              }
+              searchContainer = searchContainer.parentElement;
+            }
+            if(!insertAfter && searchInput.parentElement){
+              insertAfter = searchInput.parentElement;
+            }
+          }
+          
+          if(!insertAfter && budgetInput){
+            var budgetContainer = budgetInput.closest('div') || budgetInput.parentElement;
+            insertAfter = budgetContainer;
+          }
+          
+          // Insert the controls
+          if(insertAfter && insertAfter !== main && insertAfter !== document.body){
+            insertAfter.insertAdjacentHTML('afterend', controlsHtml);
+          } else {
+            var firstChild = main.firstElementChild;
+            if(firstChild && firstChild.id !== 'pcf-builder-controls'){
+              if(searchInput && searchInput.parentElement){
+                searchInput.parentElement.insertAdjacentHTML('afterend', controlsHtml);
+              } else {
+                main.insertAdjacentHTML('afterbegin', controlsHtml);
+              }
+            } else if(!firstChild){
+              main.innerHTML = controlsHtml + main.innerHTML;
+            }
+          }
+          
+          // Function to load parts from parts-data
+          function loadPartsData(){
+            try{
+              var partsDataEl = document.getElementById('parts-data');
+              if(partsDataEl && partsDataEl.textContent){
+                return JSON.parse(partsDataEl.textContent);
+              }
+            } catch(e){
+              console.error('Error loading parts data:', e);
+            }
+            return [];
+          }
+          
+          // Function to filter and display parts by category
+          function displayPartsByCategory(category){
+            var parts = loadPartsData();
+            var container = document.querySelector('main');
+            if(!container) return;
+            
+            // Normalize category for matching
+            var categoryLower = category.toLowerCase();
+            var categoryMap = {
+              'cpu': ['CPU'],
+              'gpu': ['GPU'],
+              'motherboard': ['Motherboard'],
+              'ram': ['RAM'],
+              'storage': ['Storage'],
+              'psu': ['PSU'],
+              'case': ['Case'],
+              'cooling': ['Cooling']
+            };
+            
+            var categoryMatch = categoryMap[categoryLower] || [category];
+            
+            // Filter parts by category
+            var filteredParts = parts.filter(function(part){
+              var partCategory = (part.category || '').toUpperCase();
+              return categoryMatch.some(function(cat){
+                return partCategory === cat.toUpperCase();
+              });
+            });
+            
+            // Remove existing parts container
+            var existingContainer = container.querySelector('.pcf-builder-parts-container');
+            if(existingContainer){
+              existingContainer.remove();
+            }
+            
+            // Create new parts container
+            var partsContainer = document.createElement('div');
+            partsContainer.className = 'pcf-builder-parts-container grid-view';
+            partsContainer.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;padding:20px;width:100%;box-sizing:border-box;';
+            
+            // Create cards for each part
+            filteredParts.forEach(function(part){
+              var card = document.createElement('div');
+              card.setAttribute('data-testid', 'card-builder-part-' + part.name.toLowerCase().replace(/\s+/g, '-'));
+              card.style.cssText = 'background:#1f2937;border:1px solid #374151;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:transform 0.2s,box-shadow 0.2s;';
+              card.style.cssText += 'cursor:pointer;';
+              card.onmouseover = function(){ this.style.transform = 'translateY(-4px)'; this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.3)'; };
+              card.onmouseout = function(){ this.style.transform = 'translateY(0)'; this.style.boxShadow = 'none'; };
+              
+              // Image container
+              var imgContainer = document.createElement('div');
+              imgContainer.className = 'aspect-video bg-muted';
+              imgContainer.style.cssText = 'width:100%;height:200px;background:#374151;position:relative;overflow:hidden;';
+              
+              // Get stock image based on category
+              var basePath = location.pathname.includes('/') ? location.pathname.split('/').slice(0, -1).join('/') : '';
+              if(!basePath || basePath === '/') basePath = '';
+              var stockImage = '';
+              var cat = (part.category || '').toLowerCase();
+              if(cat.includes('cpu')){
+                stockImage = basePath + '/assets/PCPartsStock/IntelCpuStock.jpg';
+              } else if(cat.includes('gpu')){
+                stockImage = basePath + '/assets/PCPartsStock/GPUStock.jpg';
+              } else if(cat.includes('motherboard')){
+                stockImage = basePath + '/assets/PCPartsStock/MotherBoardStock.jpg';
+              } else if(cat.includes('ram')){
+                stockImage = basePath + '/assets/PCPartsStock/RAMStock.jpg';
+              } else if(cat.includes('storage')){
+                stockImage = basePath + '/assets/PCPartsStock/StorageStock.jpg';
+              } else if(cat.includes('psu')){
+                stockImage = basePath + '/assets/PCPartsStock/PSUStock.jpg';
+              } else if(cat.includes('case')){
+                stockImage = basePath + '/assets/PCPartsStock/CaseStock.jpg';
+              } else if(cat.includes('cooling')){
+                stockImage = basePath + '/assets/PCPartsStock/CoolingStock.jpg';
+              }
+              
+              if(stockImage){
+                imgContainer.style.backgroundImage = 'url("' + stockImage + '")';
+                imgContainer.style.backgroundSize = 'cover';
+                imgContainer.style.backgroundPosition = 'center';
+              }
+              
+              // Retailer badge
+              if(part.retailer){
+                var badge = document.createElement('div');
+                badge.textContent = part.retailer;
+                badge.style.cssText = 'position:absolute;top:8px;right:8px;background:rgba(37,99,235,0.9);color:#fff;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;';
+                imgContainer.appendChild(badge);
+              }
+              
+              card.appendChild(imgContainer);
+              
+              // Content container
+              var content = document.createElement('div');
+              content.style.cssText = 'padding:16px;flex:1;display:flex;flex-direction:column;';
+              
+              // Category badge
+              var categoryBadge = document.createElement('div');
+              categoryBadge.textContent = part.category || '';
+              categoryBadge.style.cssText = 'color:#9ca3af;font-size:12px;margin-bottom:8px;text-transform:uppercase;';
+              content.appendChild(categoryBadge);
+              
+              // Name
+              var name = document.createElement('h3');
+              name.textContent = part.name || '';
+              name.style.cssText = 'color:#e5e7eb;font-size:16px;font-weight:600;margin:0 0 8px 0;line-height:1.4;';
+              content.appendChild(name);
+              
+              // Specs
+              if(part.specs && Object.keys(part.specs).length > 0){
+                var specs = document.createElement('div');
+                specs.style.cssText = 'color:#9ca3af;font-size:13px;margin-bottom:12px;line-height:1.6;';
+                var specText = [];
+                var count = 0;
+                for(var key in part.specs){
+                  if(count < 3 && part.specs[key]){
+                    specText.push(key + ': ' + part.specs[key]);
+                    count++;
+                  }
+                }
+                specs.textContent = specText.join(' • ');
+                content.appendChild(specs);
+              }
+              
+              // Price
+              var price = document.createElement('div');
+              price.textContent = '₱' + (part.price || 0).toLocaleString();
+              price.style.cssText = 'color:#10b981;font-size:18px;font-weight:700;margin-bottom:12px;';
+              content.appendChild(price);
+              
+              // Add to Build button
+              var addButton = document.createElement('button');
+              addButton.textContent = 'Add to Build';
+              addButton.style.cssText = 'background:#2563eb;color:#fff;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;width:100%;transition:background 0.2s;';
+              addButton.onmouseover = function(){ this.style.background = '#1d4ed8'; };
+              addButton.onmouseout = function(){ this.style.background = '#2563eb'; };
+              addButton.onclick = function(e){
+                e.stopPropagation();
+                // TODO: Add to build functionality
+                console.log('Add to build:', part.name);
+              };
+              content.appendChild(addButton);
+              
+              card.appendChild(content);
+              partsContainer.appendChild(card);
+            });
+            
+            // Insert parts container after controls
+            var controls = document.getElementById('pcf-builder-controls');
+            if(controls && controls.nextSibling){
+              controls.parentElement.insertBefore(partsContainer, controls.nextSibling);
+            } else if(controls){
+              controls.parentElement.appendChild(partsContainer);
+            } else {
+              container.appendChild(partsContainer);
+            }
+          }
+          
+          // Add click handlers for category buttons
+          var controlsContainer = document.getElementById('pcf-builder-controls');
+          if(controlsContainer){
+            controlsContainer.addEventListener('click', function(e){
+              var btn = e.target.closest('.pcf-category-btn');
+              if(!btn) return;
+              
+              e.preventDefault();
+              e.stopPropagation();
+              
+              var category = btn.getAttribute('data-category');
+              if(!category) return;
+              
+              // Update active state
+              var allBtns = controlsContainer.querySelectorAll('.pcf-category-btn');
+              allBtns.forEach(function(b){
+                b.classList.remove('pcf-category-btn-active');
+                b.style.background = '#1f2937';
+                b.style.borderColor = '#374151';
+                b.style.color = '#e5e7eb';
+              });
+              
+              btn.classList.add('pcf-category-btn-active');
+              btn.style.background = '#2563eb';
+              btn.style.borderColor = '#2563eb';
+              btn.style.color = '#ffffff';
+              
+              // Save preference
+              localStorage.setItem('pcfind_builder_filter', category);
+              
+              // Display parts for selected category
+              displayPartsByCategory(category);
+            });
+          }
+          
+          // Display initial category parts
+          setTimeout(function(){
+            displayPartsByCategory(activeCategory);
+          }, 100);
           
           // Immediate cleanup: Remove any duplicate bottom sections that might exist
           var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle');
@@ -2635,33 +2911,7 @@
             }
           }
           
-          // Remove all part cards from PC Builder page - starting fresh
-          var container = document.querySelector('main');
-          if(container){
-            // Find and remove all builder part cards
-            var cards = container.querySelectorAll('[data-testid^="card-builder-part-"]');
-            cards.forEach(function(card){
-              card.remove();
-            });
-            
-            // Remove parts container classes
-            var partsContainer = container.querySelector('.pcf-builder-parts-container');
-            if(partsContainer){
-              partsContainer.classList.remove('pcf-builder-parts-container', 'grid-view', 'stack-view');
-            }
-            
-            // Also remove any parts containers
-            var allPartsContainers = container.querySelectorAll('.pcf-builder-parts-container');
-            allPartsContainers.forEach(function(container){
-              container.classList.remove('pcf-builder-parts-container', 'grid-view', 'stack-view');
-            });
-          }
-          
-          // Remove all builder part cards from anywhere in the document
-          var allBuilderCards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
-          allBuilderCards.forEach(function(card){
-            card.remove();
-          });
+          // Parts will be displayed by category buttons - no need to remove here
           
           // Cleanup: Remove any orphaned controls (all removed for reset)
           setTimeout(function(){
@@ -2683,7 +2933,7 @@
             // Remove any view toggle buttons
             var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle, .pcf-builder-view-toggle-mobile, .pcf-builder-view-toggle-btn');
             allViewToggles.forEach(function(toggle){
-              toggle.remove();
+                toggle.remove();
             });
             
             // Remove any builder part cards that might appear
@@ -2952,7 +3202,7 @@
                 var retryPath = (location.pathname||'').toLowerCase();
                 var stillOnPCBuilder = retryPath.includes('/pc-builder') || retryPath.endsWith('/pc-builder') || retryPath === '/pc-builder/';
                 if(stillOnPCBuilder){
-                  executeFilter(category);
+                executeFilter(category);
                 }
               }, 200);
               return;
@@ -3002,8 +3252,8 @@
                 
                 // If no data-category attribute, check card text content
                 if(!categoryMatch){
-                  var cardText = (card.textContent || '').toLowerCase();
-                  var cardTitle = '';
+              var cardText = (card.textContent || '').toLowerCase();
+              var cardTitle = '';
                   var cardCategoryBadge = '';
                   
                   // Try to get category from badge or specific elements
@@ -3011,19 +3261,19 @@
                   if(badgeEl){
                     cardCategoryBadge = (badgeEl.textContent || '').toLowerCase().trim();
                   }
-                  
-                  // Try to get more specific text from title or heading elements
-                  var titleEl = card.querySelector('h1, h2, h3, h4, h5, h6, [class*="title"], [class*="name"]');
-                  if(titleEl){
-                    cardTitle = (titleEl.textContent || '').toLowerCase();
-                  }
-                  
-                  // Combine all text for matching
+              
+              // Try to get more specific text from title or heading elements
+              var titleEl = card.querySelector('h1, h2, h3, h4, h5, h6, [class*="title"], [class*="name"]');
+              if(titleEl){
+                cardTitle = (titleEl.textContent || '').toLowerCase();
+              }
+              
+              // Combine all text for matching
                   var allText = cardCategoryBadge + ' ' + cardText + ' ' + cardTitle;
-                  
-                  // Map dropdown values to search patterns - more specific matching
-                  var categoryMap = {
-                    'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper', 'core i3', 'core i5', 'core i7', 'core i9'],
+              
+                // Map dropdown values to search patterns - more specific matching
+                var categoryMap = {
+                  'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper', 'core i3', 'core i5', 'core i7', 'core i9'],
                     'gpu': ['gpu', 'graphics', 'video card', 'videocard', 'nvidia', 'rtx', 'gtx', 'radeon', 'geforce', 'rx ', 'rx6700', 'rx6600', 'rx6800', 'rx 6700', 'rx 6600', 'rx 6800', 'rtx 30', 'rtx 40', 'gtx 16', 'gtx 10'],
                     'motherboard': ['motherboard', 'mobo', 'mainboard', 'board', 'msi', 'asus', 'gigabyte', 'asrock', 'b550', 'b650', 'x570', 'x670', 'z690', 'z790', 'h610', 'h670', 'b660', 'b760'],
                     'ram': ['ram', 'memory', 'ddr', 'ddr4', 'ddr5', '8gb', '16gb', '32gb', '64gb', 'corsair', 'g.skill', 'kingston', 'crucial', 'vengeance', 'trident'],
@@ -3031,10 +3281,10 @@
                     'psu': ['psu', 'power supply', 'powersupply', 'power', 'watt', 'corsair', 'seasonic', 'evga', 'cooler master', '750w', '850w', '1000w', '650w', '550w'],
                     'case': ['case', 'chassis', 'tower', 'cabinet', 'atx', 'matx', 'mini itx', 'fractal', 'nzxt', 'corsair', 'lian li', 'phanteks'],
                     'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid', 'thermal', 'noctua', 'be quiet', 'corsair', 'nzxt', 'arctic', 'cpu cooler', 'cpu cooler']
-                  };
-                  
-                  // Get patterns for this category
-                  var patterns = categoryMap[category] || [category];
+                };
+                
+                // Get patterns for this category
+                var patterns = categoryMap[category] || [category];
                   
                   // Check category badge first (most reliable text source)
                   if(cardCategoryBadge){
@@ -3045,9 +3295,9 @@
                   
                   // If badge didn't match, check all text
                   if(!categoryMatch){
-                    categoryMatch = patterns.some(function(pattern){
-                      return allText.includes(pattern);
-                    });
+                categoryMatch = patterns.some(function(pattern){
+                  return allText.includes(pattern);
+                });
                   }
                 }
               }
