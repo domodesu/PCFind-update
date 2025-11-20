@@ -3299,15 +3299,6 @@
             
             // Start looking for cards
             findCards(0);
-            
-            // Clear flag after filtering completes
-            setTimeout(function(){
-              _pcfFilteringInProgress = false;
-              // Reset category tracking after delay to allow new calls
-              setTimeout(function(){
-                _pcfLastFilterCategory = null;
-              }, 50);
-            }, 100);
           }, 50); // Debounce delay of 50ms
         }
         
