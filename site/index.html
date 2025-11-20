@@ -2184,6 +2184,42 @@
             tabList.remove();
           }
           
+          // Set up continuous observer to remove any recreated category tabs/buttons
+          var removeCategoryTabs = function(){
+            var allTabs = main.querySelectorAll('[role="tablist"]:not(#pcf-builder-category-filter), [role="tab"]:not(#pcf-builder-category-filter), button[role="tab"]:not(#pcf-builder-category-filter)');
+            allTabs.forEach(function(tab){
+              if(!tab.closest('#pcf-builder-controls')){
+                tab.style.display = 'none';
+                tab.remove();
+              }
+            });
+            // Also check for category buttons (CPU, GPU, etc.)
+            var categoryNames = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling', 'processor', 'graphics', 'memory'];
+            var allButtons = main.querySelectorAll('button:not(.pcf-builder-view-toggle-btn):not(#pcf-builder-category-filter)');
+            allButtons.forEach(function(btn){
+              var btnText = (btn.textContent || '').trim().toLowerCase();
+              // Check if button text matches a category name exactly
+              if(categoryNames.some(function(cat){
+                return btnText === cat || (btnText.length <= 15 && btnText.indexOf(cat) === 0);
+              })){
+                // Check if it's not inside our controls container
+                if(!btn.closest('#pcf-builder-controls') && !btn.closest('#pcf-builder-view-toggle')){
+                  btn.style.display = 'none';
+                  btn.remove();
+                }
+              }
+            });
+          };
+          
+          // Run immediately
+          removeCategoryTabs();
+          
+          // Set up observer to continuously remove recreated tabs
+          var tabRemovalObserver = new MutationObserver(function(){
+            removeCategoryTabs();
+          });
+          tabRemovalObserver.observe(main, {childList: true, subtree: true});
+          
           // Add change handler to category dropdown
           var categoryFilter = document.getElementById('pcf-builder-category-filter');
           if(categoryFilter){
