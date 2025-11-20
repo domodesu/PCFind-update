@@ -237,6 +237,11 @@
       
       /* Responsive: on small widths, move primary nav into burger */
       .pcf-nav-mobile{display:none}
+      /* Ensure Browse Parts is always visible on desktop */
+      nav a[href="/browse-parts"]{
+        display: inline-block !important;
+        visibility: visible !important;
+      }
       @media (max-width: 900px){
         nav a[href="/"], nav a[href="/browse-parts"], nav a[href="/pc-builder"], nav a[href="/saved-builds"]{display:none !important}
         .pcf-nav-mobile{display:block}
@@ -1563,10 +1568,31 @@
       }
       
       /* Ensure view toggle is inline, not below */
+      /* PC Builder view toggle - only show on desktop */
       #pcf-builder-controls #pcf-builder-view-toggle {
         display: flex !important;
         flex-direction: row !important;
         flex-shrink: 0 !important;
+      }
+      /* Hide PC Builder toggle on mobile */
+      @media (max-width: 768px) {
+        #pcf-builder-controls #pcf-builder-view-toggle {
+          display: none !important;
+        }
+        /* Show mobile toggle for PC Builder on mobile */
+        #pcf-builder-controls .pcf-builder-view-toggle-mobile {
+          display: flex !important;
+          flex-direction: column !important;
+          width: 100% !important;
+          gap: 8px !important;
+        }
+      }
+      @media (min-width: 769px) {
+        /* Hide mobile toggle on desktop */
+        #pcf-builder-controls .pcf-builder-view-toggle-mobile {
+          display: none !important;
+        }
+      }
         order: 2 !important;
       }
       
@@ -1640,11 +1666,18 @@
           width: 100%;
         }
         #pcf-builder-view-toggle {
-          width: 100%;
-          justify-content: center;
-          order: 2;
+          display: none !important; /* Hide desktop toggle on mobile */
         }
-        .pcf-builder-view-toggle-btn {
+        /* Show mobile toggle for PC Builder on mobile */
+        #pcf-builder-controls .pcf-builder-view-toggle-mobile {
+          display: flex !important;
+          flex-direction: row !important;
+          width: 100% !important;
+          justify-content: center !important;
+          gap: 8px !important;
+          order: 2 !important;
+        }
+        .pcf-builder-view-toggle-mobile .pcf-builder-view-toggle-btn {
           flex: 1;
         }
         body[data-page="pc-builder"] .pcf-builder-parts-container.grid-view {
@@ -2259,7 +2292,17 @@
           });
           
           controlsHtml += '</div>';
+          // Desktop view toggle (hidden on mobile)
           controlsHtml += '<div id="pcf-builder-view-toggle" style="display:flex;gap:8px;align-items:center;flex-shrink:0;">';
+          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
+          controlsHtml += '<span>⊞</span> <span>Grid</span>';
+          controlsHtml += '</button>';
+          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
+          controlsHtml += '<span>☰</span> <span>Stack</span>';
+          controlsHtml += '</button>';
+          controlsHtml += '</div>';
+          // Mobile view toggle (hidden on desktop)
+          controlsHtml += '<div class="pcf-builder-view-toggle-mobile" style="display:none;flex-direction:row;width:100%;justify-content:center;gap:8px;order:2;">';
           controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
           controlsHtml += '<span>⊞</span> <span>Grid</span>';
           controlsHtml += '</button>';
