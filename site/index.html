@@ -3189,13 +3189,42 @@
             _pcfFilteringInProgress = true;
             _pcfLastFilterCategory = category;
             
-            var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
-            // Remove console logs to prevent spam - only log errors
-            if(cards.length === 0){
-              console.warn('No cards found with selector [data-testid^="card-builder-part-"]');
-              // Try alternative selectors
-              cards = document.querySelectorAll('[data-testid*="card"], [data-testid*="part"], .p-6');
+            // Try to find cards with multiple selectors and retry if not found
+            function findCards(retryCount){
+              retryCount = retryCount || 0;
+              var maxRetries = 10; // Try for up to 5 seconds (500ms * 10)
+              
+              var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+              
+              // If no cards found, try alternative selectors
+              if(cards.length === 0){
+                cards = document.querySelectorAll('[data-testid*="card-builder"], [data-testid*="card-part"], [data-testid*="builder-part"], [data-testid*="part-"]');
+              }
+              
+              // If still no cards, try more generic selectors
+              if(cards.length === 0){
+                cards = document.querySelectorAll('[data-testid*="card"], [data-testid*="part"]');
+              }
+              
+              // If still no cards and we haven't exceeded retries, wait and try again
+              if(cards.length === 0 && retryCount < maxRetries){
+                setTimeout(function(){
+                  findCards(retryCount + 1);
+                }, 500);
+                return;
+              }
+              
+              // If no cards found after retries, silently return (parts may not be loaded yet)
+              if(cards.length === 0){
+                return;
+              }
+              
+              // Filter cards now that we found them
+              filterCardsNow(cards, category);
             }
+            
+            // Start looking for cards
+            findCards(0);
           
               // Filter immediately without transitions to prevent flashing
             cards.forEach(function(card){
