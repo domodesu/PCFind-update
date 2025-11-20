@@ -4123,10 +4123,67 @@
           }
         }
         
+        // Load a saved build
+        function loadSavedBuild(buildId){
+          try{
+            const savedBuilds = getSavedBuildsList();
+            const savedBuild = savedBuilds.find(b => b.id === buildId);
+            if(savedBuild){
+              // Load the saved build into current build
+              const currentBuild = {
+                items: JSON.parse(JSON.stringify(savedBuild.items)), // Deep copy
+                name: savedBuild.name,
+                lastModified: Date.now()
+              };
+              saveCurrentBuild(currentBuild);
+              renderSavedBuilds();
+              if(window.showToast) window.showToast('✅ Build loaded!');
+            }
+          }catch(e){
+            console.error('Error loading saved build:', e);
+            if(window.showToast) window.showToast('❌ Failed to load build');
+          }
+        }
+        
+        // Delete a saved build
+        function deleteSavedBuild(buildId){
+          if(!window.showConfirmModal){
+            if(!confirm('Delete this saved build?')) return;
+          } else {
+            window.showConfirmModal(
+              'Delete Saved Build?',
+              'This saved build will be permanently deleted. This action cannot be undone.',
+              function(){
+                doDeleteSavedBuild(buildId);
+              }
+            );
+            return;
+          }
+          doDeleteSavedBuild(buildId);
+        }
+        
+        function doDeleteSavedBuild(buildId){
+          try{
+            const savedBuilds = getSavedBuildsList();
+            const filtered = savedBuilds.filter(b => b.id !== buildId);
+            if(saveSavedBuildsList(filtered)){
+              renderSavedBuilds();
+              if(window.showToast) window.showToast('🗑️ Build deleted');
+            } else {
+              if(window.showToast) window.showToast('❌ Failed to delete build');
+            }
+          }catch(e){
+            console.error('Error deleting saved build:', e);
+            if(window.showToast) window.showToast('❌ Failed to delete build');
+          }
+        }
+        
         // Make functions globally accessible
         window.removeFromBuild = removeFromBuild;
         window.clearBuild = clearBuild;
         window.saveBuildPermanently = saveBuildPermanently;
+        window.loadSavedBuild = loadSavedBuild;
+        window.deleteSavedBuild = deleteSavedBuild;
         window.addToBuild = function(item, options){
           if(!item) return;
           const build = getCurrentBuild();
