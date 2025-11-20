@@ -2668,7 +2668,7 @@
             });
             
             // Insert parts container after controls
-            var controls = document.getElementById('pcf-builder-controls');
+          var controls = document.getElementById('pcf-builder-controls');
             if(controls && controls.nextSibling){
               controls.parentElement.insertBefore(partsContainer, controls.nextSibling);
             } else if(controls){
@@ -2678,9 +2678,16 @@
             }
           }
           
-          // Add click handlers for category buttons - use capture phase to ensure it runs first
-          var controlsContainer = document.getElementById('pcf-builder-controls');
-          if(controlsContainer){
+          // Add click handlers for category buttons - attach after a short delay to ensure DOM is ready
+          setTimeout(function(){
+            var controlsContainer = document.getElementById('pcf-builder-controls');
+            if(!controlsContainer){
+              console.error('Controls container not found');
+              return;
+            }
+            
+            console.log('Setting up category button handlers');
+            
             // Remove any existing handler first
             if(controlsContainer._pcfCategoryClickHandler){
               controlsContainer.removeEventListener('click', controlsContainer._pcfCategoryClickHandler, {capture: true});
@@ -2699,7 +2706,7 @@
               var category = btn.getAttribute('data-category');
               if(!category) return;
               
-              console.log('Category button clicked:', category);
+              console.log('Category button clicked (delegation):', category);
               
               // Update active state immediately
               var allBtns = controlsContainer.querySelectorAll('.pcf-category-btn');
@@ -2727,7 +2734,9 @@
             
             // Also attach direct click handlers to buttons as backup
             var categoryBtns = controlsContainer.querySelectorAll('.pcf-category-btn');
-            categoryBtns.forEach(function(btn){
+            console.log('Found', categoryBtns.length, 'category buttons');
+            
+            categoryBtns.forEach(function(btn, index){
               // Remove any existing handler
               if(btn._pcfDirectClickHandler){
                 btn.removeEventListener('click', btn._pcfDirectClickHandler);
@@ -2741,7 +2750,7 @@
                 var category = this.getAttribute('data-category');
                 if(!category) return;
                 
-                console.log('Direct button click:', category);
+                console.log('Direct button click:', category, 'Button index:', index);
                 
                 // Update active state
                 var allBtns = controlsContainer.querySelectorAll('.pcf-category-btn');
@@ -2764,14 +2773,15 @@
                 displayPartsByCategory(category);
               };
               
-              btn.addEventListener('click', btn._pcfDirectClickHandler);
+              btn.addEventListener('click', btn._pcfDirectClickHandler, {capture: false});
+              console.log('Attached handler to button:', btn.textContent, 'Category:', category);
             });
-          }
+          }, 200);
           
           // Display initial category parts
           setTimeout(function(){
             displayPartsByCategory(activeCategory);
-          }, 100);
+          }, 300);
           
           // Immediate cleanup: Remove any duplicate bottom sections that might exist
           var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle');
@@ -2828,6 +2838,7 @@
           }, 100);
           
           // Remove original tablist (we've replaced it with our buttons)
+          var tabList = main ? main.querySelector('[role="tablist"]') : null;
           if(tabList){
             tabList.remove();
           }
@@ -2968,13 +2979,13 @@
               if(btn.closest('#pcf-builder-controls') || btn.closest('#pcf-builder-categories') || btn.classList.contains('pcf-category-btn')){
                 return; // Don't remove our new category buttons
               }
-              var btnText = (btn.textContent || '').trim().toLowerCase();
-              var isCategoryBtn = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling', 'all', 'all categories'].some(function(cat){
-                return btnText === cat || btnText.includes(cat);
-              });
-              if(isCategoryBtn || (btn.hasAttribute('role') && btn.getAttribute('role') === 'tab')){
-                console.log('Removing duplicate category button (bottom selection):', btn);
-                btn.remove();
+                var btnText = (btn.textContent || '').trim().toLowerCase();
+                var isCategoryBtn = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling', 'all', 'all categories'].some(function(cat){
+                  return btnText === cat || btnText.includes(cat);
+                });
+                if(isCategoryBtn || (btn.hasAttribute('role') && btn.getAttribute('role') === 'tab')){
+                  console.log('Removing duplicate category button (bottom selection):', btn);
+                  btn.remove();
               }
             });
             
