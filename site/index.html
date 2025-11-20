@@ -2351,7 +2351,12 @@
             if(allIndex >= 0){
               categoryButtons[allIndex].active = true;
             } else {
+              // Activate first category by default
               categoryButtons[0].active = true;
+              // Also update localStorage to match
+              if(categoryButtons[0].value){
+                localStorage.setItem('pcfind_builder_filter', categoryButtons[0].value);
+              }
             }
           }
           
@@ -3223,53 +3228,77 @@
               filterCardsNow(cards, category);
             }
             
+            // Internal function to actually filter the cards
+            function filterCardsNow(cards, category){
+              // Only log if category changed or first call
+              if(!window._pcfLastLoggedCategory || window._pcfLastLoggedCategory !== category){
+                console.log('filterBuilderPartsByCategory called with category:', category, 'Found cards:', cards.length);
+                window._pcfLastLoggedCategory = category;
+              }
+              
+              // Filter immediately without transitions to prevent flashing
+              cards.forEach(function(card){
+                var cardText = (card.textContent || '').toLowerCase();
+                var categoryMatch = false;
+                
+                // Show all if no category selected or 'all'
+                if(!category || category === '' || category === 'all'){
+                  categoryMatch = true;
+                } else {
+                  // Map dropdown values to search patterns
+                  var categoryMap = {
+                    'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper'],
+                    'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'amd', 'radeon', 'geforce', 'rx ', 'rx6700', 'rx6600', 'rx6800'],
+                    'motherboard': ['motherboard', 'mobo', 'mainboard', 'board', 'msi', 'asus', 'gigabyte', 'asrock'],
+                    'ram': ['ram', 'memory', 'ddr', 'ddr4', 'ddr5'],
+                    'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2', 'sata'],
+                    'psu': ['psu', 'power supply', 'power', 'watt', 'corsair', 'seasonic'],
+                    'case': ['case', 'chassis', 'tower', 'cabinet', 'atx', 'matx'],
+                    'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid', 'thermal']
+                  };
+                  
+                  // Get patterns for this category
+                  var patterns = categoryMap[category] || [category];
+                  categoryMatch = patterns.some(function(pattern){
+                    return cardText.includes(pattern);
+                  });
+                }
+                
+                // Show or hide card immediately - no transitions to prevent flashing
+                if(categoryMatch){
+                  // Show card immediately
+                  card.style.display = '';
+                  card.style.opacity = '1';
+                  card.style.visibility = 'visible';
+                  card.style.pointerEvents = '';
+                  card.removeAttribute('hidden');
+                } else {
+                  // Hide card immediately
+                  card.style.display = 'none';
+                  card.style.opacity = '0';
+                  card.style.visibility = 'hidden';
+                  card.style.pointerEvents = 'none';
+                }
+              });
+              
+              // Only log completion if category changed
+              if(!window._pcfLastLoggedComplete || window._pcfLastLoggedComplete !== category){
+                console.log('Filtering complete. Category:', category, 'Cards processed:', cards.length);
+                window._pcfLastLoggedComplete = category;
+              }
+              
+              // Clear flag after filtering completes
+              setTimeout(function(){
+                _pcfFilteringInProgress = false;
+                // Reset category tracking after delay to allow new calls
+                setTimeout(function(){
+                  _pcfLastFilterCategory = null;
+                }, 50);
+              }, 100);
+            }
+            
             // Start looking for cards
             findCards(0);
-          
-              // Filter immediately without transitions to prevent flashing
-            cards.forEach(function(card){
-            var cardText = (card.textContent || '').toLowerCase();
-            var categoryMatch = false;
-            
-            // Show all if no category selected or 'all'
-            if(!category || category === '' || category === 'all'){
-              categoryMatch = true;
-            } else {
-              // Map dropdown values to search patterns
-              var categoryMap = {
-                'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper'],
-                'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'amd', 'radeon', 'geforce', 'rx ', 'rx6700', 'rx6600', 'rx6800'],
-                'motherboard': ['motherboard', 'mobo', 'mainboard', 'board', 'msi', 'asus', 'gigabyte', 'asrock'],
-                'ram': ['ram', 'memory', 'ddr', 'ddr4', 'ddr5'],
-                'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2', 'sata'],
-                'psu': ['psu', 'power supply', 'power', 'watt', 'corsair', 'seasonic'],
-                'case': ['case', 'chassis', 'tower', 'cabinet', 'atx', 'matx'],
-                'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid', 'thermal']
-              };
-              
-              // Get patterns for this category
-              var patterns = categoryMap[category] || [category];
-              categoryMatch = patterns.some(function(pattern){
-                return cardText.includes(pattern);
-              });
-            }
-            
-            // Show or hide card immediately - no transitions to prevent flashing
-            if(categoryMatch){
-              // Show card immediately
-              card.style.display = '';
-              card.style.opacity = '1';
-              card.style.visibility = 'visible';
-              card.style.pointerEvents = '';
-              card.removeAttribute('hidden');
-            } else {
-              // Hide card immediately
-              card.style.display = 'none';
-              card.style.opacity = '0';
-              card.style.visibility = 'hidden';
-              card.style.pointerEvents = 'none';
-            }
-            });
             
             // Clear flag after filtering completes
             setTimeout(function(){
