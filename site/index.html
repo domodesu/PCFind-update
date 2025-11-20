@@ -1614,11 +1614,15 @@
           visibility: visible !important;
           opacity: 1 !important;
         }
+      @media (min-width: 901px) {
         /* Show theme toggle on desktop */
         #pcf-theme, .pcf-tools #pcf-theme, button#pcf-theme {
           display: block !important;
           visibility: visible !important;
           opacity: 1 !important;
+          height: auto !important;
+          width: auto !important;
+          overflow: visible !important;
         }
       }
       
@@ -2353,8 +2357,17 @@
           });
           
           controlsHtml += '</div>';
-          // Mobile view toggle (hidden on desktop) - order: 1 for mobile
-          controlsHtml += '<div class="pcf-builder-view-toggle-mobile" style="display:none;flex-direction:row;width:100%;justify-content:center;gap:8px;order:1;">';
+          // Desktop view toggle (hidden on mobile) - place it SECOND (order: 2)
+          controlsHtml += '<div id="pcf-builder-view-toggle" style="display:flex;gap:8px;align-items:center;flex-shrink:0;order:2;">';
+          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
+          controlsHtml += '<span>⊞</span> <span>Grid</span>';
+          controlsHtml += '</button>';
+          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
+          controlsHtml += '<span>☰</span> <span>Stack</span>';
+          controlsHtml += '</button>';
+          controlsHtml += '</div>';
+          // Mobile view toggle (hidden on desktop) - order: 2 for mobile
+          controlsHtml += '<div class="pcf-builder-view-toggle-mobile" style="display:none;flex-direction:row;width:100%;justify-content:center;gap:8px;order:2;">';
           controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
           controlsHtml += '<span>⊞</span> <span>Grid</span>';
           controlsHtml += '</button>';
@@ -2701,33 +2714,52 @@
               console.log('Filtering for category (existing controls):', category);
               localStorage.setItem('pcfind_builder_filter', category);
               
-              // Filter parts immediately - use window function to ensure it's accessible
-              var filterFn = window.filterBuilderPartsByCategory;
-              if(typeof filterFn === 'function'){
-                try {
-                  filterFn(category);
-                  console.log('Filter function called successfully');
-                } catch(err) {
-                  console.error('Error calling filter function:', err);
-                }
-              } else {
-                console.error('filterBuilderPartsByCategory function not found in window!');
+              // Ensure filter function exists before calling
+              if(!window.filterBuilderPartsByCategory){
+                console.error('filterBuilderPartsByCategory not available, waiting...');
+                setTimeout(function(){
+                  if(window.filterBuilderPartsByCategory){
+                    window.filterBuilderPartsByCategory(category);
+                  } else {
+                    console.error('filterBuilderPartsByCategory still not available after delay');
+                  }
+                }, 100);
+                return;
               }
               
-              // Scroll to parts section after filtering
-              setTimeout(function(){
-                var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]:not([style*="display: none"])');
-                var firstVisibleCard = cards.length > 0 ? cards[0] : null;
+              // Filter parts immediately - use window function to ensure it's accessible
+              try {
+                window.filterBuilderPartsByCategory(category);
+                console.log('Filter function called successfully');
                 
-                if(firstVisibleCard){
-                  firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
-                  // If no cards found, scroll to controls
-                  if(existingControls){
-                    existingControls.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Scroll to parts section after filtering
+                setTimeout(function(){
+                  var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+                  var firstVisibleCard = null;
+                  
+                  // Find first visible card
+                  for(var i = 0; i < cards.length; i++){
+                    var card = cards[i];
+                    var style = window.getComputedStyle(card);
+                    if(style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity) > 0){
+                      firstVisibleCard = card;
+                      break;
+                    }
                   }
-                }
-              }, 100);
+                  
+                  if(firstVisibleCard){
+                    firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  } else {
+                    // If no cards found, scroll to controls
+                    if(existingControls){
+                      existingControls.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }
+                }, 200);
+              } catch(err) {
+                console.error('Error calling filter function:', err);
+              }
+              
             };
             
             // Remove any existing listeners first - match exactly
@@ -2854,6 +2886,8 @@
               
               // Attach handler with capture phase
               controlsContainer.addEventListener('click', controlsContainer._pcfViewToggleHandler, {capture: true, passive: false});
+              // Mark as attached
+              controlsContainer._pcfViewToggleAttached = true;
             }
           }
           
@@ -3219,6 +3253,15 @@
           // Check if we're on browse parts page
           var path = (location.pathname||'').toLowerCase();
           var isBrowseParts = path.includes('/browse-parts') || path.endsWith('/browse-parts') || path === '/browse-parts/';
+          var isPCBuilder = path.includes('/pc-builder') || path.endsWith('/pc-builder') || path === '/pc-builder/';
+          
+          // Remove Browse Parts toggle if on PC Builder page
+          if(isPCBuilder){
+            var browseToggle = document.getElementById('pcf-view-toggle');
+            if(browseToggle) browseToggle.remove();
+            return;
+          }
+          
           if(!isBrowseParts) return;
           
           // Find the parts container - look for common container patterns
