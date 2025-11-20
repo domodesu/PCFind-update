@@ -1044,13 +1044,39 @@
         }
         function setUser(u, remember){
           try{
+            // Check if user changed - if so, clear the build
+            const currentUser = getUser();
+            const userChanged = !currentUser || !currentUser.name || currentUser.name !== u.name;
+            
             if(remember){ localStorage.setItem('pcfind_user', JSON.stringify(u)); sessionStorage.removeItem('pcfind_user'); }
             else { sessionStorage.setItem('pcfind_user', JSON.stringify(u)); localStorage.removeItem('pcfind_user'); }
+            
+            // Clear build if user changed (new account logged in)
+            if(userChanged){
+              try{
+                const emptyBuild = {items:[], name: 'My Build', lastModified: Date.now()};
+                sessionStorage.setItem('pcfind_current_build', JSON.stringify(emptyBuild));
+                localStorage.setItem('pcfind_current_build', JSON.stringify(emptyBuild));
+              }catch(e){
+                console.error('Error clearing build on user change:', e);
+              }
+            }
           }catch{}
           sync();
           notifyUserChange();
         }
-        function clearUser(){ try{ localStorage.removeItem('pcfind_user'); sessionStorage.removeItem('pcfind_user'); }catch{} sync(); notifyUserChange(); }
+        function clearUser(){ 
+          try{ 
+            localStorage.removeItem('pcfind_user'); 
+            sessionStorage.removeItem('pcfind_user');
+            // Clear build when user logs out
+            const emptyBuild = {items:[], name: 'My Build', lastModified: Date.now()};
+            sessionStorage.setItem('pcfind_current_build', JSON.stringify(emptyBuild));
+            localStorage.removeItem('pcfind_current_build');
+          }catch{} 
+          sync(); 
+          notifyUserChange(); 
+        }
         function sync(){
           const u = getUser();
           const burgerAccountItem = document.getElementById('pcf-open-account');
@@ -3748,9 +3774,24 @@
         // Get current build from session/localStorage
         function getCurrentBuild(){
           try{
-            const session = sessionStorage.getItem('pcfind_current_build');
-            const stored = localStorage.getItem('pcfind_current_build');
-            return session ? JSON.parse(session) : (stored ? JSON.parse(stored) : {items:[], name: 'My Build', lastModified: Date.now()});
+            // If user is logged in, prefer localStorage (persistent)
+            // If not logged in, use sessionStorage (temporary)
+            const user = getUser();
+            if(user && user.name){
+              // User is logged in - use localStorage
+              const stored = localStorage.getItem('pcfind_current_build');
+              if(stored){
+                return JSON.parse(stored);
+              }
+            } else {
+              // User is not logged in - use sessionStorage
+              const session = sessionStorage.getItem('pcfind_current_build');
+              if(session){
+                return JSON.parse(session);
+              }
+            }
+            // Return empty build if nothing found
+            return {items:[], name: 'My Build', lastModified: Date.now()};
           }catch{
             return {items:[], name: 'My Build', lastModified: Date.now()};
           }
