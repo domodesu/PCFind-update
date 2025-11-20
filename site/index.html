@@ -2386,6 +2386,12 @@
       // PC Builder Filter and Button Rearrangement
       (function(){
         function initPCBuilderFilter(){
+          // Prevent multiple simultaneous executions
+          if(window._pcfInitInProgress){
+            return;
+          }
+          window._pcfInitInProgress = true;
+          
           var path = (location.pathname||'').toLowerCase();
           var isPCBuilder = path.includes('/pc-builder') || path.endsWith('/pc-builder') || path === '/pc-builder/';
           var isSavedBuilds = path.includes('/saved-builds') || path.endsWith('/saved-builds') || path === '/saved-builds/';
@@ -2399,6 +2405,15 @@
             // Also remove any view toggles from PC Builder
             var builderViewToggle = document.getElementById('pcf-builder-view-toggle');
             if(builderViewToggle) builderViewToggle.remove();
+            window._pcfInitInProgress = false;
+            return;
+          }
+          
+          // Check if controls already exist - if so, don't recreate
+          var existingControls = document.getElementById('pcf-builder-controls');
+          if(existingControls && existingControls.querySelector('.pcf-category-btn')){
+            // Controls already exist with buttons, just ensure handlers are attached
+            window._pcfInitInProgress = false;
             return;
           }
           
@@ -2781,6 +2796,8 @@
           // Display initial category parts
           setTimeout(function(){
             displayPartsByCategory(activeCategory);
+            // Clear the init flag after everything is set up
+            window._pcfInitInProgress = false;
           }, 300);
           
           // Immediate cleanup: Remove any duplicate bottom sections that might exist
@@ -2942,96 +2959,8 @@
           
           // Parts will be displayed by category buttons - no need to remove here
           
-          // Cleanup: Remove any orphaned controls (all removed for reset)
-          setTimeout(function(){
-            // Remove any remaining controls containers
-            var controlsContainer = document.getElementById('pcf-builder-controls');
-            if(controlsContainer){
-              controlsContainer.remove();
-            }
-          }, 500);
-          
-          // Also remove any duplicate sections that might be created later
-          var cleanupObserver = new MutationObserver(function(){
-            // DON'T remove our controls container - it's needed for category buttons!
-            // Only remove orphaned/duplicate controls containers that are not properly set up
-            
-            // Remove any view toggle buttons (deprecated)
-            var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle, .pcf-builder-view-toggle-mobile, .pcf-builder-view-toggle-btn');
-            allViewToggles.forEach(function(toggle){
-                toggle.remove();
-            });
-            
-            // Remove duplicate tablists and category buttons (bottom selection)
-            var allTabLists = document.querySelectorAll('[role="tablist"]');
-            allTabLists.forEach(function(tl){
-              if(tl && tl.id !== 'pcf-builder-controls' && !tl.closest('#pcf-builder-controls')){
-                console.log('Removing duplicate tablist:', tl);
-                tl.remove();
-              }
-            });
-            
-            // Remove any category buttons outside of pcf-builder-controls (but keep our new buttons)
-            var allCategoryBtns = document.querySelectorAll('button[role="tab"], [role="tab"]');
-            var controlsContainer2 = document.getElementById('pcf-builder-controls');
-            allCategoryBtns.forEach(function(btn){
-              // Keep buttons inside our controls container
-              if(btn.closest('#pcf-builder-controls') || btn.closest('#pcf-builder-categories') || btn.classList.contains('pcf-category-btn')){
-                return; // Don't remove our new category buttons
-              }
-                var btnText = (btn.textContent || '').trim().toLowerCase();
-                var isCategoryBtn = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling', 'all', 'all categories'].some(function(cat){
-                  return btnText === cat || btnText.includes(cat);
-                });
-                if(isCategoryBtn || (btn.hasAttribute('role') && btn.getAttribute('role') === 'tab')){
-                  console.log('Removing duplicate category button (bottom selection):', btn);
-                  btn.remove();
-              }
-            });
-            
-            // Remove any sections containing category buttons below controls
-            if(controlsContainer2 && main){
-              var allSections = main.querySelectorAll('div, section, nav');
-              allSections.forEach(function(section){
-                if(section === controlsContainer2 || section.closest('#pcf-builder-controls')){
-                  return; // Skip controls container itself
-                }
-                var hasCategoryButtons = false;
-                var categoryBtnsInSection = section.querySelectorAll('button');
-                categoryBtnsInSection.forEach(function(btn){
-                  var btnText = (btn.textContent || '').trim().toLowerCase();
-                  var isCategoryBtn = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling'].some(function(cat){
-                    return btnText === cat;
-                  });
-                  if(isCategoryBtn && (!btn.closest('#pcf-builder-controls'))){
-                    hasCategoryButtons = true;
-                  }
-                });
-                
-                // Check if this section is below the controls
-                var isBelow = false;
-                if(controlsContainer2.nextSibling){
-                  var currentNode = controlsContainer2.nextSibling;
-                  while(currentNode){
-                    if(currentNode === section || (currentNode.contains && currentNode.contains(section))){
-                      isBelow = true;
-                      break;
-                    }
-                    currentNode = currentNode.nextSibling;
-                  }
-                }
-                
-                if(hasCategoryButtons && (isBelow || section.compareDocumentPosition(controlsContainer2) & Node.DOCUMENT_POSITION_FOLLOWING)){
-                  console.log('Removing duplicate category section (bottom selection):', section);
-                  section.remove();
-                }
-              });
-            }
-          });
-          
-          if(main){
-            cleanupObserver.observe(main, {childList: true, subtree: true});
-          }
+          // Cleanup observer disabled - not needed for new implementation
+          // The new category buttons are managed directly and don't need cleanup
           
           // Initial cleanup after a short delay to catch any that are created after init
           setTimeout(function(){
