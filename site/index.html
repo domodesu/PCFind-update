@@ -2432,22 +2432,28 @@
           if(controlsContainer){
             // Store handler on element to prevent duplicate listeners
             if(controlsContainer._pcfCategoryHandler){
-              controlsContainer.removeEventListener('click', controlsContainer._pcfCategoryHandler);
+              controlsContainer.removeEventListener('click', controlsContainer._pcfCategoryHandler, {capture: true, passive: false});
             }
             
-            // Create handler function
+            // Create handler function - use capture phase to ensure it runs first
             controlsContainer._pcfCategoryHandler = function(e){
               var btn = e.target.closest('.pcf-category-btn');
               if(!btn) return;
               
+              // Stop all other handlers
               e.preventDefault();
               e.stopPropagation();
               e.stopImmediatePropagation();
               
               // Prevent multiple rapid clicks
-              if(btn._pcfClicking) return;
+              if(btn._pcfClicking) {
+                console.log('Click ignored - already processing');
+                return;
+              }
               btn._pcfClicking = true;
-              setTimeout(function(){ btn._pcfClicking = false; }, 300);
+              setTimeout(function(){ btn._pcfClicking = false; }, 500);
+              
+              console.log('Category button clicked - processing:', btn.textContent);
               
               // Remove active class from all buttons
               var allBtns = controlsContainer.querySelectorAll('.pcf-category-btn');
@@ -2466,31 +2472,26 @@
               
               // Get category and filter
               var category = btn.getAttribute('data-category') || '';
-              console.log('Category button clicked:', category);
+              console.log('Filtering for category:', category);
               localStorage.setItem('pcfind_builder_filter', category);
               
               // Filter parts immediately - use window function to ensure it's accessible
-              var filterFn = window.filterBuilderPartsByCategory || filterBuilderPartsByCategory;
+              var filterFn = window.filterBuilderPartsByCategory;
               if(typeof filterFn === 'function'){
-                filterFn(category);
+                try {
+                  filterFn(category);
+                  console.log('Filter function called successfully');
+                } catch(err) {
+                  console.error('Error calling filter function:', err);
+                }
               } else {
-                console.error('filterBuilderPartsByCategory function not found!');
+                console.error('filterBuilderPartsByCategory function not found in window!');
               }
               
               // Scroll to parts section after filtering
               setTimeout(function(){
-                var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
-                var firstVisibleCard = null;
-                
-                // Find first visible card
-                for(var i = 0; i < cards.length; i++){
-                  var card = cards[i];
-                  var style = window.getComputedStyle(card);
-                  if(style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity) > 0){
-                    firstVisibleCard = card;
-                    break;
-                  }
-                }
+                var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]:not([style*="display: none"])');
+                var firstVisibleCard = cards.length > 0 ? cards[0] : null;
                 
                 if(firstVisibleCard){
                   firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2500,10 +2501,15 @@
                     controlsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }
                 }
-              }, 500);
+              }, 100);
             };
             
-            controlsContainer.addEventListener('click', controlsContainer._pcfCategoryHandler, true);
+            // Remove any existing listeners first - match exactly
+            if(controlsContainer._pcfCategoryHandler){
+              controlsContainer.removeEventListener('click', controlsContainer._pcfCategoryHandler, {capture: true, passive: false});
+            }
+            // Add listener with capture phase to run before others
+            controlsContainer.addEventListener('click', controlsContainer._pcfCategoryHandler, {capture: true, passive: false});
           }
           
           // Apply active styles to existing buttons
@@ -2542,7 +2548,7 @@
             
             // Use event delegation for category buttons - ensures they always work
             if(existingControls._pcfCategoryHandler){
-              existingControls.removeEventListener('click', existingControls._pcfCategoryHandler, true);
+              existingControls.removeEventListener('click', existingControls._pcfCategoryHandler, {capture: true, passive: false});
             }
             
             existingControls._pcfCategoryHandler = function(e){
@@ -2574,31 +2580,26 @@
               btn.style.color = '#ffffff';
               
               var category = btn.getAttribute('data-category') || '';
-              console.log('Category button clicked (existing controls):', category);
+              console.log('Filtering for category (existing controls):', category);
               localStorage.setItem('pcfind_builder_filter', category);
               
               // Filter parts immediately - use window function to ensure it's accessible
-              var filterFn = window.filterBuilderPartsByCategory || filterBuilderPartsByCategory;
+              var filterFn = window.filterBuilderPartsByCategory;
               if(typeof filterFn === 'function'){
-                filterFn(category);
+                try {
+                  filterFn(category);
+                  console.log('Filter function called successfully');
+                } catch(err) {
+                  console.error('Error calling filter function:', err);
+                }
               } else {
-                console.error('filterBuilderPartsByCategory function not found!');
+                console.error('filterBuilderPartsByCategory function not found in window!');
               }
               
               // Scroll to parts section after filtering
               setTimeout(function(){
-                var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
-                var firstVisibleCard = null;
-                
-                // Find first visible card
-                for(var i = 0; i < cards.length; i++){
-                  var card = cards[i];
-                  var style = window.getComputedStyle(card);
-                  if(style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity) > 0){
-                    firstVisibleCard = card;
-                    break;
-                  }
-                }
+                var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]:not([style*="display: none"])');
+                var firstVisibleCard = cards.length > 0 ? cards[0] : null;
                 
                 if(firstVisibleCard){
                   firstVisibleCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2608,10 +2609,15 @@
                     existingControls.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }
                 }
-              }, 500);
+              }, 100);
             };
             
-            existingControls.addEventListener('click', existingControls._pcfCategoryHandler, true);
+            // Remove any existing listeners first - match exactly
+            if(existingControls._pcfCategoryHandler){
+              existingControls.removeEventListener('click', existingControls._pcfCategoryHandler, {capture: true, passive: false});
+            }
+            // Add listener with capture phase to run before others
+            existingControls.addEventListener('click', existingControls._pcfCategoryHandler, {capture: true, passive: false});
             
             // Apply active styles to existing buttons
             var existingCategoryBtns = existingControls.querySelectorAll('.pcf-category-btn');
@@ -2843,6 +2849,9 @@
         }
         
         function filterBuilderPartsByCategory(category){
+          // Make function globally accessible immediately
+          window.filterBuilderPartsByCategory = filterBuilderPartsByCategory;
+          
           var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
           console.log('filterBuilderPartsByCategory called with category:', category, 'Found cards:', cards.length);
           
@@ -2856,66 +2865,53 @@
             console.log('Trying alternative selectors, found:', cards.length);
           }
           
-          // Make function globally accessible
-          window.filterBuilderPartsByCategory = filterBuilderPartsByCategory;
-          
-          // Use requestAnimationFrame to batch DOM updates and prevent flashing
-          requestAnimationFrame(function(){
-            cards.forEach(function(card){
-              // Add transition for smooth fade
-              if(!card.style.transition){
-                card.style.transition = 'opacity 0.2s ease, visibility 0.2s ease';
-              }
+          // Filter immediately without transitions to prevent flashing
+          cards.forEach(function(card){
+            var cardText = (card.textContent || '').toLowerCase();
+            var categoryMatch = false;
+            
+            // Show all if no category selected or 'all'
+            if(!category || category === '' || category === 'all'){
+              categoryMatch = true;
+            } else {
+              // Map dropdown values to search patterns
+              var categoryMap = {
+                'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper'],
+                'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'amd', 'radeon', 'geforce', 'rx ', 'rx6700', 'rx6600', 'rx6800'],
+                'motherboard': ['motherboard', 'mobo', 'mainboard', 'board', 'msi', 'asus', 'gigabyte', 'asrock'],
+                'ram': ['ram', 'memory', 'ddr', 'ddr4', 'ddr5'],
+                'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2', 'sata'],
+                'psu': ['psu', 'power supply', 'power', 'watt', 'corsair', 'seasonic'],
+                'case': ['case', 'chassis', 'tower', 'cabinet', 'atx', 'matx'],
+                'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid', 'thermal']
+              };
               
-              var cardText = (card.textContent || '').toLowerCase();
-              var categoryMatch = false;
-              
-              // Show all if no category selected or 'all'
-              if(!category || category === '' || category === 'all'){
-                categoryMatch = true;
-              } else {
-                // Map dropdown values to search patterns
-                var categoryMap = {
-                  'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper'],
-                  'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'amd', 'radeon', 'geforce', 'rx '],
-                  'motherboard': ['motherboard', 'mobo', 'mainboard', 'board', 'msi', 'asus', 'gigabyte', 'asrock'],
-                  'ram': ['ram', 'memory', 'ddr', 'ddr4', 'ddr5'],
-                  'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2', 'sata'],
-                  'psu': ['psu', 'power supply', 'power', 'watt', 'corsair', 'seasonic'],
-                  'case': ['case', 'chassis', 'tower', 'cabinet', 'atx', 'matx'],
-                  'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid', 'thermal']
-                };
-                
-                // Get patterns for this category
-                var patterns = categoryMap[category] || [category];
-                categoryMatch = patterns.some(function(pattern){
-                  return cardText.includes(pattern);
-                });
-              }
-              
-              // Show or hide card immediately - prevent flashing
-              if(categoryMatch){
-                // Show card immediately
-                card.style.display = '';
-                card.style.opacity = '1';
-                card.style.visibility = 'visible';
-                card.style.pointerEvents = '';
-                card.removeAttribute('hidden');
-              } else {
-                // Hide card immediately
-                card.style.display = 'none';
-                card.style.opacity = '0';
-                card.style.visibility = 'hidden';
-                card.style.pointerEvents = 'none';
-              }
-            });
+              // Get patterns for this category
+              var patterns = categoryMap[category] || [category];
+              categoryMatch = patterns.some(function(pattern){
+                return cardText.includes(pattern);
+              });
+            }
+            
+            // Show or hide card immediately - no transitions to prevent flashing
+            if(categoryMatch){
+              // Show card immediately
+              card.style.display = '';
+              card.style.opacity = '1';
+              card.style.visibility = 'visible';
+              card.style.pointerEvents = '';
+              card.removeAttribute('hidden');
+            } else {
+              // Hide card immediately
+              card.style.display = 'none';
+              card.style.opacity = '0';
+              card.style.visibility = 'hidden';
+              card.style.pointerEvents = 'none';
+            }
           });
           
           console.log('Filtering complete. Category:', category, 'Cards processed:', cards.length);
         }
-        
-        // Make function globally accessible
-        window.filterBuilderPartsByCategory = filterBuilderPartsByCategory;
         
         
         function rearrangeCardButtons(){
