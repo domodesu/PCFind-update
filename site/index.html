@@ -1431,6 +1431,15 @@
         cursor: pointer;
         min-width: 180px;
         transition: all 0.2s;
+        position: relative !important;
+        z-index: 10 !important;
+        pointer-events: auto !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        -webkit-appearance: menulist;
+        -moz-appearance: menulist;
+        appearance: menulist;
       }
       #pcf-builder-filter select:hover,
       #pcf-builder-category-filter:hover,
@@ -1600,13 +1609,16 @@
         display: flex;
         gap: 8px;
         align-items: center;
-        margin-bottom: 20px;
-        padding: 0 20px;
+        margin: 16px 0 !important;
+        padding: 0 20px !important;
         justify-content: space-between;
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
         flex-wrap: wrap;
+        position: relative !important;
+        clear: both !important;
+        z-index: 1 !important;
       }
       #pcf-category-filter {
         padding: 8px 12px;
@@ -2276,6 +2288,12 @@
           
           // Set up continuous observer to remove any recreated category tabs/buttons
           var removeCategoryTabs = function(){
+            // Don't interfere with dropdown when it's open
+            var categoryFilter = document.getElementById('pcf-builder-category-filter');
+            if(categoryFilter && document.activeElement === categoryFilter){
+              return; // Dropdown is open, don't interfere
+            }
+            
             var allTabs = main.querySelectorAll('[role="tablist"]:not(#pcf-builder-category-filter), [role="tab"]:not(#pcf-builder-category-filter), button[role="tab"]:not(#pcf-builder-category-filter)');
             allTabs.forEach(function(tab){
               if(!tab.closest('#pcf-builder-controls')){
@@ -2292,21 +2310,68 @@
               if(categoryNames.some(function(cat){
                 return btnText === cat || (btnText.length <= 15 && btnText.indexOf(cat) === 0);
               })){
-                // Check if it's not inside our controls container
-                if(!btn.closest('#pcf-builder-controls') && !btn.closest('#pcf-builder-view-toggle')){
+                // Check if it's not inside our controls container or a select element
+                if(!btn.closest('#pcf-builder-controls') && !btn.closest('#pcf-builder-view-toggle') && btn.tagName !== 'SELECT'){
                   btn.style.display = 'none';
                   btn.remove();
                 }
               }
             });
+            
+            // Ensure dropdown select is never removed and is always interactive
+            var dropdownSelect = document.getElementById('pcf-builder-category-filter');
+            if(dropdownSelect){
+              dropdownSelect.style.pointerEvents = 'auto';
+              dropdownSelect.style.cursor = 'pointer';
+              dropdownSelect.style.userSelect = 'none';
+              dropdownSelect.style.position = 'relative';
+              dropdownSelect.style.zIndex = '1000';
+              // Prevent any parent from blocking clicks
+              var parent = dropdownSelect.parentElement;
+              while(parent && parent !== document.body){
+                if(parent === document.getElementById('pcf-builder-controls')){
+                  parent.style.pointerEvents = 'auto';
+                  parent.style.position = 'relative';
+                  parent.style.zIndex = '1';
+                  break;
+                }
+                parent.style.pointerEvents = 'auto';
+                parent = parent.parentElement;
+              }
+              // Ensure the dropdown opens on click - remove any event listeners that might block it
+              dropdownSelect.addEventListener('mousedown', function(e){
+                e.stopPropagation();
+              }, true);
+              dropdownSelect.addEventListener('click', function(e){
+                e.stopPropagation();
+              }, true);
+            }
           };
           
           // Run immediately
           removeCategoryTabs();
           
-          // Set up observer to continuously remove recreated tabs
-          var tabRemovalObserver = new MutationObserver(function(){
-            removeCategoryTabs();
+          // Set up observer to continuously remove recreated tabs (but debounce to avoid interference)
+          var tabRemovalTimeout;
+          var tabRemovalObserver = new MutationObserver(function(mutations){
+            // Don't trigger removal if the mutation is related to our dropdown
+            var shouldIgnore = false;
+            mutations.forEach(function(mutation){
+              if(mutation.type === 'childList'){
+                mutation.addedNodes.forEach(function(node){
+                  if(node && (node.id === 'pcf-builder-category-filter' || node.closest && node.closest('#pcf-builder-controls'))){
+                    shouldIgnore = true;
+                  }
+                });
+              }
+            });
+            
+            if(!shouldIgnore){
+              clearTimeout(tabRemovalTimeout);
+              tabRemovalTimeout = setTimeout(function(){
+                removeCategoryTabs();
+              }, 150); // Debounce to avoid interfering with dropdown
+            }
           });
           tabRemovalObserver.observe(main, {childList: true, subtree: true});
           
@@ -2603,6 +2668,21 @@
             }
           } else {
             container.insertAdjacentHTML('beforebegin', toggleHtml);
+          }
+          
+          // Ensure toggle is visible and properly positioned
+          var viewToggle = document.getElementById('pcf-view-toggle');
+          if(viewToggle){
+            viewToggle.style.display = 'flex';
+            viewToggle.style.visibility = 'visible';
+            viewToggle.style.opacity = '1';
+            viewToggle.style.position = 'relative';
+            viewToggle.style.clear = 'both';
+            viewToggle.style.width = '100%';
+            viewToggle.style.boxSizing = 'border-box';
+            viewToggle.style.margin = '16px 0';
+            viewToggle.style.padding = '0 20px';
+            viewToggle.style.zIndex = '1';
           }
           
           // Find parts container - look for grid or flex containers with cards
