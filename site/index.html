@@ -1468,12 +1468,23 @@
         background: #f9fafb;
       }
       
-      /* Hide and remove old category tabs on PC Builder */
-      body[data-page="pc-builder"] [role="tablist"] {
+      /* Hide and remove old category tabs on PC Builder - completely hide bottom selection buttons */
+      body[data-page="pc-builder"] [role="tablist"],
+      [role="tablist"] {
         display: none !important;
         visibility: hidden !important;
         height: 0 !important;
         overflow: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        position: absolute !important;
+        left: -9999px !important;
+      }
+      
+      /* Hide individual tabs at the bottom */
+      body[data-page="pc-builder"] [role="tab"] {
+        display: none !important;
+        visibility: hidden !important;
       }
       
       /* Category button styling */
@@ -1527,8 +1538,11 @@
         align-items: center;
         margin: 16px 0 !important;
         padding: 0 20px !important;
-        flex-wrap: wrap;
-        justify-content: space-between;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 8px !important;
         visibility: visible !important;
         opacity: 1 !important;
         position: relative !important;
@@ -1575,17 +1589,21 @@
       body[data-page="pc-builder"] [data-testid^="card-builder-part-"] {
         padding: 16px;
         gap: 12px;
+        transition: opacity 0.25s ease-in-out, visibility 0.25s ease-in-out !important;
       }
       
       /* Mobile adjustments */
       @media (max-width: 768px) {
         #pcf-builder-controls {
           padding: 0 12px;
-          flex-direction: column;
-          gap: 12px;
+          flex-direction: row;
+          flex-wrap: wrap;
+          gap: 8px;
+          align-items: center;
         }
         #pcf-builder-categories {
           width: 100%;
+          order: 1;
         }
         .pcf-builder-category-select {
           width: 100%;
@@ -1593,6 +1611,7 @@
         #pcf-builder-view-toggle {
           width: 100%;
           justify-content: center;
+          order: 2;
         }
         .pcf-builder-view-toggle-btn {
           flex: 1;
@@ -2180,9 +2199,9 @@
             }
           }
           
-          // Create organized category buttons and view toggle container
-          var controlsHtml = '<div id="pcf-builder-controls" style="display:flex;flex-direction:column;gap:16px;margin:16px 0;padding:0 20px;position:relative;clear:both;width:100%;box-sizing:border-box;z-index:1;">';
-          controlsHtml += '<div id="pcf-builder-categories" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%;">';
+          // Create organized category buttons and view toggle in one row
+          var controlsHtml = '<div id="pcf-builder-controls" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:16px 0;padding:0 20px;position:relative;clear:both;width:100%;box-sizing:border-box;z-index:1;">';
+          controlsHtml += '<div id="pcf-builder-categories" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1;min-width:0;">';
           
           // Add category buttons
           categoryButtons.forEach(function(btn){
@@ -2191,7 +2210,7 @@
           });
           
           controlsHtml += '</div>';
-          controlsHtml += '<div id="pcf-builder-view-toggle" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;">';
+          controlsHtml += '<div id="pcf-builder-view-toggle" style="display:flex;gap:8px;align-items:center;flex-shrink:0;">';
           controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
           controlsHtml += '<span>⊞</span> <span>Grid</span>';
           controlsHtml += '</button>';
@@ -2273,7 +2292,11 @@
               // Get category and filter
               var category = this.getAttribute('data-category') || '';
               localStorage.setItem('pcfind_builder_filter', category);
-              filterBuilderPartsByCategory(category);
+              
+              // Use requestAnimationFrame to prevent flashing
+              requestAnimationFrame(function(){
+                filterBuilderPartsByCategory(category);
+              });
             });
             
             // Apply active styles
@@ -2288,7 +2311,10 @@
           var activeBtn = document.querySelector('.pcf-category-btn-active');
           if(activeBtn){
             var initialCategory = activeBtn.getAttribute('data-category') || '';
-            filterBuilderPartsByCategory(initialCategory);
+            // Delay initial filter to prevent flash on page load
+            setTimeout(function(){
+              filterBuilderPartsByCategory(initialCategory);
+            }, 100);
           }
           
           // Remove any old dropdown if exists
@@ -2425,35 +2451,64 @@
           // Normalize category - handle empty string, 'all', and normalize case
           category = (category || '').toLowerCase().trim();
           
-          cards.forEach(function(card){
-            var cardText = (card.textContent || '').toLowerCase();
-            var categoryMatch = false;
-            
-            // Show all if no category selected or 'all'
-            if(!category || category === '' || category === 'all'){
-              categoryMatch = true;
-            } else {
-              // Map dropdown values to search patterns
-              var categoryMap = {
-                'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper'],
-                'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'amd', 'radeon', 'geforce', 'rx '],
-                'motherboard': ['motherboard', 'mobo', 'mainboard', 'board', 'msi', 'asus', 'gigabyte', 'asrock'],
-                'ram': ['ram', 'memory', 'ddr', 'ddr4', 'ddr5'],
-                'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2', 'sata'],
-                'psu': ['psu', 'power supply', 'power', 'watt', 'corsair', 'seasonic'],
-                'case': ['case', 'chassis', 'tower', 'cabinet', 'atx', 'matx'],
-                'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid', 'thermal']
-              };
+          // Use requestAnimationFrame to batch DOM updates and prevent flashing
+          requestAnimationFrame(function(){
+            cards.forEach(function(card){
+              // Add transition for smooth fade
+              if(!card.style.transition){
+                card.style.transition = 'opacity 0.2s ease, visibility 0.2s ease';
+              }
               
-              // Get patterns for this category
-              var patterns = categoryMap[category] || [category];
-              categoryMatch = patterns.some(function(pattern){
-                return cardText.includes(pattern);
-              });
-            }
-            
-            // Show or hide card
-            card.style.display = categoryMatch ? '' : 'none';
+              var cardText = (card.textContent || '').toLowerCase();
+              var categoryMatch = false;
+              
+              // Show all if no category selected or 'all'
+              if(!category || category === '' || category === 'all'){
+                categoryMatch = true;
+              } else {
+                // Map dropdown values to search patterns
+                var categoryMap = {
+                  'cpu': ['cpu', 'processor', 'intel', 'amd', 'ryzen', 'core i', 'i3-', 'i5-', 'i7-', 'i9-', 'pentium', 'celeron', 'xeon', 'athlon', 'threadripper'],
+                  'gpu': ['gpu', 'graphics', 'video card', 'nvidia', 'rtx', 'gtx', 'amd', 'radeon', 'geforce', 'rx '],
+                  'motherboard': ['motherboard', 'mobo', 'mainboard', 'board', 'msi', 'asus', 'gigabyte', 'asrock'],
+                  'ram': ['ram', 'memory', 'ddr', 'ddr4', 'ddr5'],
+                  'storage': ['storage', 'ssd', 'hdd', 'hard drive', 'nvme', 'm.2', 'sata'],
+                  'psu': ['psu', 'power supply', 'power', 'watt', 'corsair', 'seasonic'],
+                  'case': ['case', 'chassis', 'tower', 'cabinet', 'atx', 'matx'],
+                  'cooling': ['cooler', 'cooling', 'fan', 'heatsink', 'aio', 'liquid', 'thermal']
+                };
+                
+                // Get patterns for this category
+                var patterns = categoryMap[category] || [category];
+                categoryMatch = patterns.some(function(pattern){
+                  return cardText.includes(pattern);
+                });
+              }
+              
+              // Show or hide card with smooth transition - prevent flashing
+              if(categoryMatch){
+                // Show card - set display first, then fade in
+                card.style.display = '';
+                requestAnimationFrame(function(){
+                  card.style.opacity = '1';
+                  card.style.visibility = 'visible';
+                  card.style.pointerEvents = '';
+                });
+              } else {
+                // Hide card - fade out first, then remove from layout
+                card.style.opacity = '0';
+                card.style.visibility = 'hidden';
+                card.style.pointerEvents = 'none';
+                // Remove from layout after fade completes
+                requestAnimationFrame(function(){
+                  setTimeout(function(){
+                    if(card.style.opacity === '0' && card.style.visibility === 'hidden'){
+                      card.style.display = 'none';
+                    }
+                  }, 220);
+                });
+              }
+            });
           });
         }
         
