@@ -1534,21 +1534,39 @@
       /* PC Builder categories and view toggle container */
       #pcf-builder-controls {
         display: flex !important;
-        gap: 12px;
-        align-items: center;
+        flex-direction: row !important;
+        gap: 8px !important;
+        align-items: center !important;
         margin: 16px 0 !important;
         padding: 0 20px !important;
-        flex-direction: row !important;
         flex-wrap: wrap !important;
         justify-content: space-between !important;
-        align-items: center !important;
-        gap: 8px !important;
         visibility: visible !important;
         opacity: 1 !important;
         position: relative !important;
         clear: both !important;
         width: 100% !important;
         box-sizing: border-box !important;
+      }
+      
+      /* Ensure view toggle is inline, not below */
+      #pcf-builder-controls #pcf-builder-view-toggle {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-shrink: 0 !important;
+        order: 2 !important;
+      }
+      
+      #pcf-builder-controls #pcf-builder-categories {
+        order: 1 !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+      }
+      
+      /* Hide any view toggle sections outside of controls */
+      #pcf-builder-view-toggle:not(#pcf-builder-controls #pcf-builder-view-toggle) {
+        display: none !important;
+        visibility: hidden !important;
       }
       #pcf-builder-categories {
         display: flex !important;
@@ -2152,6 +2170,24 @@
           var oldControls = document.getElementById('pcf-builder-controls');
           if(oldControls) oldControls.remove();
           
+          // Remove any orphaned view toggle sections (bottom sections)
+          var orphanedViewToggle = document.querySelectorAll('#pcf-builder-view-toggle:not(#pcf-builder-controls #pcf-builder-view-toggle)');
+          orphanedViewToggle.forEach(function(el){
+            if(el && !el.closest('#pcf-builder-controls')){
+              el.remove();
+            }
+          });
+          
+          // Also remove any pcf-view-toggle (browse parts) if it exists on PC builder page
+          var path = (location.pathname||'').toLowerCase();
+          var isPCBuilder = path.includes('/pc-builder') || path.includes('/pcbuilder') || path.endsWith('/pc-builder');
+          if(isPCBuilder){
+            var browsePartsToggle = document.getElementById('pcf-view-toggle');
+            if(browsePartsToggle){
+              browsePartsToggle.remove();
+            }
+          }
+          
           var main = document.querySelector('main');
           if(!main) return;
           
@@ -2262,9 +2298,23 @@
           var controls = document.getElementById('pcf-builder-controls');
           if(controls){
             controls.style.display = 'flex';
+            controls.style.flexDirection = 'row';
+            controls.style.flexWrap = 'wrap';
+            controls.style.justifyContent = 'space-between';
+            controls.style.alignItems = 'center';
+            controls.style.gap = '8px';
             controls.style.visibility = 'visible';
             controls.style.opacity = '1';
           }
+          
+          // Remove any duplicate bottom sections that might exist
+          var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle');
+          var controlsContainer = document.getElementById('pcf-builder-controls');
+          allViewToggles.forEach(function(toggle){
+            if(!toggle.closest('#pcf-builder-controls') || (controlsContainer && !controlsContainer.contains(toggle))){
+              toggle.remove();
+            }
+          });
           
           // Remove original tablist (we've replaced it with our buttons)
           if(tabList){
@@ -2382,6 +2432,25 @@
             existingControls.remove();
           }
           
+          // Remove any duplicate/old view toggle sections that might be separate
+          var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle');
+          var controlsContainer = document.getElementById('pcf-builder-controls');
+          allViewToggles.forEach(function(toggle){
+            if(!toggle.closest('#pcf-builder-controls') || (controlsContainer && !controlsContainer.contains(toggle))){
+              toggle.remove();
+            }
+          });
+          
+          // Also remove any pcf-view-toggle (browse parts) if it exists on PC builder page
+          var browsePartsViewToggle = document.getElementById('pcf-view-toggle');
+          if(browsePartsViewToggle){
+            var path = (location.pathname||'').toLowerCase();
+            var isPCBuilder = path.includes('/pc-builder') || path.includes('/pcbuilder') || path.endsWith('/pc-builder');
+            if(isPCBuilder){
+              browsePartsViewToggle.remove();
+            }
+          }
+          
           // Add view toggle functionality
           var toggleBtns = document.querySelectorAll('.pcf-builder-view-toggle-btn');
           var container = document.querySelector('main');
@@ -2442,6 +2511,34 @@
               }, 100);
             });
             cardObserver.observe(main, {childList: true, subtree: true});
+          }
+          
+          // Cleanup: Remove any orphaned bottom view toggle sections
+          setTimeout(function(){
+            var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle');
+            var controlsContainer = document.getElementById('pcf-builder-controls');
+            allViewToggles.forEach(function(toggle){
+              if(!toggle.closest('#pcf-builder-controls') || (controlsContainer && !controlsContainer.contains(toggle))){
+                console.log('Removing orphaned view toggle:', toggle);
+                toggle.remove();
+              }
+            });
+          }, 500);
+          
+          // Also remove any duplicate sections that might be created later
+          var cleanupObserver = new MutationObserver(function(){
+            var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle');
+            var controlsContainer = document.getElementById('pcf-builder-controls');
+            allViewToggles.forEach(function(toggle){
+              if(!toggle.closest('#pcf-builder-controls') || (controlsContainer && !controlsContainer.contains(toggle))){
+                console.log('Removing orphaned view toggle detected:', toggle);
+                toggle.remove();
+              }
+            });
+          });
+          
+          if(main){
+            cleanupObserver.observe(main, {childList: true, subtree: true});
           }
         }
         
@@ -3716,13 +3813,15 @@
           
           if(chatHistory.length === 0){
             html += '<div class="pcf-chat-welcome" style="text-align:center;padding:40px 20px;">';
-            html += '<h2 class="pcf-chat-welcome-title" style="margin-bottom:16px;">🤖 PC Building AI Assistant</h2>';
-            html += '<p class="pcf-chat-welcome-text">Ask me anything about PC parts, compatibility, builds, or recommendations!</p>';
+            html += '<h2 class="pcf-chat-welcome-title" style="margin-bottom:16px;">🤖 PC Hardware Specialist AI</h2>';
+            html += '<p class="pcf-chat-welcome-text">I specialize in PC hardware only - components, builds, specs, and compatibility questions!</p>';
+            html += '<p class="pcf-chat-welcome-text" style="margin-top:8px;font-size:0.85rem;color:#94a3b8;">CPU • GPU • RAM • Storage • PSU • Motherboard • Case • Cooling</p>';
             html += '<p class="pcf-chat-welcome-text" style="margin-top:12px;font-size:0.9rem;">Examples:</p>';
             html += '<ul class="pcf-chat-welcome-text" style="list-style:none;padding:0;margin-top:8px;font-size:0.9rem;">';
             html += '<li>• What CPU should I pair with RTX 4070?</li>';
-            html += '<li>• Is 16GB RAM enough for gaming?</li>';
+            html += '<li>• Compare DDR4 vs DDR5 RAM performance</li>';
             html += '<li>• Help me build a ₱50,000 gaming PC</li>';
+            html += '<li>• Is 750W PSU enough for RTX 4080?</li>';
             html += '</ul></div>';
           }
           
@@ -3775,7 +3874,7 @@
           
           html += '<div class="pcf-chat-input-area">';
           html += '<div class="pcf-chat-input-wrap">';
-          html += '<textarea class="pcf-chat-input" id="pcf-chat-input" placeholder="Type your question..." rows="1"></textarea>';
+          html += '<textarea class="pcf-chat-input" id="pcf-chat-input" placeholder="Ask about PC components, builds, or hardware specs..." rows="1"></textarea>';
           html += '<button class="pcf-chat-send" id="pcf-chat-send">Send</button>';
           html += '</div></div>';
           html += '</div>'; // Close pcf-chat-main
