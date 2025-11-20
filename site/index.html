@@ -1469,8 +1469,8 @@
       }
       
       /* Hide and remove old category tabs on PC Builder - completely hide bottom selection buttons */
-      body[data-page="pc-builder"] [role="tablist"],
-      [role="tablist"] {
+      body[data-page="pc-builder"] [role="tablist"]:not(#pcf-builder-controls [role="tablist"]),
+      [role="tablist"]:not(#pcf-builder-controls [role="tablist"]) {
         display: none !important;
         visibility: hidden !important;
         height: 0 !important;
@@ -1479,10 +1479,23 @@
         pointer-events: none !important;
         position: absolute !important;
         left: -9999px !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
       
-      /* Hide individual tabs at the bottom */
-      body[data-page="pc-builder"] [role="tab"] {
+      /* Hide individual tabs at the bottom (but not inside pcf-builder-controls) */
+      body[data-page="pc-builder"] [role="tab"]:not(#pcf-builder-controls [role="tab"]),
+      body[data-page="pc-builder"] [role="tab"]:not(.pcf-category-btn) {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      /* Hide any section below controls that has category buttons */
+      body[data-page="pc-builder"] #pcf-builder-controls ~ * [role="tablist"],
+      body[data-page="pc-builder"] #pcf-builder-controls ~ * [role="tab"] {
         display: none !important;
         visibility: hidden !important;
       }
@@ -2307,7 +2320,7 @@
             controls.style.opacity = '1';
           }
           
-          // Remove any duplicate bottom sections that might exist
+          // Immediate cleanup: Remove any duplicate bottom sections that might exist
           var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle');
           var controlsContainer = document.getElementById('pcf-builder-controls');
           allViewToggles.forEach(function(toggle){
@@ -2316,9 +2329,102 @@
             }
           });
           
+          // Immediate cleanup: Remove ALL tablists and category buttons outside controls (bottom selection)
+          setTimeout(function(){
+            var allTabLists = main ? main.querySelectorAll('[role="tablist"]') : document.querySelectorAll('[role="tablist"]');
+            var controlsContainerCheck = document.getElementById('pcf-builder-controls');
+            allTabLists.forEach(function(tl){
+              if(tl && tl.id !== 'pcf-builder-controls' && (!tl.closest('#pcf-builder-controls') || (controlsContainerCheck && !controlsContainerCheck.contains(tl)))){
+                console.log('Removing duplicate tablist (bottom selection) - immediate cleanup:', tl);
+                tl.style.display = 'none';
+                tl.remove();
+              }
+            });
+            
+            // Remove any category buttons that are siblings of controls or below them
+            var allButtons = main ? main.querySelectorAll('button') : document.querySelectorAll('button');
+            var controlsContainerCheck2 = document.getElementById('pcf-builder-controls');
+            allButtons.forEach(function(btn){
+              if(btn.closest('#pcf-builder-controls') || btn.closest('#pcf-builder-categories')){
+                return; // Skip buttons inside our controls
+              }
+              var btnText = (btn.textContent || '').trim().toLowerCase();
+              var isCategoryBtn = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling'].some(function(cat){
+                return btnText === cat;
+              });
+              if(isCategoryBtn){
+                // Check if this button is below or after the controls
+                if(controlsContainerCheck2){
+                  var isBelow = false;
+                  var currentNode = controlsContainerCheck2.nextSibling;
+                  while(currentNode){
+                    if(currentNode === btn || (currentNode.contains && currentNode.contains(btn))){
+                      isBelow = true;
+                      break;
+                    }
+                    currentNode = currentNode.nextSibling;
+                  }
+                  if(isBelow || (btn.compareDocumentPosition && (btn.compareDocumentPosition(controlsContainerCheck2) & Node.DOCUMENT_POSITION_FOLLOWING))){
+                    console.log('Removing duplicate category button (bottom selection) - immediate cleanup:', btn);
+                    btn.style.display = 'none';
+                    btn.remove();
+                  }
+                }
+              }
+            });
+          }, 100);
+          
           // Remove original tablist (we've replaced it with our buttons)
           if(tabList){
             tabList.remove();
+          }
+          
+          // Aggressively remove ALL tablist elements and duplicate category buttons (bottom selection)
+          var allTabLists = main ? main.querySelectorAll('[role="tablist"]') : document.querySelectorAll('[role="tablist"]');
+          allTabLists.forEach(function(tl){
+            if(tl && tl.id !== 'pcf-builder-controls'){
+              console.log('Removing tablist:', tl);
+              tl.remove();
+            }
+          });
+          
+          // Remove any category buttons that are NOT inside pcf-builder-controls
+          var allCategoryBtns = document.querySelectorAll('button[role="tab"], [role="tab"]');
+          var controlsContainer = document.getElementById('pcf-builder-controls');
+          allCategoryBtns.forEach(function(btn){
+            // Only keep buttons inside pcf-builder-controls
+            if(!btn.closest('#pcf-builder-controls') && !btn.closest('#pcf-builder-categories')){
+              var btnText = (btn.textContent || '').trim().toLowerCase();
+              var isCategoryBtn = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling', 'all', 'all categories'].some(function(cat){
+                return btnText.includes(cat);
+              });
+              if(isCategoryBtn || btn.hasAttribute('role') && btn.getAttribute('role') === 'tab'){
+                console.log('Removing duplicate category button:', btn);
+                btn.remove();
+              }
+            }
+          });
+          
+          // Also remove any tab buttons that might be siblings or below controls
+          var controlsContainer2 = document.getElementById('pcf-builder-controls');
+          if(controlsContainer2 && controlsContainer2.parentElement){
+            var siblings = Array.from(controlsContainer2.parentElement.children);
+            siblings.forEach(function(sibling){
+              if(sibling !== controlsContainer2 && sibling !== controlsContainer2.parentElement){
+                if(sibling.querySelector('[role="tab"]') || sibling.querySelector('[role="tablist"]')){
+                  var hasCategoryButtons = Array.from(sibling.querySelectorAll('button')).some(function(btn){
+                    var btnText = (btn.textContent || '').trim().toLowerCase();
+                    return ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling'].some(function(cat){
+                      return btnText === cat;
+                    });
+                  });
+                  if(hasCategoryButtons){
+                    console.log('Removing duplicate category section:', sibling);
+                    sibling.remove();
+                  }
+                }
+              }
+            });
           }
           
           // Set up category button click handlers
@@ -2527,6 +2633,7 @@
           
           // Also remove any duplicate sections that might be created later
           var cleanupObserver = new MutationObserver(function(){
+            // Remove orphaned view toggles
             var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle');
             var controlsContainer = document.getElementById('pcf-builder-controls');
             allViewToggles.forEach(function(toggle){
@@ -2535,11 +2642,103 @@
                 toggle.remove();
               }
             });
+            
+            // Remove duplicate tablists and category buttons (bottom selection)
+            var allTabLists = document.querySelectorAll('[role="tablist"]');
+            allTabLists.forEach(function(tl){
+              if(tl && tl.id !== 'pcf-builder-controls' && !tl.closest('#pcf-builder-controls')){
+                console.log('Removing duplicate tablist:', tl);
+                tl.remove();
+              }
+            });
+            
+            // Remove any category buttons outside of pcf-builder-controls
+            var allCategoryBtns = document.querySelectorAll('button[role="tab"], [role="tab"]');
+            var controlsContainer2 = document.getElementById('pcf-builder-controls');
+            allCategoryBtns.forEach(function(btn){
+              if(!btn.closest('#pcf-builder-controls') && !btn.closest('#pcf-builder-categories')){
+                var btnText = (btn.textContent || '').trim().toLowerCase();
+                var isCategoryBtn = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling', 'all', 'all categories'].some(function(cat){
+                  return btnText === cat || btnText.includes(cat);
+                });
+                if(isCategoryBtn || (btn.hasAttribute('role') && btn.getAttribute('role') === 'tab')){
+                  console.log('Removing duplicate category button (bottom selection):', btn);
+                  btn.remove();
+                }
+              }
+            });
+            
+            // Remove any sections containing category buttons below controls
+            if(controlsContainer2 && main){
+              var allSections = main.querySelectorAll('div, section, nav');
+              allSections.forEach(function(section){
+                if(section === controlsContainer2 || section.closest('#pcf-builder-controls')){
+                  return; // Skip controls container itself
+                }
+                var hasCategoryButtons = false;
+                var categoryBtnsInSection = section.querySelectorAll('button');
+                categoryBtnsInSection.forEach(function(btn){
+                  var btnText = (btn.textContent || '').trim().toLowerCase();
+                  var isCategoryBtn = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling'].some(function(cat){
+                    return btnText === cat;
+                  });
+                  if(isCategoryBtn && (!btn.closest('#pcf-builder-controls'))){
+                    hasCategoryButtons = true;
+                  }
+                });
+                
+                // Check if this section is below the controls
+                var isBelow = false;
+                if(controlsContainer2.nextSibling){
+                  var currentNode = controlsContainer2.nextSibling;
+                  while(currentNode){
+                    if(currentNode === section || (currentNode.contains && currentNode.contains(section))){
+                      isBelow = true;
+                      break;
+                    }
+                    currentNode = currentNode.nextSibling;
+                  }
+                }
+                
+                if(hasCategoryButtons && (isBelow || section.compareDocumentPosition(controlsContainer2) & Node.DOCUMENT_POSITION_FOLLOWING)){
+                  console.log('Removing duplicate category section (bottom selection):', section);
+                  section.remove();
+                }
+              });
+            }
           });
           
           if(main){
             cleanupObserver.observe(main, {childList: true, subtree: true});
           }
+          
+          // Initial cleanup after a short delay to catch any that are created after init
+          setTimeout(function(){
+            // Remove all tablists except the one inside controls
+            var allTabLists = main ? main.querySelectorAll('[role="tablist"]') : document.querySelectorAll('[role="tablist"]');
+            allTabLists.forEach(function(tl){
+              if(tl && tl.id !== 'pcf-builder-controls' && !tl.closest('#pcf-builder-controls')){
+                console.log('Removing duplicate tablist (bottom selection):', tl);
+                tl.remove();
+              }
+            });
+            
+            // Remove any category buttons outside of controls
+            var allCategoryBtns2 = document.querySelectorAll('button[role="tab"], [role="tab"]');
+            var controlsContainer3 = document.getElementById('pcf-builder-controls');
+            allCategoryBtns2.forEach(function(btn){
+              if(!btn.closest('#pcf-builder-controls') && !btn.closest('#pcf-builder-categories')){
+                var btnText = (btn.textContent || '').trim().toLowerCase();
+                var isCategoryBtn = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooling', 'all', 'all categories'].some(function(cat){
+                  return btnText === cat || btnText.includes(cat);
+                });
+                if(isCategoryBtn || (btn.hasAttribute('role') && btn.getAttribute('role') === 'tab')){
+                  console.log('Removing duplicate category button (bottom selection) - delayed cleanup:', btn);
+                  btn.remove();
+                }
+              }
+            });
+          }, 1000);
         }
         
         function filterBuilderPartsByCategory(category){
