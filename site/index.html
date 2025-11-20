@@ -1418,7 +1418,10 @@
         display: flex;
         flex-direction: column;
       }
-      #pcf-builder-filter select {
+      /* Category dropdown styles - works for both IDs */
+      #pcf-builder-filter select,
+      #pcf-builder-category-filter,
+      .pcf-builder-category-select {
         padding: 10px 14px;
         border-radius: 8px;
         border: 1px solid #374151;
@@ -1429,21 +1432,29 @@
         min-width: 180px;
         transition: all 0.2s;
       }
-      #pcf-builder-filter select:hover {
+      #pcf-builder-filter select:hover,
+      #pcf-builder-category-filter:hover,
+      .pcf-builder-category-select:hover {
         border-color: #4b5563;
         background: #374151;
       }
-      #pcf-builder-filter select:focus {
+      #pcf-builder-filter select:focus,
+      #pcf-builder-category-filter:focus,
+      .pcf-builder-category-select:focus {
         outline: none;
         border-color: #2563eb;
         box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
       }
-      .light #pcf-builder-filter select {
+      .light #pcf-builder-filter select,
+      .light #pcf-builder-category-filter,
+      .light .pcf-builder-category-select {
         background: #ffffff;
         border-color: #e5e7eb;
         color: #111827;
       }
-      .light #pcf-builder-filter select:hover {
+      .light #pcf-builder-filter select:hover,
+      .light #pcf-builder-category-filter:hover,
+      .light .pcf-builder-category-select:hover {
         border-color: #d1d5db;
         background: #f9fafb;
       }
@@ -1560,11 +1571,23 @@
           text-overflow: ellipsis;
         }
         
-        body[data-page="pc-builder"] [role="tablist"] {
-          display: flex;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: thin;
+        /* Ensure dropdown is full width on mobile */
+        #pcf-builder-controls {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        #pcf-builder-categories {
+          width: 100%;
+        }
+        #pcf-builder-category-filter,
+        .pcf-builder-category-select,
+        #pcf-builder-filter select {
+          width: 100%;
+          min-width: 100%;
+        }
+        #pcf-builder-view-toggle {
+          width: 100%;
+          justify-content: center;
         }
       }
       
