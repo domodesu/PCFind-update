@@ -2474,8 +2474,8 @@
                   }
                   if(isBelow || (btn.compareDocumentPosition && (btn.compareDocumentPosition(controlsContainerCheck2) & Node.DOCUMENT_POSITION_FOLLOWING))){
                     console.log('Removing duplicate category button (bottom selection) - immediate cleanup:', btn);
-                    btn.style.display = 'none';
-                    btn.remove();
+                  btn.style.display = 'none';
+                  btn.remove();
                   }
                 }
               }
@@ -2901,8 +2901,8 @@
                 
                 // Update container classes
                 if(partsContainer){
-                  partsContainer.classList.remove('grid-view', 'stack-view');
-                  partsContainer.classList.add(view + '-view');
+                partsContainer.classList.remove('grid-view', 'stack-view');
+                partsContainer.classList.add(view + '-view');
                   console.log('Container view updated to:', view);
                 }
                 
@@ -3278,7 +3278,7 @@
           var path = (location.pathname||'').toLowerCase();
           var isPCBuilder = path.includes('/pc-builder') || path.endsWith('/pc-builder') || path === '/pc-builder/';
           if(isPCBuilder){
-            setTimeout(initPCBuilderFilter, 300);
+          setTimeout(initPCBuilderFilter, 300);
           }
         });
         routeObserver.observe(document.body, {childList: true, subtree: true});
@@ -5591,7 +5591,7 @@
                 <a href="/signup.html">Upgrade to Pro</a>
               </article>
               <article class="pcf-plan-card">
-                <span class="pcf-plan-badge">Premium</span> 
+                <span class="pcf-plan-badge">Premium</span>
                 <h2 class="pcf-plan-title">Premium Shop</h2>
                 <p class="pcf-plan-price">₱990 <span>/ month</span></p>
                 <ul class="pcf-plan-details">
