@@ -1094,12 +1094,9 @@
                 const item = document.getElementById('pcf-open-account'); if(item) item.textContent = data.user.username;
                 const lo = document.getElementById('pcf-logout'); if(lo) lo.style.display = 'block';
               }, 100);
-              // Redirect to home page after successful login
+              // Refresh page to update UI after successful login
               setTimeout(()=>{
-                const path = (location.pathname||'').toLowerCase();
-                if(path !== '/' && !path.endsWith('/index.html') && !path.endsWith('/index')){
-                  window.location.href = '/';
-                }
+                window.location.reload();
               }, 500);
             }else{
               errorEl.textContent=data.error||'Login failed. Please check your credentials.'; errorEl.style.display='block';
@@ -1122,7 +1119,14 @@
           eye.textContent = shown ? '👁' : '🙈';
         });
         avatar.addEventListener('click', ()=>{ dd.style.display = dd.style.display==='block'?'none':'block'; });
-        ddLogout.addEventListener('click', ()=>{ clearUser(); showToast('Signed out'); });
+        ddLogout.addEventListener('click', ()=>{ 
+          clearUser(); 
+          showToast('Signed out'); 
+          // Refresh page to update UI after logout
+          setTimeout(()=>{
+            window.location.reload();
+          }, 500);
+        });
         // Profile modal handlers (ensure Close/Save work)
         (function(){
           const prof = document.getElementById('pcf-profile');
