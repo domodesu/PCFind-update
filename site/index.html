@@ -2942,28 +2942,13 @@
           
           // Also remove any duplicate sections that might be created later
           var cleanupObserver = new MutationObserver(function(){
-            // Remove any controls containers that might appear
-            var controlsContainer = document.getElementById('pcf-builder-controls');
-            if(controlsContainer){
-              controlsContainer.remove();
-            }
+            // DON'T remove our controls container - it's needed for category buttons!
+            // Only remove orphaned/duplicate controls containers that are not properly set up
             
-            // Remove any view toggle buttons
+            // Remove any view toggle buttons (deprecated)
             var allViewToggles = document.querySelectorAll('#pcf-builder-view-toggle, .pcf-builder-view-toggle-mobile, .pcf-builder-view-toggle-btn');
             allViewToggles.forEach(function(toggle){
                 toggle.remove();
-            });
-            
-            // Remove any builder part cards that might appear
-            var allBuilderCards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
-            allBuilderCards.forEach(function(card){
-              card.remove();
-            });
-            
-            // Remove parts container classes
-            var allPartsContainers = document.querySelectorAll('.pcf-builder-parts-container');
-            allPartsContainers.forEach(function(container){
-              container.classList.remove('pcf-builder-parts-container', 'grid-view', 'stack-view');
             });
             
             // Remove duplicate tablists and category buttons (bottom selection)
