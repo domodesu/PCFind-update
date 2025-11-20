@@ -1731,7 +1731,7 @@
         }
       }
       
-      /* View Toggle Styles */
+      /* View Toggle Styles for Browse Parts */
       .pcf-view-toggle {
         display: flex;
         gap: 8px;
@@ -1746,6 +1746,36 @@
         position: relative !important;
         clear: both !important;
         z-index: 1 !important;
+      }
+      /* Browse Parts toggle visibility - desktop shows .pcf-view-toggle, mobile shows .pcf-view-toggle-mobile */
+      @media (max-width: 768px) {
+        /* Hide desktop toggle on mobile */
+        .pcf-view-toggle:not(.pcf-view-toggle-mobile) {
+          display: none !important;
+        }
+        /* Show mobile toggle on mobile */
+        .pcf-view-toggle-mobile {
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 12px !important;
+          margin: 16px 0 !important;
+          padding: 0 20px !important;
+          justify-content: center !important;
+          width: 100% !important;
+        }
+        .pcf-view-toggle-mobile .pcf-view-toggle-btn {
+          flex: 1;
+        }
+      }
+      @media (min-width: 769px) {
+        /* Hide mobile toggle on desktop */
+        .pcf-view-toggle-mobile {
+          display: none !important;
+        }
+        /* Show desktop toggle on desktop */
+        .pcf-view-toggle:not(.pcf-view-toggle-mobile) {
+          display: flex !important;
+        }
       }
       #pcf-category-filter {
         padding: 8px 12px;
@@ -3062,6 +3092,7 @@
           var savedView = localStorage.getItem('pcfind_parts_view') || 'grid';
           
           // Create toggle buttons and filter
+          // Desktop toggle (hidden on mobile via CSS)
           var toggleHtml = '<div id="pcf-view-toggle" class="pcf-view-toggle">';
           toggleHtml += '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;flex:1">';
           // Filter dropdown
@@ -3082,6 +3113,28 @@
           toggleHtml += '<span>⊞</span> <span>Grid</span>';
           toggleHtml += '</button>';
           toggleHtml += '<button class="pcf-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
+          toggleHtml += '<span>☰</span> <span>Stack</span>';
+          toggleHtml += '</button>';
+          toggleHtml += '</div>';
+          toggleHtml += '</div>';
+          // Mobile toggle (hidden on desktop via CSS)
+          toggleHtml += '<div class="pcf-view-toggle-mobile" style="display:none;flex-direction:column;gap:12px;margin:16px 0;padding:0 20px;justify-content:center;width:100%;">';
+          toggleHtml += '<select id="pcf-category-filter-mobile" style="padding:8px 12px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#e5e7eb;font-size:14px;cursor:pointer;width:100%">';
+          toggleHtml += '<option value="">All Categories</option>';
+          toggleHtml += '<option value="CPU">CPU</option>';
+          toggleHtml += '<option value="GPU">GPU</option>';
+          toggleHtml += '<option value="Motherboard">Motherboard</option>';
+          toggleHtml += '<option value="RAM">RAM</option>';
+          toggleHtml += '<option value="Storage">Storage</option>';
+          toggleHtml += '<option value="PSU">PSU</option>';
+          toggleHtml += '<option value="Case">Case</option>';
+          toggleHtml += '<option value="Cooling">Cooling</option>';
+          toggleHtml += '</select>';
+          toggleHtml += '<div style="display:flex;gap:8px;width:100%">';
+          toggleHtml += '<button class="pcf-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View" style="flex:1">';
+          toggleHtml += '<span>⊞</span> <span>Grid</span>';
+          toggleHtml += '</button>';
+          toggleHtml += '<button class="pcf-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View" style="flex:1">';
           toggleHtml += '<span>☰</span> <span>Stack</span>';
           toggleHtml += '</button>';
           toggleHtml += '</div>';
