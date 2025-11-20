@@ -238,9 +238,13 @@
       /* Responsive: on small widths, move primary nav into burger */
       .pcf-nav-mobile{display:none}
       /* Ensure Browse Parts is always visible on desktop */
-      nav a[href="/browse-parts"]{
+      nav a[href="/browse-parts"],
+      header nav a[href="/browse-parts"],
+      nav > a[href="/browse-parts"],
+      a[href="/browse-parts"] {
         display: inline-block !important;
         visibility: visible !important;
+        opacity: 1 !important;
       }
       @media (max-width: 900px){
         nav a[href="/"], nav a[href="/browse-parts"], nav a[href="/pc-builder"], nav a[href="/saved-builds"]{display:none !important}
@@ -1595,8 +1599,11 @@
         }
       }
       
-      #pcf-builder-controls #pcf-builder-categories {
+      #pcf-builder-controls #pcf-builder-view-toggle {
         order: 1 !important;
+      }
+      #pcf-builder-controls #pcf-builder-categories {
+        order: 2 !important;
         flex: 1 !important;
         min-width: 0 !important;
       }
@@ -2311,8 +2318,19 @@
           }
           
           // Create organized category buttons and view toggle in one row
+          // Order: view toggle first, then category buttons (swapped back to original order)
           var controlsHtml = '<div id="pcf-builder-controls" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:16px 0;padding:0 20px;position:relative;clear:both;width:100%;box-sizing:border-box;z-index:1;">';
-          controlsHtml += '<div id="pcf-builder-categories" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1;min-width:0;">';
+          // Desktop view toggle (hidden on mobile) - place it first
+          controlsHtml += '<div id="pcf-builder-view-toggle" style="display:flex;gap:8px;align-items:center;flex-shrink:0;order:1;">';
+          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
+          controlsHtml += '<span>⊞</span> <span>Grid</span>';
+          controlsHtml += '</button>';
+          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
+          controlsHtml += '<span>☰</span> <span>Stack</span>';
+          controlsHtml += '</button>';
+          controlsHtml += '</div>';
+          // Category buttons - place them after toggle
+          controlsHtml += '<div id="pcf-builder-categories" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1;min-width:0;order:2;">';
           
           // Add category buttons
           categoryButtons.forEach(function(btn){
@@ -2321,17 +2339,8 @@
           });
           
           controlsHtml += '</div>';
-          // Desktop view toggle (hidden on mobile)
-          controlsHtml += '<div id="pcf-builder-view-toggle" style="display:flex;gap:8px;align-items:center;flex-shrink:0;">';
-          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
-          controlsHtml += '<span>⊞</span> <span>Grid</span>';
-          controlsHtml += '</button>';
-          controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'stack' ? 'active' : '') + '" data-view="stack" title="Stack View">';
-          controlsHtml += '<span>☰</span> <span>Stack</span>';
-          controlsHtml += '</button>';
-          controlsHtml += '</div>';
           // Mobile view toggle (hidden on desktop)
-          controlsHtml += '<div class="pcf-builder-view-toggle-mobile" style="display:none;flex-direction:row;width:100%;justify-content:center;gap:8px;order:2;">';
+          controlsHtml += '<div class="pcf-builder-view-toggle-mobile" style="display:none;flex-direction:row;width:100%;justify-content:center;gap:8px;order:1;">';
           controlsHtml += '<button class="pcf-builder-view-toggle-btn ' + (savedView === 'grid' ? 'active' : '') + '" data-view="grid" title="Grid View">';
           controlsHtml += '<span>⊞</span> <span>Grid</span>';
           controlsHtml += '</button>';
@@ -5370,7 +5379,7 @@
                 <a href="/signup.html">Upgrade to Pro</a>
               </article>
               <article class="pcf-plan-card">
-                <span class="pcf-plan-badge">Premium</span>
+                <span class="pcf-plan-badge">Premium</span> 
                 <h2 class="pcf-plan-title">Premium Shop</h2>
                 <p class="pcf-plan-price">₱990 <span>/ month</span></p>
                 <ul class="pcf-plan-details">
