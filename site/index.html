@@ -3055,9 +3055,13 @@
             window._pcfLastLoggedComplete = category;
           }
           
-          // Clear flag after a short delay
+          // Clear flag after filtering completes
           setTimeout(function(){
             _pcfFilteringInProgress = false;
+            // Reset category tracking after delay to allow new calls
+            setTimeout(function(){
+              _pcfLastFilterCategory = null;
+            }, 50);
           }, 100);
         }
         
@@ -3136,10 +3140,23 @@
           setTimeout(initPCBuilderFilter, 600);
         });
         
-        // Initialize on route changes
+        // Debounce route change handler
+        var _pcfRouteChangeTimeout = null;
         function handleRouteChange(){
+          // Clear any pending route change
+          if(_pcfRouteChangeTimeout){
+            clearTimeout(_pcfRouteChangeTimeout);
+          }
+          
+          // Reset filter flags on route change
+          window._pcfInitialFilterApplied = false;
+          window._pcfLastLoggedCategory = null;
+          window._pcfLastLoggedComplete = null;
+          _pcfFilteringInProgress = false;
+          _pcfLastFilterCategory = null;
+          
           // Delay to allow SPA to update DOM
-          setTimeout(function(){
+          _pcfRouteChangeTimeout = setTimeout(function(){
             initPCBuilderFilter();
             // Also re-attach event listeners after a short delay
             setTimeout(function(){
