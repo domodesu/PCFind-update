@@ -3316,6 +3316,31 @@
           // Make function globally accessible immediately
           window.filterBuilderPartsByCategory = filterBuilderPartsByCategory;
           
+          // Only run on PC Builder page - check path first
+          var path = (location.pathname||'').toLowerCase();
+          var isPCBuilder = path.includes('/pc-builder') || path.endsWith('/pc-builder') || path === '/pc-builder/';
+          
+          // If not on PC Builder page, reset any hidden cards and return
+          if(!isPCBuilder){
+            // Reset any cards that might have been hidden by this filter
+            var allCards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+            allCards.forEach(function(card){
+              card.style.display = '';
+              card.style.opacity = '';
+              card.style.visibility = '';
+              card.style.pointerEvents = '';
+              card.removeAttribute('hidden');
+            });
+            // Clear filter flags
+            _pcfFilteringInProgress = false;
+            _pcfLastFilterCategory = null;
+            if(_pcfFilterTimeout){
+              clearTimeout(_pcfFilterTimeout);
+              _pcfFilterTimeout = null;
+            }
+            return;
+          }
+          
           // Normalize category first
           category = (category || '').toLowerCase().trim();
           
@@ -3346,37 +3371,30 @@
           
           // Internal function to execute the filter
           function executeFilter(category){
+            // Double-check we're still on PC Builder page
+            var currentPath = (location.pathname||'').toLowerCase();
+            var stillOnPCBuilder = currentPath.includes('/pc-builder') || currentPath.endsWith('/pc-builder') || currentPath === '/pc-builder/';
+            if(!stillOnPCBuilder){
+              return; // Don't filter if we've navigated away
+            }
+            
             // Set flag to prevent multiple calls
             _pcfFilteringInProgress = true;
             _pcfLastFilterCategory = category;
             
-            // Try to find cards with multiple selectors
+            // Only select PC Builder cards - don't use fallback selectors that might match Browse Parts cards
             var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
             
-            // If no cards found, try alternative selectors
-            if(cards.length === 0){
-              cards = document.querySelectorAll('[data-testid*="card-builder"], [data-testid*="card-part"], [data-testid*="builder-part"], [data-testid*="part-"]');
-            }
-            
-            // If still no cards, try more generic selectors
-            if(cards.length === 0){
-              cards = document.querySelectorAll('[data-testid*="card"], [data-testid*="part"]');
-            }
-            
-            // If still no cards, try finding by class or structure
-            if(cards.length === 0){
-              var main = document.querySelector('main');
-              if(main){
-                // Look for any card-like elements in main
-                cards = main.querySelectorAll('div[class*="card"], article, section[class*="part"]');
-              }
-            }
-            
-            // If no cards found, silently return (parts may not be loaded yet)
+            // If no PC Builder cards found, return (don't try to filter Browse Parts cards)
             if(cards.length === 0){
               // Try again after a short delay if cards might still be loading
               setTimeout(function(){
-                executeFilter(category);
+                // Double-check we're still on PC Builder before retrying
+                var retryPath = (location.pathname||'').toLowerCase();
+                var stillOnPCBuilder = retryPath.includes('/pc-builder') || retryPath.endsWith('/pc-builder') || retryPath === '/pc-builder/';
+                if(stillOnPCBuilder){
+                  executeFilter(category);
+                }
               }, 200);
               return;
             }
