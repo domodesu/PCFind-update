@@ -2663,10 +2663,16 @@
             existingControls.style.opacity = '1';
             
             // Use event delegation for category buttons - ensures they always work
+            // Always remove old handler first to prevent duplicates
             if(existingControls._pcfCategoryHandler){
-              existingControls.removeEventListener('click', existingControls._pcfCategoryHandler, {capture: true, passive: false});
+              try {
+                existingControls.removeEventListener('click', existingControls._pcfCategoryHandler, {capture: true, passive: false});
+              } catch(e) {
+                console.log('Error removing old handler, continuing...');
+              }
             }
             
+            // Create new handler function
             existingControls._pcfCategoryHandler = function(e){
               var btn = e.target.closest('.pcf-category-btn');
               if(!btn) return;
