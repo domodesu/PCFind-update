@@ -3125,7 +3125,8 @@
         }
         
         
-        function rearrangeCardButtons(){
+        // Make rearrangeCardButtons globally accessible
+        window.rearrangeCardButtons = function rearrangeCardButtons(){
           var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
           var container = document.querySelector('.pcf-builder-parts-container');
           var isStackView = container && container.classList.contains('stack-view');
