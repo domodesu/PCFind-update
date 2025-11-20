@@ -3994,6 +3994,36 @@
           }
         }
         
+        // Get saved builds list
+        function getSavedBuildsList(){
+          try{
+            const user = getUser();
+            if(user && user.name){
+              // User is logged in - get from localStorage
+              const saved = localStorage.getItem('pcfind_saved_builds');
+              return saved ? JSON.parse(saved) : [];
+            }
+            return [];
+          }catch{
+            return [];
+          }
+        }
+        
+        // Save builds list
+        function saveSavedBuildsList(buildsList){
+          try{
+            const user = getUser();
+            if(user && user.name){
+              // User is logged in - save to localStorage
+              localStorage.setItem('pcfind_saved_builds', JSON.stringify(buildsList));
+              return true;
+            }
+            return false;
+          }catch{
+            return false;
+          }
+        }
+        
         // Save build permanently
         function saveBuildPermanently(){
           // Check if user is logged in using the getUser function
@@ -4024,11 +4054,37 @@
             return;
           }
           
-          // Save to localStorage (permanent for logged-in users)
           try{
-            localStorage.setItem('pcfind_current_build', JSON.stringify(build));
-            if(window.showToast) window.showToast('✅ Build saved successfully!');
+            // Get existing saved builds list
+            const savedBuilds = getSavedBuildsList();
+            
+            // Create a new saved build entry
+            const savedBuild = {
+              id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+              name: build.name || 'My Build ' + (savedBuilds.length + 1),
+              items: JSON.parse(JSON.stringify(build.items)), // Deep copy
+              totalPrice: build.items.reduce((sum, item) => sum + (Number(item.price) || 0), 0),
+              savedAt: Date.now(),
+              lastModified: build.lastModified || Date.now()
+            };
+            
+            // Add to saved builds list
+            savedBuilds.push(savedBuild);
+            
+            // Save the list
+            if(saveSavedBuildsList(savedBuilds)){
+              // Also save current build
+              localStorage.setItem('pcfind_current_build', JSON.stringify(build));
+              if(window.showToast) window.showToast('✅ Build saved successfully!');
+              // Refresh the saved builds page if we're on it
+              if(isSavedBuilds()){
+                setTimeout(() => renderSavedBuilds(), 100);
+              }
+            } else {
+              if(window.showToast) window.showToast('❌ Failed to save build');
+            }
           }catch(e){
+            console.error('Error saving build:', e);
             if(window.showToast) window.showToast('❌ Failed to save build');
           }
         }
