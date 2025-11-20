@@ -2690,10 +2690,12 @@
               e.stopPropagation();
               e.stopImmediatePropagation();
               
-              // Prevent multiple rapid clicks
-              if(btn._pcfClicking) return;
-              btn._pcfClicking = true;
-              setTimeout(function(){ btn._pcfClicking = false; }, 300);
+              // Prevent multiple rapid clicks - use timestamp method
+              var now = Date.now();
+              if(btn._pcfLastCategoryClick && (now - btn._pcfLastCategoryClick) < 300){
+                return; // Ignore clicks within 300ms
+              }
+              btn._pcfLastCategoryClick = now;
               
               // Remove active class from all buttons
               var allBtns = existingControls.querySelectorAll('.pcf-category-btn');
@@ -2858,8 +2860,17 @@
                 var view = btn.getAttribute('data-view');
                 if(!view) return;
                 
-                // Update active state for all toggle buttons
-                var allToggleBtns = controlsContainer.querySelectorAll('.pcf-builder-view-toggle-btn');
+                // Prevent rapid clicks
+                var now = Date.now();
+                if(btn._pcfLastViewClick && (now - btn._pcfLastViewClick) < 300){
+                  return;
+                }
+                btn._pcfLastViewClick = now;
+                
+                console.log('View toggle clicked:', view);
+                
+                // Update active state for all toggle buttons (both desktop and mobile)
+                var allToggleBtns = document.querySelectorAll('.pcf-builder-view-toggle-btn');
                 allToggleBtns.forEach(function(b){ 
                   b.classList.remove('active');
                   b.style.background = '#1f2937';
@@ -2873,15 +2884,33 @@
                 btn.style.borderColor = '#2563eb';
                 btn.style.color = '#fff';
                 
+                // Also activate corresponding button in other toggle (desktop/mobile)
+                var otherToggleBtns = document.querySelectorAll('.pcf-builder-view-toggle-btn[data-view="' + view + '"]');
+                otherToggleBtns.forEach(function(b){
+                  if(b !== btn){
+                    b.classList.add('active');
+                    b.style.background = '#2563eb';
+                    b.style.borderColor = '#2563eb';
+                    b.style.color = '#fff';
+                  }
+                });
+                
                 // Update container classes
-                partsContainer.classList.remove('grid-view', 'stack-view');
-                partsContainer.classList.add(view + '-view');
+                if(partsContainer){
+                  partsContainer.classList.remove('grid-view', 'stack-view');
+                  partsContainer.classList.add(view + '-view');
+                  console.log('Container view updated to:', view);
+                }
                 
                 // Save preference
                 localStorage.setItem('pcfind_builder_view', view);
                 
-                // Rearrange buttons after view change
-                setTimeout(rearrangeCardButtons, 50);
+                // Force re-render
+                setTimeout(function(){
+                  if(window.rearrangeCardButtons){
+                    window.rearrangeCardButtons();
+                  }
+                }, 50);
               };
               
               // Attach handler with capture phase
