@@ -3062,21 +3062,91 @@
         var _pcfFilteringInProgress = false;
         var _pcfLastFilterCategory = null;
         
+        // Make rearrangeCardButtons globally accessible
+        window.rearrangeCardButtons = function rearrangeCardButtons(){
+          var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
+          var container = document.querySelector('.pcf-builder-parts-container');
+          var isStackView = container && container.classList.contains('stack-view');
+          
+          cards.forEach(function(card){
+            // Ensure card uses flexbox column (for grid view) or row (for stack view)
+            if(getComputedStyle(card).display !== 'flex'){
+              card.style.display = 'flex';
+            }
+            
+            if(isStackView){
+              card.style.flexDirection = 'row';
+            } else {
+              card.style.flexDirection = 'column';
+              card.style.height = '100%';
+            }
+            
+            // Find Add to Build button or link
+            var buttons = card.querySelectorAll('button, a');
+            var addButton = null;
+            
+            buttons.forEach(function(btn){
+              var text = (btn.textContent || '').toLowerCase().trim();
+              var href = btn.getAttribute('href') || '';
+              if((text.includes('add to build') || text.includes('add') && !text.includes('compare')) || 
+                 href.includes('add') || btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('add')){
+                addButton = btn;
+              }
+            });
+            
+            if(addButton){
+              // Move button to bottom
+              var parent = addButton.parentElement;
+              
+              // If parent is the card, move button
+              if(parent === card){
+                card.appendChild(addButton);
+              } else {
+                // Make parent flex if it isn't
+                if(getComputedStyle(parent).display !== 'flex'){
+                  parent.style.display = 'flex';
+                }
+                parent.style.flexDirection = 'column';
+                parent.style.flex = '1';
+                parent.appendChild(addButton);
+              }
+              
+              // Style button at bottom
+              addButton.style.marginTop = 'auto';
+              addButton.style.marginBottom = '0';
+              addButton.style.alignSelf = 'stretch';
+              addButton.style.width = '100%';
+              addButton.style.order = '999';
+              
+              // Make button more prominent
+              if(!addButton.style.padding || addButton.style.padding === ''){
+                addButton.style.padding = '10px 16px';
+              }
+              if(!addButton.style.fontWeight || addButton.style.fontWeight === ''){
+                addButton.style.fontWeight = '600';
+              }
+              if(!addButton.style.borderRadius || addButton.style.borderRadius === ''){
+                addButton.style.borderRadius = '8px';
+              }
+            }
+          });
+        };
+        
         function filterBuilderPartsByCategory(category){
           // Make function globally accessible immediately
           window.filterBuilderPartsByCategory = filterBuilderPartsByCategory;
           
-              // Normalize category first
-              category = (category || '').toLowerCase().trim();
-              
-              // Prevent duplicate calls with same category
-              if(_pcfFilteringInProgress && _pcfLastFilterCategory === category){
-                return;
-              }
-              
-              // Set flag to prevent multiple calls
-              _pcfFilteringInProgress = true;
-              _pcfLastFilterCategory = category;
+          // Normalize category first
+          category = (category || '').toLowerCase().trim();
+          
+          // Prevent duplicate calls with same category
+          if(_pcfFilteringInProgress && _pcfLastFilterCategory === category){
+            return;
+          }
+          
+          // Set flag to prevent multiple calls
+          _pcfFilteringInProgress = true;
+          _pcfLastFilterCategory = category;
           
           var cards = document.querySelectorAll('[data-testid^="card-builder-part-"]');
           // Only log if category changed or first call
