@@ -2559,6 +2559,11 @@
               var btn = e.target.closest('.pcf-category-btn');
               if(!btn) return;
               
+              // Don't prevent default on navigation links
+              if(e.target.tagName === 'A' && e.target.closest('nav')){
+                return; // Let navigation links work normally
+              }
+              
               // Stop all other handlers
               e.preventDefault();
               e.stopPropagation();
