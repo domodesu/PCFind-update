@@ -2341,42 +2341,68 @@
                 parent = parent.parentElement;
               }
               
-              // Mark interaction when dropdown is clicked/opened
+              // Completely stop observer when interacting with dropdown
               dropdownSelect.addEventListener('mousedown', function(e){
                 window.__pcfDropdownInteracting = true;
-                // Allow default behavior - don't prevent anything
-                e.stopImmediatePropagation = function(){}; // Override to do nothing
+                if(window.__pcfStopTabObserver){
+                  window.__pcfStopTabObserver(); // Completely stop observer
+                }
               }, true); // Use capture phase to run first
               
               dropdownSelect.addEventListener('click', function(e){
                 window.__pcfDropdownInteracting = true;
-                // Don't prevent default - allow dropdown to open
-                // Extend interaction time to prevent observer from interfering
+                if(window.__pcfStopTabObserver){
+                  window.__pcfStopTabObserver(); // Completely stop observer
+                }
+                // Keep interaction flag for longer
                 setTimeout(function(){
                   if(document.activeElement === dropdownSelect || dropdownSelect.matches(':focus')){
                     window.__pcfDropdownInteracting = true;
                     setTimeout(function(){
                       window.__pcfDropdownInteracting = false;
-                    }, 1000);
+                      if(window.__pcfStartTabObserver){
+                        window.__pcfStartTabObserver(); // Restart observer
+                      }
+                    }, 2000); // Longer delay
                   } else {
                     window.__pcfDropdownInteracting = false;
+                    if(window.__pcfStartTabObserver){
+                      window.__pcfStartTabObserver(); // Restart observer
+                    }
                   }
-                }, 100);
+                }, 200);
               }, false);
               
               dropdownSelect.addEventListener('focus', function(e){
                 window.__pcfDropdownInteracting = true;
-              });
+                if(window.__pcfStopTabObserver){
+                  window.__pcfStopTabObserver(); // Stop observer
+                }
+              }, true);
               
               dropdownSelect.addEventListener('blur', function(e){
                 // Delay clearing interaction flag to allow dropdown to stay open
                 setTimeout(function(){
-                  // Only clear if dropdown is truly not focused and not open
-                  if(document.activeElement !== dropdownSelect){
-                    window.__pcfDropdownInteracting = false;
+                  window.__pcfDropdownInteracting = false;
+                  // Restart observer after delay
+                  setTimeout(function(){
+                    if(window.__pcfStartTabObserver){
+                      window.__pcfStartTabObserver(); // Restart observer
+                    }
+                  }, 500);
+                }, 1000); // Longer delay
+              }, true);
+              
+              dropdownSelect.addEventListener('change', function(e){
+                // Keep observer stopped during change
+                window.__pcfDropdownInteracting = true;
+                setTimeout(function(){
+                  window.__pcfDropdownInteracting = false;
+                  if(window.__pcfStartTabObserver){
+                    window.__pcfStartTabObserver(); // Restart observer
                   }
                 }, 500);
-              });
+              }, true);
               
               // Prevent any click handlers on parent from closing dropdown
               var controlsContainer = document.getElementById('pcf-builder-controls');
@@ -2384,9 +2410,19 @@
                 controlsContainer.addEventListener('click', function(e){
                   if(e.target === dropdownSelect || dropdownSelect.contains(e.target)){
                     e.stopPropagation();
+                    e.stopImmediatePropagation();
                   }
                 }, true);
               }
+              
+              // Also prevent document-level click handlers
+              var docClickHandler = function(e){
+                if(e.target === dropdownSelect || dropdownSelect.contains(e.target)){
+                  e.stopPropagation();
+                  e.stopImmediatePropagation();
+                }
+              };
+              document.addEventListener('click', docClickHandler, true);
             }
           };
           
