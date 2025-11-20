@@ -3873,10 +3873,44 @@
           const c = ensureContainer();
           const build = getCurrentBuild();
           const user = window.isUserLoggedIn && window.isUserLoggedIn();
+          const savedBuilds = getSavedBuildsList();
           
           let html = '';
+          
+          // Show saved builds list if user is logged in and has saved builds
+          if(user && savedBuilds && savedBuilds.length > 0){
+            html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:24px;margin-bottom:20px" class="light-mode-card">';
+            html += '<h1 style="color:#e5e7eb;margin:0 0 8px 0;font-size:2rem" class="light-mode-title">💾 Saved Builds</h1>';
+            html += '<p style="color:#9ca3af;margin:0 0 20px 0" class="light-mode-text">Your saved PC builds</p>';
+            
+            // Display saved builds
+            savedBuilds.forEach((savedBuild, index) => {
+              const savedDate = new Date(savedBuild.savedAt);
+              const dateStr = savedDate.toLocaleDateString() + ' ' + savedDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+              
+              html += '<div style="background:#0b1220;border:1px solid #374151;border-radius:12px;padding:20px;margin-bottom:16px;transition:all 0.2s" class="light-mode-item" onmouseover="this.style.borderColor=\'#4b5563\';this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.3)\'" onmouseout="this.style.borderColor=\'#374151\';this.style.transform=\'translateY(0)\';this.style.boxShadow=\'none\'">';
+              html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;flex-wrap:wrap;gap:12px">';
+              html += '<div style="flex:1;min-width:0">';
+              html += '<h3 style="color:#e5e7eb;margin:0 0 4px 0;font-size:1.25rem;font-weight:600" class="light-mode-title">' + (savedBuild.name || 'My Build') + '</h3>';
+              html += '<p style="color:#9ca3af;margin:0 0 8px 0;font-size:0.9rem" class="light-mode-text">' + savedBuild.items.length + ' component' + (savedBuild.items.length !== 1 ? 's' : '') + ' • Saved ' + dateStr + '</p>';
+              if(savedBuild.totalPrice > 0){
+                html += '<p style="color:#10b981;margin:0;font-size:1.1rem;font-weight:600">₱' + savedBuild.totalPrice.toLocaleString() + '</p>';
+              }
+              html += '</div>';
+              html += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+              html += '<button onclick="window.loadSavedBuild(\'' + savedBuild.id + '\')" style="background:#2563eb;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:500;font-size:0.9rem;transition:all 0.2s" onmouseover="this.style.background=\'#1d4ed8\'" onmouseout="this.style.background=\'#2563eb\'">📂 Load</button>';
+              html += '<button onclick="window.deleteSavedBuild(\'' + savedBuild.id + '\')" style="background:#dc2626;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:500;font-size:0.9rem;transition:all 0.2s" onmouseover="this.style.background=\'#b91c1c\'" onmouseout="this.style.background=\'#dc2626\'">🗑️ Delete</button>';
+              html += '</div>';
+              html += '</div>';
+              html += '</div>';
+            });
+            
+            html += '</div>';
+          }
+          
+          // Current Build section
           html += '<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:24px;margin-bottom:20px" class="light-mode-card">';
-          html += '<h1 style="color:#e5e7eb;margin:0 0 8px 0;font-size:2rem" class="light-mode-title">💾 Current Build</h1>';
+          html += '<h1 style="color:#e5e7eb;margin:0 0 8px 0;font-size:2rem" class="light-mode-title">🔧 Current Build</h1>';
           html += '<p style="color:#9ca3af;margin:0" class="light-mode-text">Your selected components - modify or clear anytime</p>';
           if(!user){
             html += '<div style="background:#374151;border-radius:8px;padding:12px;margin-top:16px;color:#fbbf24;font-size:0.9rem" class="light-mode-warning">⚠️ <strong>Not signed in:</strong> Your build is temporary. <a href="#" onclick="if(window.showSignInRequired) window.showSignInRequired(\'Sign in to save your build permanently!\'); return false;" style="color:#60a5fa;text-decoration:underline">Sign in to save</a></div>';
