@@ -4381,6 +4381,12 @@
         // Check if user is logged in (globally accessible)
         window.isUserLoggedIn = function(){
           try{
+            // Use the same getUser function from the auth section if available
+            if(typeof getUser === 'function'){
+              const user = getUser();
+              return !!(user && user.name);
+            }
+            // Fallback to direct storage check
             const s = sessionStorage.getItem('pcfind_user');
             const l = localStorage.getItem('pcfind_user');
             const user = s?JSON.parse(s):(l?JSON.parse(l):null);
