@@ -2383,6 +2383,36 @@
         layoutObserver.observe(document.body, {childList: true, subtree: true});
       })();
       
+      // Intercept fetch calls to suppress 404 errors from original React app
+      (function(){
+        // Save original fetch
+        var originalFetch = window.fetch;
+        
+        // Override fetch to intercept /api/parts/ calls
+        window.fetch = function(...args){
+          var url = args[0];
+          
+          // Check if this is a call to /api/parts/
+          if(typeof url === 'string' && url.includes('/api/parts/')){
+            // Return a rejected promise that fails silently
+            return Promise.reject(new Error('API endpoint not available - using parts-data instead'))
+              .catch(function(err){
+                // Silently handle the error - don't log to console
+                return Promise.resolve({
+                  ok: false,
+                  status: 404,
+                  statusText: 'Not Found',
+                  json: function(){ return Promise.resolve([]); },
+                  text: function(){ return Promise.resolve('[]'); }
+                });
+              });
+          }
+          
+          // For all other requests, use original fetch
+          return originalFetch.apply(this, args);
+        };
+      })();
+      
       // PC Builder Filter and Button Rearrangement
       (function(){
         function initPCBuilderFilter(){
