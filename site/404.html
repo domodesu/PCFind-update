@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting…</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:40px;color:#444}</style>
+    <script>
+      (function(){
+        try{
+          // Capture the full path that 404'd
+          var path = (location.pathname||'');
+          var host = (location.hostname||'').toLowerCase();
+          // Detect user site vs project site
+          var hostParts = host.split('.');
+          var username = hostParts[0] || '';
+          var isUserSite = host.endsWith('.github.io') && (host === username + '.github.io');
+          var repo = '';
+          if(!isUserSite){
+            // Project site: strip repo prefix
+            var parts = path.split('/');
+            repo = parts[1]||'';
+            if(repo && path.toLowerCase().startsWith('/' + repo.toLowerCase() + '/')){
+              path = path.slice(('/' + repo).length) || '/';
+            }
+          }
+          // Store the intended path in sessionStorage so index.html can restore it
+          try{ sessionStorage.setItem('spa_redirect', path + (location.search||'') + (location.hash||'')); }catch{}
+          // Redirect to the index
+          var base = repo ? ('/' + repo + '/') : '/';
+          location.replace(base);
+        }catch(e){ location.replace('./'); }
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Redirecting…</p>
+  </body>
+  </html>
+
+
