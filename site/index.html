@@ -2693,11 +2693,38 @@
             }
           }
           
-          // Add click handlers for category buttons - attach after a short delay to ensure DOM is ready
-          setTimeout(function(){
+          // Add click handlers for category buttons - attach after controls are created
+          // Use a function that can be called multiple times safely
+          function attachButtonHandlers(){
             var controlsContainer = document.getElementById('pcf-builder-controls');
             if(!controlsContainer){
-              console.error('Controls container not found');
+              // Silently return - controls might not be created yet
+              return false;
+            }
+            
+            // Check if handlers are already attached
+            if(controlsContainer._pcfHandlersAttached){
+              return true;
+            }
+            
+            setupButtonHandlers(controlsContainer);
+            controlsContainer._pcfHandlersAttached = true;
+            return true;
+          }
+          
+          // Try to attach handlers immediately, then retry if needed
+          setTimeout(function(){
+            if(!attachButtonHandlers()){
+              // Retry after a longer delay if controls weren't ready
+              setTimeout(function(){
+                attachButtonHandlers();
+              }, 500);
+            }
+          }, 200);
+          
+          // Function to set up button handlers (extracted for reuse)
+          function setupButtonHandlers(controlsContainer){
+            if(!controlsContainer){
               return;
             }
             
@@ -2791,7 +2818,7 @@
               btn.addEventListener('click', btn._pcfDirectClickHandler, {capture: false});
               console.log('Attached handler to button:', btn.textContent, 'Category:', category);
             });
-          }, 200);
+          }
           
           // Display initial category parts
           setTimeout(function(){
